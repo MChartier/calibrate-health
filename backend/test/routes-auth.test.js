@@ -20,6 +20,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   const dbPath = require.resolve('../src/config/database');
   const passportPath = require.resolve('passport');
   const bcryptPath = require.resolve('bcryptjs');
+  const credentialPath = require.resolve('../src/services/credentialVerification');
+  const previousCredential = require.cache[credentialPath];
+  delete require.cache[credentialPath];
   const authPath = require.resolve('../src/routes/auth');
 
   const previousDbModule = require.cache[dbPath];
@@ -33,6 +36,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   stubModule(bcryptPath, bcryptStub);
 
   const loaded = require('../src/routes/auth');
+
+  if (previousCredential) require.cache[credentialPath] = previousCredential;
+  else delete require.cache[credentialPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];
@@ -474,4 +480,30 @@ test('auth route: verification resend and reset request do not reveal account ex
     assert.equal(knownRes.statusCode, 202);
     assert.deepEqual(knownRes.body, unknownRes.body);
   }
+});
+
+test('browser login clears rejected authenticated state even when session cleanup fails', async () => {
+  const { BrowserLoginRejected } = require('../src/utils/browserLoginCredentials');
+  const user = { id: 7 };
+  const router = loadAuthRouter({ prismaStub: {}, bcryptStub: {}, passportStub: {
+    authenticate: (_strategy, callback) => (_req, _res, _next) => callback(null, user)
+  } });
+  const [handler] = getRouteHandlers(router, 'post', '/login');
+  const res = createRes();
+  let done;
+  const completed = new Promise(resolve => { done = resolve; });
+  const originalJson = res.json;
+  res.json = function(value) { originalJson.call(this, value); done(); return this; };
+  const req = {
+    body: { email: 'synthetic@example.invalid', password: 'synthetic' }, user,
+    session: { destroy(callback) { callback(new Error('synthetic cleanup failure')); } },
+    login(_user, callback) { void callback(new BrowserLoginRejected()); }
+  };
+  handler(req, res, error => { throw error; });
+  await completed;
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Invalid email or password' });
+  assert.equal(req.session, null);
+  assert.equal(req.user, undefined);
+  assert.ok(res.clearedCookie);
 });

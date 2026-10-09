@@ -19,6 +19,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   const dbPath = require.resolve('../src/config/database');
   const passportPath = require.resolve('passport');
   const bcryptPath = require.resolve('bcryptjs');
+  const credentialPath = require.resolve('../src/services/credentialVerification');
+  const previousCredential = require.cache[credentialPath];
+  delete require.cache[credentialPath];
   const mobileAuthPath = require.resolve('../src/services/mobileAuth');
   const mobileAuthDependencyPaths = [
     require.resolve('../src/services/mobileSessionCredentials'),
@@ -42,6 +45,9 @@ function loadAuthRouter({ prismaStub, passportStub, bcryptStub }) {
   stubModule(bcryptPath, bcryptStub);
 
   const loaded = require('../src/routes/auth');
+
+  if (previousCredential) require.cache[credentialPath] = previousCredential;
+  else delete require.cache[credentialPath];
 
   if (previousDbModule) require.cache[dbPath] = previousDbModule;
   else delete require.cache[dbPath];
@@ -88,6 +94,7 @@ const dbUser = {
   id: 7,
   email: 'native@example.com',
   password_hash: 'hash',
+  credential_security_version: 3,
   created_at: new Date('2026-01-01T00:00:00.000Z'),
   weight_unit: 'KG',
   height_unit: 'CM',
@@ -113,6 +120,10 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
         userLookups.push(args);
         return dbUser;
       },
+      updateMany: async ({ where }) => {
+        assert.deepEqual(where, { id: dbUser.id, credential_security_version: 3 });
+        return { count: 1 };
+      },
       findUnique: async () => dbUser
     },
     mobileAuthSession: {
@@ -122,6 +133,7 @@ test('auth route: POST /mobile/login returns mobile tokens for valid credentials
       }
     }
   };
+  prismaStub.$transaction = async (action) => action(prismaStub);
   const router = loadAuthRouter({
     prismaStub,
     passportStub: { authenticate: () => () => {} },
@@ -356,4 +368,20 @@ test('auth route: GET /mobile/sessions returns owned active devices', async () =
   assert.equal(res.body.sessions.length, 1);
   assert.equal(res.body.sessions[0].current, true);
   assert.equal(res.body.sessions[0].device_platform, 'android_phone');
+});
+
+test('mobile login rejects a credential change during password verification with the generic response', async () => {
+  let version = 3;
+  let creates = 0;
+  const prismaStub = {
+    user: { findFirst: async () => ({ ...dbUser }), updateMany: async ({ where }) => ({ count: where.credential_security_version === version ? 1 : 0 }) },
+    mobileAuthSession: { create: async () => { creates++; return { id: 1 }; } }
+  };
+  prismaStub.$transaction = action => action(prismaStub);
+  const router = loadAuthRouter({ prismaStub, passportStub: {}, bcryptStub: { compare: async () => { version++; return true; } } });
+  const res = createRes();
+  await getRouteHandler(router, 'post', '/mobile/login')({ body: { email: dbUser.email, password: 'synthetic', device_id: 'phone', device_platform: 'android_phone' } }, res);
+  assert.equal(res.statusCode, 401);
+  assert.deepEqual(res.body, { message: 'Invalid email or password' });
+  assert.equal(creates, 0);
 });

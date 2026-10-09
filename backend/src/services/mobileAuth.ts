@@ -67,6 +67,28 @@ export async function issueMobileAuthPayload(opts: {
   };
 }
 
+/** Issue only while the credential snapshot verified by local login is still current. */
+export async function issueVerifiedMobileAuthPayload(opts: {
+  userId: number;
+  credentialSecurityVersion: number;
+  device: ParsedMobileDevice;
+}): Promise<MobileAuthSessionPayload | null> {
+  if (!Number.isSafeInteger(opts.credentialSecurityVersion) || opts.credentialSecurityVersion < 0) return null;
+  return prisma.$transaction(async (tx) => {
+    // This row lock orders issuance against password writers and account deletion.
+    const current = await tx.user.updateMany({
+      where: { id: opts.userId, credential_security_version: opts.credentialSecurityVersion },
+      data: { credential_security_version: opts.credentialSecurityVersion }
+    });
+    if (current.count !== 1) return null;
+    const user = await tx.user.findUnique({ where: { id: opts.userId }, select: USER_CLIENT_SELECT });
+    if (!user) return null;
+    // Restricted accounts keep their recovery session; serialization retains current access gates.
+    const { sessionId: _sessionId, ...tokens } = await issueMobileSession(opts, tx);
+    return { user: serializeUserForClient(user), ...tokens };
+  });
+}
+
 /** Rotate a refresh token into a new access/refresh pair for the same native session. */
 export async function refreshMobileSession(refreshToken: string): Promise<MobileAuthSessionPayload | null> {
   const tokenHash = hashMobileToken(refreshToken);

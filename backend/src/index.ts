@@ -1,6 +1,7 @@
 import 'dotenv/config';
+import { markVerifiedBrowserLogin, serializeBrowserLoginUser } from './utils/browserLoginCredentials';
+import { verifyLocalPassword } from './services/credentialVerification';
 
-import bcrypt from 'bcryptjs';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
@@ -14,7 +15,6 @@ import { getNativePushModeConfigurationWarning } from './config/nativePush';
 import { resolveMcpConfiguration } from './config/mcp';
 import { validateCredentialProviderConfiguration } from './config/credentialProvider';
 import { configureFrontendStaticAssets } from './frontendStatic';
-import { isAuthenticatedUser } from './middleware/authenticatedUser';
 import authRoutes from './routes/auth';
 import clientConfigRoutes from './routes/clientConfig';
 import serverSettingsRoutes from './routes/serverSettings';
@@ -54,7 +54,7 @@ import {
 import { startReminderScheduler } from './services/reminderScheduler';
 import { createCalibrateMcpHttpApp, isCalibrateMcpPath } from './mcp/server';
 import { checkDatabaseReadiness } from './services/readiness';
-import { DUMMY_AUTH_PASSWORD_HASH, normalizeEmailCredential } from './utils/authCredentials';
+import { normalizeEmailCredential } from './utils/authCredentials';
 import { autoLoginTestUser } from './utils/devAuth';
 import { DEFAULT_SESSION_TTL_MS, PostgresSessionStore } from './utils/postgresSessionStore';
 import { USER_CLIENT_SELECT } from './utils/userSerialization';
@@ -238,15 +238,16 @@ const bootstrap = async (): Promise<void> => {
         const user = await prisma.user.findFirst({
           where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
           orderBy: { id: 'asc' },
-          select: { ...USER_CLIENT_SELECT, password_hash: true },
+          select: { ...USER_CLIENT_SELECT, password_hash: true, credential_security_version: true },
         });
-        const isMatch = await bcrypt.compare(password, user?.password_hash ?? DUMMY_AUTH_PASSWORD_HASH);
+        const isMatch = await verifyLocalPassword(password, user?.password_hash);
         if (!user || !isMatch) {
           return done(null, false, { message: 'Invalid email or password' });
         }
 
         // Avoid keeping password hashes on req.user or in the session.
-        const { password_hash: _passwordHash, ...safeUser } = user;
+        const { password_hash: _passwordHash, credential_security_version: version, ...safeUser } = user;
+        markVerifiedBrowserLogin(safeUser, user.id, version);
         return done(null, safeUser);
       } catch (err) {
         return done(err);
@@ -254,12 +255,7 @@ const bootstrap = async (): Promise<void> => {
     })
   );
 
-  passport.serializeUser((user, done) => {
-    if (!isAuthenticatedUser(user)) {
-      return done(new Error('Cannot serialize an invalid user principal'));
-    }
-    return done(null, user.id);
-  });
+  passport.serializeUser(serializeBrowserLoginUser);
 
   passport.deserializeUser(async (id: number, done) => {
     try {

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
-const { CredentialProvider, CredentialProviderUnavailable } = require('../scripts/lib/credentialProvider');
+const { CredentialProvider, CredentialProviderUnavailable } = require('../src/services/credentialVerification');
 
 const identity = { provider: 'firebase', userId: 7, projectId: 'synthetic-project', uid: 'synthetic-uid', email: 'synthetic@example.invalid' };
 const tokenClaims = () => ({ uid: identity.uid, aud: identity.projectId, auth_time: Math.floor(Date.now() / 1000) });
@@ -85,4 +85,42 @@ test('forged response and verifier rejection cannot create an authenticated resu
   await assert.rejects(h.provider.verify(identity, 'synthetic-password'), CredentialProviderUnavailable);
   const wrong = setup({ fetch: async () => ({ ok: true, json: async () => ({ localId: 'wrong', idToken: 'forged' }) }) });
   assert.equal(await wrong.provider.verify(identity, 'synthetic-password'), false);
+});
+
+test('runtime local verification keeps unknown accounts invalid without issuing an authenticated result', async () => {
+  const { verifyLocalPassword } = require('../src/services/credentialVerification');
+  assert.equal(await verifyLocalPassword('synthetic-password', undefined), false);
+  assert.equal(await verifyLocalPassword('synthetic-password', ''), false);
+  const password = '\u00e9'.repeat(36);
+  const hash = await bcrypt.hash(password, 10);
+  assert.equal(await verifyLocalPassword(password, hash), true);
+  // Raw comparison preserves existing reauthentication; input limits remain caller-owned.
+  assert.equal(await verifyLocalPassword(password + 'x', hash), true);
+  assert.equal(await new CredentialProvider().verify({ provider: 'local', userId: 1, passwordHash: hash }, password + 'x'), false);
+});
+
+test('preparation compatibility export shares the runtime implementation and error identity', () => {
+  const preparation = require('../scripts/lib/credentialProvider');
+  assert.equal(preparation.CredentialProvider, CredentialProvider);
+  assert.equal(preparation.CredentialProviderUnavailable, CredentialProviderUnavailable);
+});
+
+test('incomplete trusted Firebase mappings are held before any provider request', async () => {
+  const h = setup();
+  for (const changed of [{ userId: 0 }, { userId: NaN }, { uid: '' }, { projectId: '' }, { email: '' }]) {
+    await assert.rejects(h.provider.verify({ ...identity, ...changed }, 'synthetic-password'), CredentialProviderUnavailable);
+  }
+  assert.equal(h.calls.length, 0);
+});
+
+test('unknown local credentials perform a dummy comparison but cannot authenticate', async () => {
+  const { verifyLocalPassword } = require('../src/services/credentialVerification');
+  const { DUMMY_AUTH_PASSWORD_HASH } = require('../src/utils/authCredentials');
+  const original = bcrypt.compare;
+  const calls = [];
+  bcrypt.compare = async (...args) => { calls.push(args); return true; };
+  try {
+    assert.equal(await verifyLocalPassword('unknown-password', undefined), false);
+    assert.deepEqual(calls, [['unknown-password', DUMMY_AUTH_PASSWORD_HASH]]);
+  } finally { bcrypt.compare = original; }
 });

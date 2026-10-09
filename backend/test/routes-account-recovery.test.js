@@ -15,6 +15,7 @@ function loadRouter({ prismaStub, accountTokensStub }) {
     tokens: require.resolve('../src/services/accountTokens'),
     passport: require.resolve('passport'),
     bcrypt: require.resolve('bcryptjs'),
+    credentials: require.resolve('../src/services/credentialVerification'),
     auth: require.resolve('../src/routes/auth')
   };
   const previous = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, require.cache[path]]));
