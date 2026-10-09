@@ -1,0 +1,533 @@
+{
+  "checkedAtUtc": "2026-10-09T04:39:49.045Z",
+  "pr": 452,
+  "updatedAt": "2026-10-09T04:39:26Z",
+  "headSha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "headBranch": "mchartier/unified-release-447",
+  "actualTargetSha": "cd8932b24b76af564d7e50f69750dba8f44c8e68",
+  "actualTargetBranch": "mchartier/release-entrypoints-recovery",
+  "apiBaseSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "sourceParentSha": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "ultimateTargetSha": "547206a1b372b73fc95fc412ad453b8099440000",
+  "ultimateTargetBranch": "master",
+  "bodySha256": "f1e85ed295255d1b534f44f66d93548267637229c69efe9bca75387e6eda8945",
+  "draft": true,
+  "labels": [],
+  "publishedScope": {
+    "commits": [
+      {
+        "sha": "70b8e125eb874d9b8c2b21fd0aa394971b0da67c",
+        "parents": [
+          "0c26cea12e3ecdbc962eebaeb140af35f54ab95a"
+        ]
+      },
+      {
+        "sha": "a8539c3b90bd8c69a761c234869e5a0553f8ed08",
+        "parents": [
+          "70b8e125eb874d9b8c2b21fd0aa394971b0da67c"
+        ]
+      },
+      {
+        "sha": "53de4b701554e2debb6ad62472559a2702f7e485",
+        "parents": [
+          "a8539c3b90bd8c69a761c234869e5a0553f8ed08"
+        ]
+      },
+      {
+        "sha": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+        "parents": [
+          "53de4b701554e2debb6ad62472559a2702f7e485"
+        ]
+      }
+    ],
+    "files": [
+      {
+        "path": ".github/ios-release-attestation-trusted-workflow-shas",
+        "status": "added",
+        "sha": "f53b793bc7f0b223f6f97c44eef59681fec4c0ed"
+      },
+      {
+        "path": ".github/workflows/builds.yml",
+        "status": "modified",
+        "sha": "db490f8b3e5aaf0c8ba87838b44a0041010132f7"
+      },
+      {
+        "path": ".github/workflows/cut-release.yml",
+        "status": "modified",
+        "sha": "1b54fd83855007a436179513b78ef58baa548528"
+      },
+      {
+        "path": ".github/workflows/expo-ota-update.yml",
+        "status": "modified",
+        "sha": "3934c52e61efe2db6fc6455f61d4940426dfc940"
+      },
+      {
+        "path": ".github/workflows/native-ios-release.yml",
+        "status": "added",
+        "sha": "472fed32b12ed71e2377c0fb6abe3f4a248bb834"
+      },
+      {
+        "path": ".github/workflows/native-release.yml",
+        "status": "modified",
+        "sha": "1a13cf64bd0d3dc57e067fdbadc58f37024f184f"
+      },
+      {
+        "path": ".github/workflows/publish-release.yml",
+        "status": "modified",
+        "sha": "09a3aecfc596c1e8ee3d140fc494bafb30b37ebe"
+      },
+      {
+        "path": ".github/workflows/unified-ota-release.yml",
+        "status": "added",
+        "sha": "2aa97a210b7cd5d5364d8d9bb8dda6d3e9f6bfd7"
+      },
+      {
+        "path": ".github/workflows/unified-release-handler.yml",
+        "status": "added",
+        "sha": "899c17738fe87c1c5d371e182e116a2e39be3f01"
+      },
+      {
+        "path": ".github/workflows/unified-release.yml",
+        "status": "added",
+        "sha": "d24f7cbe017a7b33ba19a0394b5cca162c773562"
+      },
+      {
+        "path": ".github/workflows/unified-server-handler.yml",
+        "status": "added",
+        "sha": "2a12d4b03e6ad6f249b026d2f1c5faa24bc49a23"
+      },
+      {
+        "path": ".github/workflows/unified-server-request.yml",
+        "status": "added",
+        "sha": "0d9279f56488fbd91a2d4aa7b0bd2e103835427e"
+      },
+      {
+        "path": "docs/unified-releases.md",
+        "status": "added",
+        "sha": "985c11a411830c4dbc82f5882881fe0ac73ef745"
+      },
+      {
+        "path": "mobile/app.config.js",
+        "status": "modified",
+        "sha": "00e59815fc9aaa6f216352bf30fb7a83cfe41556"
+      },
+      {
+        "path": "mobile/app.config.test.cjs",
+        "status": "modified",
+        "sha": "1d50eb437b165ac6b0355fc3618b993178c6de10"
+      },
+      {
+        "path": "mobile/app.json",
+        "status": "modified",
+        "sha": "f9a1387eff8547ee05197c8b6e867d43346bc31b"
+      },
+      {
+        "path": "mobile/eas.json",
+        "status": "modified",
+        "sha": "8bb2e97abb632986b6bc0e06468ce24f61145638"
+      },
+      {
+        "path": "package.json",
+        "status": "modified",
+        "sha": "76bc271a8a53005b42b159100fbf4da1fef2e25c"
+      },
+      {
+        "path": "scripts/expo-ota-artifact.mjs",
+        "status": "modified",
+        "sha": "6db250dc7a63cc0c00d178d915753994f999b675"
+      },
+      {
+        "path": "scripts/expo-ota-artifact.test.mjs",
+        "status": "modified",
+        "sha": "7d1ffe950c77b297c37b8c64029c49c61937004c"
+      },
+      {
+        "path": "scripts/ghcr-release-receipt.mjs",
+        "status": "modified",
+        "sha": "ad4b2357d4a32985d734a0f0924b410c880d9bde"
+      },
+      {
+        "path": "scripts/ghcr-release-receipt.test.mjs",
+        "status": "modified",
+        "sha": "ee4f326e5967a9d6d2160dc719223b64557fef7d"
+      },
+      {
+        "path": "scripts/ios-app-config.test.mjs",
+        "status": "added",
+        "sha": "84c781365f8a264c00d43964fe9907eaeb6b84eb"
+      },
+      {
+        "path": "scripts/ios-artifact.mjs",
+        "status": "added",
+        "sha": "46f88d52b3da18e180c6a51877054ed3a4ee6909"
+      },
+      {
+        "path": "scripts/ios-artifact.test.mjs",
+        "status": "added",
+        "sha": "06409f9982739887151fdeec3e3baf9f5171a44e"
+      },
+      {
+        "path": "scripts/ios-ota-artifact.mjs",
+        "status": "added",
+        "sha": "5862dc6d32833f82d63712db5f491523daf07944"
+      },
+      {
+        "path": "scripts/ios-ota-artifact.test.mjs",
+        "status": "added",
+        "sha": "9c8da4a5a31d1bf91cb1c9b4b1ca4819ebf68fd8"
+      },
+      {
+        "path": "scripts/ios-release.mjs",
+        "status": "added",
+        "sha": "bae147113b580c83cd14bc20cf5609d28dd499a5"
+      },
+      {
+        "path": "scripts/ios-release.test.mjs",
+        "status": "added",
+        "sha": "ba8b35251103a8dd085fd832a7cc4d0cf6297f83"
+      },
+      {
+        "path": "scripts/native-config.mjs",
+        "status": "modified",
+        "sha": "af26a363c757b404c0c2d97d68e8cde47de02177"
+      },
+      {
+        "path": "scripts/native-config.test.mjs",
+        "status": "modified",
+        "sha": "2c15fb68a2f1b38d7dc565a48133efa5997c3b67"
+      },
+      {
+        "path": "scripts/native-eas-credentials.mjs",
+        "status": "modified",
+        "sha": "f18a710b5be36e43f3294152b098bdbd4fabc9ac"
+      },
+      {
+        "path": "scripts/native-internal-release.mjs",
+        "status": "modified",
+        "sha": "28ecb21d4d93433f662ee80e0054dac4d0329109"
+      },
+      {
+        "path": "scripts/native-internal-release.test.mjs",
+        "status": "modified",
+        "sha": "03e2de47305fb4dd70c24e56f70693c42c31bc89"
+      },
+      {
+        "path": "scripts/native-play-receipt.mjs",
+        "status": "modified",
+        "sha": "aa8b4c27a6a63e1a38cb3c4b61fc5f557db081c7"
+      },
+      {
+        "path": "scripts/native-play-receipt.test.mjs",
+        "status": "modified",
+        "sha": "9a577d915549503c6aebbbe20e13d2b7296d97e2"
+      },
+      {
+        "path": "scripts/native-release-build.mjs",
+        "status": "modified",
+        "sha": "c14cfd4f70476f7b5c5daf200370ade6c0b34f44"
+      },
+      {
+        "path": "scripts/native-release-build.test.mjs",
+        "status": "modified",
+        "sha": "e9d0c0bcfbb60c41f5cda2b9dfb1370124b602c1"
+      },
+      {
+        "path": "scripts/native.test.mjs",
+        "status": "modified",
+        "sha": "a70c02c7ebc4c7e13f768f6299e22c77aefdb813"
+      },
+      {
+        "path": "scripts/release-baselines.mjs",
+        "status": "added",
+        "sha": "f6bbf712c20d9a8b26ae02e18f30824607a76f2d"
+      },
+      {
+        "path": "scripts/release-baselines.test.mjs",
+        "status": "added",
+        "sha": "8e18f2dddecd439031e1e7d857fb5ddb836ff969"
+      },
+      {
+        "path": "scripts/release-build-config.mjs",
+        "status": "added",
+        "sha": "bb3d1b7c321a5797ccb9d2112d98d758794bf744"
+      },
+      {
+        "path": "scripts/release-build-config.test.mjs",
+        "status": "added",
+        "sha": "4b6d826ab345120c087a26466c5670cf3d844db9"
+      },
+      {
+        "path": "scripts/release-candidate.mjs",
+        "status": "added",
+        "sha": "40c9a81f8e1bd833bf7fa60fd38ae8c2e689591e"
+      },
+      {
+        "path": "scripts/release-candidate.test.mjs",
+        "status": "added",
+        "sha": "944ef7fdc71461a4d9d9ce146124b649ff521553"
+      },
+      {
+        "path": "scripts/release-config.mjs",
+        "status": "modified",
+        "sha": "ca3af934527c6f607e23d6b9b76b77b9604f7676"
+      },
+      {
+        "path": "scripts/release-controller.mjs",
+        "status": "added",
+        "sha": "29274bbf2a46ba91e3b9f3cb5932e39e21164aba"
+      },
+      {
+        "path": "scripts/release-controller.test.mjs",
+        "status": "added",
+        "sha": "3b1957f59b971060c6e7202e3360a6a9e6f06332"
+      },
+      {
+        "path": "scripts/release-github.mjs",
+        "status": "added",
+        "sha": "e88d3a82406c5371796526eeef3cef47924ae0d5"
+      },
+      {
+        "path": "scripts/release-github.test.mjs",
+        "status": "added",
+        "sha": "3b20cef2e53abd5cc824b8ca16437b7af768e2ec"
+      },
+      {
+        "path": "scripts/release-image.mjs",
+        "status": "added",
+        "sha": "47431d2e7fe1e64610227edd1d5cdb0fc8f3f180"
+      },
+      {
+        "path": "scripts/release-image.test.mjs",
+        "status": "added",
+        "sha": "d65624025294eafc54795a6379f9555ca22548bb"
+      },
+      {
+        "path": "scripts/release-inputs.mjs",
+        "status": "added",
+        "sha": "6229ee78c3e04ad2492ba60fd261d77d024469ae"
+      },
+      {
+        "path": "scripts/release-inputs.test.mjs",
+        "status": "added",
+        "sha": "5caab303f0ed3ad3ca005649a997435ce965be31"
+      },
+      {
+        "path": "scripts/release-ios-receipt.mjs",
+        "status": "added",
+        "sha": "1c38cae95cfb9718254b5722ecb01cf25722a89d"
+      },
+      {
+        "path": "scripts/release-ios-receipt.test.mjs",
+        "status": "added",
+        "sha": "e873bcfe51395d7321247b7025cc0278ceca0132"
+      },
+      {
+        "path": "scripts/release-ios-worker.mjs",
+        "status": "added",
+        "sha": "7bfe9c20a3214064850b48eaa990b6ec445d862b"
+      },
+      {
+        "path": "scripts/release-ios-worker.test.mjs",
+        "status": "added",
+        "sha": "89281e54e1ab97004223f52ef6c223bfa343fd02"
+      },
+      {
+        "path": "scripts/release-journal.mjs",
+        "status": "added",
+        "sha": "955e2482333f7c642555e3721d59fdc3155c082e"
+      },
+      {
+        "path": "scripts/release-journal.test.mjs",
+        "status": "added",
+        "sha": "b9bdd685bff8767775c5b604f7fda525cbdf4047"
+      },
+      {
+        "path": "scripts/release-operation.mjs",
+        "status": "added",
+        "sha": "4c7ab7961ba9444ba46f76a5b64741b4c5844cdd"
+      },
+      {
+        "path": "scripts/release-ota-provider.mjs",
+        "status": "added",
+        "sha": "e94d0c3560328e12039742f9fc774c30c184c129"
+      },
+      {
+        "path": "scripts/release-ota-provider.test.mjs",
+        "status": "added",
+        "sha": "cd94630312bfa77250dd8d1b5e54cec09496a43c"
+      },
+      {
+        "path": "scripts/release-ota-worker.mjs",
+        "status": "added",
+        "sha": "80faad5c219346359417d5d359d1e3aa08ef5079"
+      },
+      {
+        "path": "scripts/release-ota-worker.test.mjs",
+        "status": "added",
+        "sha": "5cc37241d96e0140d1dec03aeb9c30b58c61188a"
+      },
+      {
+        "path": "scripts/release-plan.mjs",
+        "status": "added",
+        "sha": "8875ef2b34c05da67132ebe88ac835daabb7ab36"
+      },
+      {
+        "path": "scripts/release-plan.test.mjs",
+        "status": "added",
+        "sha": "6a459ffda6e8a431fd5a70926058ea1ae13f0ce2"
+      },
+      {
+        "path": "scripts/release-providers.mjs",
+        "status": "added",
+        "sha": "18a19ebbfd4bbda8b2b60df760e21f20bcbfef36"
+      },
+      {
+        "path": "scripts/release-providers.test.mjs",
+        "status": "added",
+        "sha": "7ef7a7ca52c3477842fe5be21ab4785b8f0b6629"
+      },
+      {
+        "path": "scripts/release-request.mjs",
+        "status": "modified",
+        "sha": "e3003fc5d5acb596fcc794f2cacb2a4c406328ee"
+      },
+      {
+        "path": "scripts/release-request.test.mjs",
+        "status": "modified",
+        "sha": "825dd40e41c19257055f8c85c2476c1206790540"
+      },
+      {
+        "path": "scripts/release-retirement-github.mjs",
+        "status": "added",
+        "sha": "04494bfa9dfab3479bb9c93f245b1adb9f8f7d2d"
+      },
+      {
+        "path": "scripts/release-retirement-github.test.mjs",
+        "status": "added",
+        "sha": "e43fed552ebd681895068a8cc70057512f92590e"
+      },
+      {
+        "path": "scripts/release-retirement.mjs",
+        "status": "added",
+        "sha": "d665e97cb5a69b042240c1dc3ddbc9988e2736bc"
+      },
+      {
+        "path": "scripts/release-runner.mjs",
+        "status": "added",
+        "sha": "948ca02edf041d0acc230f274efc86dc3e960ed1"
+      },
+      {
+        "path": "scripts/release-runner.test.mjs",
+        "status": "added",
+        "sha": "b5bc08e19c8f2160ffe28547cd668c86cae3eebd"
+      },
+      {
+        "path": "scripts/release-server-handoff.mjs",
+        "status": "added",
+        "sha": "2488e2a425598b7bdb0aa870a426734048f03f0c"
+      },
+      {
+        "path": "scripts/release-server-handoff.test.mjs",
+        "status": "added",
+        "sha": "08a3599bcb1fd9a285d50b2ff0251d80ec36fdd2"
+      },
+      {
+        "path": "scripts/release-snapshot.mjs",
+        "status": "added",
+        "sha": "714f6057b5812d9de04b3a202e9684cc2bbbb62c"
+      },
+      {
+        "path": "scripts/release-snapshot.test.mjs",
+        "status": "added",
+        "sha": "f6e2f979acc472abd348c8546e91786f913387d5"
+      },
+      {
+        "path": "scripts/release-source.mjs",
+        "status": "added",
+        "sha": "1275674ba161865f47333417a65d4b03f4ee274d"
+      },
+      {
+        "path": "scripts/release-source.test.mjs",
+        "status": "added",
+        "sha": "9feb5434a8ace4c594ccdda77e39bd60ef0b3679"
+      },
+      {
+        "path": "scripts/release-workflow-contract.test.mjs",
+        "status": "modified",
+        "sha": "30719834ededc07ad1552e343c92d13f276b2b92"
+      },
+      {
+        "path": "scripts/unified-release.mjs",
+        "status": "added",
+        "sha": "ec02529968c3dec3dfa1f17da50bf5fdb450efcb"
+      },
+      {
+        "path": "scripts/unified-release.test.mjs",
+        "status": "added",
+        "sha": "2c61ea4ca06860abce1e9b7c74444493dd6e02db"
+      },
+      {
+        "path": "shared/ios-release.json",
+        "status": "added",
+        "sha": "b22de259fd7e4440ec5cafc1d12007a74b7ba9b5"
+      }
+    ],
+    "reportedCommits": 4,
+    "reportedFiles": 86,
+    "additions": 6330,
+    "deletions": 110
+  },
+  "feedback": {
+    "conversationComments": [
+      {
+        "id": 6070334887,
+        "updatedAt": "2026-10-08T22:29:15Z",
+        "bodySha256": "052e0db2fb3bbe05b8f67aa9914003bbeaa78a2815ddbb2981d32febc141599d"
+      },
+      {
+        "id": 6070337167,
+        "updatedAt": "2026-10-08T22:29:23Z",
+        "bodySha256": "e39b189a2ed6388c9d919876a2893ca0216a023301e11d788df190b4366991b9"
+      },
+      {
+        "id": 6070727939,
+        "updatedAt": "2026-10-08T22:59:48Z",
+        "bodySha256": "1c0923775a2e0c68b9325cae4d3658af0d76ea914eff7c6a9e9d80a157e3301b"
+      },
+      {
+        "id": 6070751643,
+        "updatedAt": "2026-10-08T23:01:46Z",
+        "bodySha256": "bd073b02aece8dc036ffb49c674735900293ed3a489f5ef8ac631c3ceed82d10"
+      },
+      {
+        "id": 6070931359,
+        "updatedAt": "2026-10-08T23:16:25Z",
+        "bodySha256": "f2c224c542350814fccdd1514026216cebfddd6aab824c3d121901d4bc36deca"
+      },
+      {
+        "id": 6071350064,
+        "updatedAt": "2026-10-08T23:52:33Z",
+        "bodySha256": "9e6210f08edf66852e8c98be34add10dc57b810cbeb31fc6da13b84850f93717"
+      },
+      {
+        "id": 6071620678,
+        "updatedAt": "2026-10-09T00:16:36Z",
+        "bodySha256": "970e916bd4c7709a969c42141969e8616fdc9e5d344322f7edc7ea82029ac1e3"
+      },
+      {
+        "id": 6071694756,
+        "updatedAt": "2026-10-09T00:23:15Z",
+        "bodySha256": "6280160a7cdc08fa1f94d1716b2de87f4473ea349fc22f6be4867dc321839826"
+      }
+    ],
+    "submittedReviews": [],
+    "inlineComments": []
+  },
+  "impact": {
+    "url": "https://github.com/MChartier/calibrate-health/blob/d7d8e07195c625bf7e0fbad046b1c9372dec5b5b/ultimate-refresh-impact.json",
+    "sha256": "bdc7e041ab9c6df88e8b21e99c56db20d32b9cd743ce3cb46d4597b071221c09"
+  },
+  "outcome": "Metadata-only refresh complete. No source edits or tests. Original body retained and exact API/Git bytes verified before edit. Historical QA and CI are not relabeled as new target assessment.",
+  "remaining": "Coordinator must obtain parent PR441 current-base QA first, then PR452 same-QA metadata/evidence-impact reassessment. No human readiness applied.",
+  "idle": true
+}
