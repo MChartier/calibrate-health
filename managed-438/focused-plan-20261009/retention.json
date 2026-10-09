@@ -1,0 +1,86 @@
+{
+  "owner": "01a11c7b-b7fa-7578-9694-80a1cae2b03d",
+  "repository": "MChartier/calibrate-health",
+  "productRef": "refs/heads/mchartier/managed-438-01a11c7b",
+  "productHead": "f417e84b430cc46275171462cc9d2373b8ee8f3e",
+  "evidenceRef": "refs/heads/evidence/managed-438-01a11c7b",
+  "lastVerifiedRemoteEvidenceHead": "27f6a292704d42499d8169866729d1d1c5a8ae40",
+  "localUnpublishedEvidenceHead": "7067b73a5122d7ef8bcfdc8bcb4c0d4b56ceba5d",
+  "retention": "Preserve indefinitely for this review/history unless human explicitly authorizes disposal; no refs deleted or rewritten",
+  "access": "Historical accessible evidence is recorded, not freshly byte-reverified by this planning turn. Local audit and current plan are unpublished. Future publication/access verification is required before successor evidence reliance.",
+  "records": [
+    {
+      "sha256": "08e3f6ec0867f9b28cc3141b1a8995c36eb4dddb7cd1631cad651bbe9c7c8dbd",
+      "purpose": "original 4cb baseline/8a6 source captures and fixture/harness/build provenance",
+      "path": "managed-438/",
+      "commit": "a7d2ad1648d2b743cdfda5ef66950f6feee741ad"
+    },
+    {
+      "sha256": "85d2a43d5136b0a12fbd9fefb6545d7b6430eebde582f0c2d0abe4ae817f3825",
+      "purpose": "8e source captures/provenance",
+      "path": "managed-438/review-final/",
+      "commit": "0ad646c474e5b95a4d6230419cb73528d0debcae"
+    },
+    {
+      "commit": "296ef4f724d2c0e8c808ea6192a06a10c7a24b73",
+      "purpose": "60ec checkpoint"
+    },
+    {
+      "commit": "2a0ae75409c702662cada6b4c63396f363cc8d1d",
+      "purpose": "initial handoff"
+    },
+    {
+      "commit": "d1032e7d703b0a152ab1d84168f54c0d0f5fdb2f",
+      "purpose": "terminal metadata original"
+    },
+    {
+      "commit": "abe48a92efdf313af8f8c9bc720abe900fa561e1",
+      "purpose": "terminal metadata original"
+    },
+    {
+      "sha256": "9a02eeb7f19b56020094bbf7c46ac7ac3f02f46bd7873ce52f125750c6b22e31",
+      "purpose": "f417 genuine captures, R1 logs and provenance",
+      "path": "managed-438/r1-f417e84b/",
+      "commit": "d108dee53ff3bfb2be8bb0110166ac6f06b09048"
+    },
+    {
+      "sha256": "fad5bfb24ee4be51e401f5f04089f29ffe84a577abf4f222df538d2c309e0382",
+      "purpose": "historical final body/scope/feedback/CI bindings",
+      "path": "managed-438/r1-handoff/",
+      "commit": "27f6a292704d42499d8169866729d1d1c5a8ae40"
+    },
+    {
+      "published": false,
+      "purpose": "local unpublished earlier-master audit; preserve bytes",
+      "commit": "7067b73a5122d7ef8bcfdc8bcb4c0d4b56ceba5d",
+      "auditSha256": "7a38d025b8fb0bb007cd2e7edee7179cb0f1fc90a1009edbd1c0ab14f89c6239",
+      "path": "managed-438/simplification-assessment/",
+      "proposalSha256": "8d6076feed6e5b9815ff60800b74a561e7b2004c32c2bc3a48a3cf887efe4a3f"
+    },
+    {
+      "purpose": "PR439 original evidence; admin/bootstrap scope remains deferred",
+      "path": "pr439-evidence/provenance.json",
+      "commit": "8457ed1a3bbb0f0381b48e22a40aac52b223ae6c"
+    },
+    {
+      "purpose": "PR402 retained originals",
+      "path": "pr402-recovery/retention-manifest.json",
+      "commit": "6b265afbb92951ba55e1c22212374225049c580e"
+    },
+    {
+      "purpose": "historical QA comment6067421414",
+      "path": "verdict.json",
+      "commit": "e1d6bad89ab4c4079156ab27ae99af20092bc17a"
+    },
+    {
+      "purpose": "historical QA comment6067468474",
+      "path": "final-verdict.json",
+      "commit": "83bdc1a9a09e1e03dab0489651cde268264010b9"
+    },
+    {
+      "purpose": "historical positive QA comment6068415457; invalidated by scope feedback",
+      "path": "verdict.json",
+      "commit": "1c92e91e8e19de8c9cd24eac0b38f050402076b4"
+    }
+  ]
+}

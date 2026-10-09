@@ -1,0 +1,41 @@
+{
+  "createdAtUtc": "2026-10-09T04:57:12.7925485Z",
+  "scope": "local planning deliverables only",
+  "files": [
+    {
+      "path": "build-record.ps1",
+      "bytes": 6938,
+      "sha256": "66313a98baa0c5b7c67a00ed71741858b753b1d354cc46584f4c588d2bb7105f"
+    },
+    {
+      "path": "dispositions.json",
+      "bytes": 22515,
+      "sha256": "9141b3a238ca67a43931416c42af29b174dba4fa4ddcc8a11c679aeb794914cb"
+    },
+    {
+      "path": "issue-conversation.json",
+      "bytes": 52627,
+      "sha256": "f0d260a58312f89cec5e63be4b17d566fa7141c5b97eb4e0f31bf61f4d9705cd"
+    },
+    {
+      "path": "live-readback.json",
+      "bytes": 375572,
+      "sha256": "35e01d8c53547b40540a4973eee1793eb9d4a37a708bb272ab4a4a03da234f50"
+    },
+    {
+      "path": "plan.md",
+      "bytes": 12304,
+      "sha256": "4fa47c78db9b0f2e03cdefae378129c6643c2cf372e5fb7094f06979f68871b5"
+    },
+    {
+      "path": "pr-conversation.json",
+      "bytes": 61487,
+      "sha256": "27ce8ad35b5d95deef0a0e218d4e19bf2ef1e20a94259cb31b66620d47ca5048"
+    },
+    {
+      "path": "retention.json",
+      "bytes": 3740,
+      "sha256": "82047a097bdada8e8fc4765704df72aecd892b99dc46d980e8b9ebdd268082b7"
+    }
+  ]
+}
