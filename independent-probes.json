@@ -1,0 +1,19 @@
+{
+  "sourceHead": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "retirement": {
+    "actualNames": [
+      "Inspect immutable inputs and verified successful receipts",
+      "Run only the verified selected stages"
+    ],
+    "retired": "abandoned/unified/42",
+    "nextAllocationAllowed": true,
+    "obsoletePrepareRejected": true,
+    "providerIntentBlocks": true
+  },
+  "productionApproval": {
+    "gateBeforeResolution": true,
+    "allDependentStagesRequireSuccess": true,
+    "sourceExportCredentialFree": true
+  },
+  "externalRequests": 0
+}

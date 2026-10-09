@@ -1,0 +1,70 @@
+{
+  "tool": "actionlint 1.7.12",
+  "source": "50f4a84558d9f0750ef2c6a39e82f1652e779024",
+  "parent": "0c26cea12e3ecdbc962eebaeb140af35f54ab95a",
+  "parentExit": 1,
+  "headExit": 1,
+  "parentDiagnostics": 61,
+  "headDiagnostics": 68,
+  "added": [
+    {
+      "diagnostic": [
+        ".github/workflows/native-ios-release.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-ota-release.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-release-handler.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "syntax-check",
+        "unexpected key \"queue\" for \"concurrency\" section. expected one of \"cancel-in-progress\", \"group\"",
+        "queue: max"
+      ],
+      "count": 1
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "expression",
+        "property \"workflow_sha\" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string}",
+        "WORKFLOW_SHA: ${{ job.workflow_sha }}"
+      ],
+      "count": 2
+    },
+    {
+      "diagnostic": [
+        ".github/workflows/unified-server-handler.yml",
+        "expression",
+        "property \"workflow_sha\" is not defined in object type {check_run_id: number; container: {id: string; network: string}; services: {string => {id: string; network: string; ports: {string => string}}}; status: string}",
+        "ref: ${{ job.workflow_sha }}"
+      ],
+      "count": 1
+    }
+  ],
+  "assessment": "Four queue:max and three job.workflow_sha diagnostics. All use valid GitHub Cloud features at allowed locations; no queue:max combines cancel-in-progress:true. Raw lint fails; no clean-lint claim, no broad suppression. Official docs checked 2026-10-08/09 UTC, reused with exact same seven diagnostics.",
+  "sources": [
+    "https://docs.github.com/en/actions/reference/workflows-and-actions/contexts",
+    "https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "receiptCommit": "b46c78334ecc58c31cdd83602d172a0d2c1f05cc",
+  "receiptPath": "qa-final-receipt.json",
+  "receiptSha256": "a3fc8e429dc29c3117e61b57bccd4cf3367e66fbcd25a8c2dfa32d57eacfef07",
+  "linkedProvenanceCommit": "517fd4b8f69a67e6e7e50f251b656849efe05556",
+  "manifestSha256": "ecf23a125c80483e0a1d9f48a3b8bc8bc8899d146500873775a121ce099bdd09",
+  "allManifestArtifactsVerified": 12,
+  "linkedTreeBlobIdentitiesMatched": true,
+  "priorVerdictCommentId": 6071350064,
+  "priorVerdictBodySha256": "9e6210f08edf66852e8c98be34add10dc57b810cbeb31fc6da13b84850f93717",
+  "priorEvidenceCommit": "b3ce696a170bd657e4e9f7715d7fc45f93b96c67",
+  "priorReceiptUnchanged": true
+}
