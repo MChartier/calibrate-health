@@ -124,6 +124,8 @@ test('food copy transaction preserves owned immutable snapshots and never mutate
   const createdData = [];
   const syncChanges = [];
   const tx = {
+    $executeRaw: async () => 1,
+    user: { findUnique: async () => ({ id: 7, timezone: 'UTC' }) },
     foodLogDay: {
       findUnique: async ({ where }) => ({
         id: 3,
@@ -201,6 +203,8 @@ test('food copy returns an empty successful receipt without creating rows', asyn
   const request = requireParsed();
   let createCalls = 0;
   const tx = {
+    $executeRaw: async () => 1,
+    user: { findUnique: async () => ({ id: 7, timezone: 'UTC' }) },
     foodLogDay: {
       findUnique: async ({ where }) => ({
         id: 3,
@@ -237,6 +241,8 @@ test('food copy honors the canonical target-day write gate before reading source
   const request = requireParsed();
   let sourceRead = false;
   const tx = {
+    $executeRaw: async () => 1,
+    user: { findUnique: async () => ({ id: 7, timezone: 'UTC' }) },
     foodLogDay: {
       findUnique: async ({ where }) => ({
         id: 3,

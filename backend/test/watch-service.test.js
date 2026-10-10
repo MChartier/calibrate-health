@@ -10,6 +10,14 @@ function stubModule(path, exports) {
 }
 
 function loadWatchService({ prismaStub, recentItems = [] }) {
+  if (prismaStub.$transaction) {
+    const transaction = prismaStub.$transaction;
+    prismaStub.$transaction = (callback, options) => transaction(tx => {
+      tx.$executeRaw ??= async () => 1;
+      tx.dailyCaloriePlan ??= require('./helpers/dailyCaloriePlanStore')();
+      return callback(tx);
+    }, options);
+  }
   const dbPath = require.resolve('../src/config/database');
   const recentPath = require.resolve('../src/services/recentFoods');
   const caloriePlanningPath = require.resolve('../src/services/caloriePlanning');
@@ -33,6 +41,7 @@ function loadWatchService({ prismaStub, recentItems = [] }) {
 }
 
 function loadWatchMutationService(tx) {
+  tx.dailyCaloriePlan ??= require('./helpers/dailyCaloriePlanStore')();
   tx.$executeRaw ??= async () => 1;
   const dbPath = require.resolve('../src/config/database');
   const recentPath = require.resolve('../src/services/recentFoods');
@@ -408,7 +417,7 @@ test('watch food deletion is limited to the current session undo candidate', asy
       ? { id: 10n }
       : deleted > 0 ? { id: 99n } : null },
     foodLog: {
-      findFirst: async () => ({ id: 88, name: 'Oats', calories: 300, created_at: new Date('2026-07-11T18:00:00.000Z') }),
+      findFirst: async () => ({ id: 88, name: 'Oats', calories: 300, local_date: new Date('2026-07-11T00:00:00Z'), created_at: new Date('2026-07-11T18:00:00.000Z') }),
       deleteMany: async () => { deleted += 1; return { count: 1 }; }
     }
   };
@@ -476,6 +485,7 @@ test('watch metric revalidates the date against the locked timezone before readi
 test('watch metric and completion mutations use canonical date-only upserts', async () => {
   let metricArgs;
   let dayArgs;
+  let storedDay;
   const tx = {
     bodyMetric: {
       findUnique: async () => null,
@@ -485,17 +495,20 @@ test('watch metric and completion mutations use canonical date-only upserts', as
       }
     },
     foodLogDay: {
+      update: async ({ data }) => Object.assign(storedDay, data),
       findUnique: async () => null,
       upsert: async (args) => {
         dayArgs = args;
-        return {
+        storedDay = {
           id: 6,
+          user_id: args.create.user_id,
           local_date: args.create.local_date,
           status: args.create.status,
           origin: args.create.origin,
           completed_at: args.create.completed_at,
           updated_at: new Date('2026-07-11T20:00:00.000Z')
         };
+        return storedDay;
       }
     }
   };

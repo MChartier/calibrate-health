@@ -1,3 +1,4 @@
+import { observeCurrentCaloriePlan } from './dailyCaloriePlans';
 import type {
   ActivityLevel,
   HeightUnit,
@@ -314,6 +315,7 @@ export async function completeOnboardingInTransaction(
     select: USER_CLIENT_SELECT
   });
   await options.afterWrite?.('completion');
+  await observeCurrentCaloriePlan(tx, userId, now);
 
   return {
     status: 200,

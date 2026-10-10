@@ -23,7 +23,7 @@ import { ASYNC_RESOURCE_STATES } from '../../../src/asyncState/resolveAsyncState
 import { useSharedLogDateNavigation } from '../../../src/context/LogDateContext';
 import { useAddFoodRequest } from '../../../src/context/AddFoodRequestContext';
 import { usePrefetchPreviousFoodLog } from '../../../src/hooks/usePrefetchPreviousFoodLog';
-import { getFoodDayCalorieTarget, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
+import { getFoodDayCaloriePresentation, shouldShowCalorieComparison } from '../../../src/food/dayPresentation';
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
 import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
@@ -133,7 +133,9 @@ export default function TodayScreen() {
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
     const isToday = selectedDate === getTodayDate(user?.timezone);
     const dayStatus = foodDayQuery.data;
-    const target = getFoodDayCalorieTarget({ day: dayStatus, isToday, currentTarget });
+    const comparison = getFoodDayCaloriePresentation({ day: dayStatus, isToday, currentTarget, hasFoodEntries: entries.length > 0 });
+    const target = comparison.target;
+    const comparisonLabels = { saved: 'Compared with saved target', fallback: 'Compared with current target', current: undefined, unavailable: undefined };
     const showCalorieComparison = shouldShowCalorieComparison({
         status: dayStatus?.status,
         isToday,
@@ -143,7 +145,6 @@ export default function TodayScreen() {
     if (dayStatus?.status === 'INCOMPLETE') unavailableLabel = 'Incomplete day';
     if (!planIsAvailable) unavailableLabel = planStatus === 'requires_review' ? 'Plan needs review' : 'Target unavailable';
     if (hasPendingWeightChange) unavailableLabel = 'Rechecking target';
-    if (!isToday || dayStatus?.status === 'COMPLETE') unavailableLabel = 'Saved target unavailable';
     if (isPaused) unavailableLabel = 'Tracking paused';
     const contentLoading = dashboardState.kind === 'loading';
     if (contentLoading) unavailableLabel = 'Loading day';
@@ -184,6 +185,9 @@ export default function TodayScreen() {
                     targetCalories={!contentLoading && !foodIsUnavailable && showCalorieComparison ? target : null}
                     unavailableLabel={unavailableLabel}
                     supportingLabel={balanceSupportingLabel}
+                    comparisonLabel={!contentLoading && !foodIsUnavailable && showCalorieComparison
+                        ? comparisonLabels[comparison.source]
+                        : undefined}
                     compact
                     open
                 />

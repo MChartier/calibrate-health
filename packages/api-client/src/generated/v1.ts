@@ -1247,7 +1247,7 @@ export interface components {
             /** @constant */
             format: "calibrate-account-export";
             /** @constant */
-            version: 10;
+            version: 11;
             /** Format: date-time */
             exported_at: string;
             account: components["schemas"]["AccountExportProfile"];
@@ -1256,6 +1256,7 @@ export interface components {
             body_metrics: components["schemas"]["AccountExportBodyMetric"][];
             food_logs: components["schemas"]["AccountExportFoodLog"][];
             food_log_days: components["schemas"]["AccountExportFoodLogDay"][];
+            daily_calorie_plans: components["schemas"]["AccountExportDailyCaloriePlan"][];
             food_tracking_pauses: components["schemas"]["AccountExportFoodTrackingPause"][];
             my_foods: components["schemas"]["AccountExportMyFood"][];
             in_app_notifications: components["schemas"]["AccountExportNotification"][];
@@ -1369,6 +1370,22 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        AccountExportDailyCaloriePlan: {
+            /** Format: date */
+            local_date: string;
+            timezone: string;
+            /** Format: date-time */
+            observed_at: string;
+            calculation_version: number;
+            target_kcal: number | null;
+            maintenance_kcal: number | null;
+            inputs: {
+                [key: string]: unknown;
+            };
+            timezone_conflict: boolean;
+            /** Format: date-time */
+            consumed_at: string | null;
         };
         AccountExportFoodTrackingPause: {
             id: number;

@@ -36,6 +36,14 @@ describe('CalorieBalanceCard', () => {
         )).toBeTruthy();
     });
 
+    it.each(['Compared with current target', 'Compared with saved target'])('exposes %s visually and to assistive technology at 320px', comparisonLabel => {
+        setWindowDimensions(320, 1);
+        const screen = render(<CalorieBalanceCard totalCalories={1800} targetCalories={2100} comparisonLabel={comparisonLabel} compact open />);
+        expect(screen.getByText(comparisonLabel)).toBeTruthy();
+        expect(screen.getByText('kcal remaining')).toBeTruthy();
+        expect(screen.getByLabelText(`Daily balance. 300 kcal remaining. 1,800 eaten out of 2,100 calorie target. ${comparisonLabel}.`)).toBeTruthy();
+    });
+
     it('keeps neutral progress styling through target and uses danger only when over', () => {
         const atTarget = render(
             <CalorieBalanceCard totalCalories={1820} targetCalories={1820} compact />

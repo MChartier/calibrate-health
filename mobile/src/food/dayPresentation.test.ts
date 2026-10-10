@@ -1,9 +1,10 @@
 import {
     getFoodDayStatusLabel,
-    getFoodDayCalorieTarget,
+    getFoodDayCaloriePresentation,
     shouldEmphasizePausedStatus,
     shouldShowCalorieComparison
 } from './dayPresentation';
+import type { FoodLogDay } from '@calibrate/api-client';
 
 describe('day calorie presentation', () => {
     it.each([
@@ -65,12 +66,40 @@ describe('day calorie presentation', () => {
     });
 });
 
+const saved = { consumed_kcal: 1800, target_kcal: 2000, maintenance_kcal: 2500, captured_at: '2026-07-20T19:00:00Z' };
+const complete = { status: 'COMPLETE', calorie_comparison: saved } as FoodLogDay;
 
-test('completed-day balance keeps its saved target after a pace change; unknown history stays unknown', () => {
-    const day = { status: 'COMPLETE', calorie_comparison: { target_kcal: 2000 } } as import('@calibrate/api-client').FoodLogDay;
-    expect(getFoodDayCalorieTarget({day,isToday:false,currentTarget:2350})).toBe(2000);
-    expect(getFoodDayCalorieTarget({day,isToday:true,currentTarget:2350})).toBe(2000);
-    expect(getFoodDayCalorieTarget({day:{...day,calorie_comparison:null},isToday:false,currentTarget:2350})).toBeNull();
-    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:true,currentTarget:2350})).toBe(2350);
-    expect(getFoodDayCalorieTarget({day:{...day,status:'OPEN'},isToday:false,currentTarget:2350})).toBeNull();
+test('saved targets survive later plan changes and pending or unavailable current targets', () => {
+    for (const isToday of [true, false]) {
+        for (const currentTarget of [2350, null]) {
+            expect(getFoodDayCaloriePresentation({ day: complete, isToday, currentTarget }))
+                .toEqual({ target: 2000, source: 'saved' });
+        }
+    }
+});
+
+test('legacy completed and populated past open days explicitly fall back without changing history', () => {
+    for (const status of ['COMPLETE', 'OPEN'] as const) {
+        for (const calorie_comparison of [undefined, null]) {
+            const day = { ...complete, status, calorie_comparison };
+            for (const currentTarget of [2100, 2350]) {
+                expect(getFoodDayCaloriePresentation({ day, isToday: false, currentTarget, hasFoodEntries: true }))
+                    .toEqual({ target: currentTarget, source: 'fallback' });
+                expect(day.calorie_comparison).toBe(calorie_comparison);
+            }
+        }
+    }
+});
+
+test('empty past open, paused, incomplete and invalid current plans remain unavailable', () => {
+    for (const status of ['OPEN', 'INCOMPLETE', 'PAUSED'] as const) {
+        expect(getFoodDayCaloriePresentation({ day: { ...complete, status }, isToday: false, currentTarget: 2350 }))
+            .toEqual({ target: null, source: 'unavailable' });
+    }
+    for (const currentTarget of [null, NaN, Infinity, 0, -1, 1.5]) {
+        expect(getFoodDayCaloriePresentation({ day: { ...complete, calorie_comparison: null }, isToday: false, currentTarget }))
+            .toEqual({ target: null, source: 'unavailable' });
+    }
+    expect(getFoodDayCaloriePresentation({ day: { ...complete, status: 'OPEN' }, isToday: true, currentTarget: 2350 }))
+        .toEqual({ target: 2350, source: 'current' });
 });

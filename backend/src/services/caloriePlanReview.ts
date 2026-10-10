@@ -1,18 +1,24 @@
 import { lockCaloriePlanningInputs } from './caloriePlanningLock';
 import type { MutationDatabase } from './clientOperations';
 import { buildStoredCaloriePlanningSnapshot, type StoredCaloriePlanningSnapshot } from './caloriePlanning';
+import { retainDailyCaloriePlan } from './dailyCaloriePlans';
 
 /** Persist sticky review state when the current stored plan becomes unsafe after an in-scope write. */
 export async function markCurrentCaloriePlanForReviewIfUnsafe(
   database: MutationDatabase,
   userId: number,
-  now: Date = new Date()
+  at?: Date
 ): Promise<StoredCaloriePlanningSnapshot | null> {
   // Weight/profile writers hold this guard through commit; pace saves use the same
   // guard before reading, so safety checks cannot miss a concurrent accepted pace.
   await lockCaloriePlanningInputs(database, userId);
+  const now = at ?? new Date();
   const snapshot = await buildStoredCaloriePlanningSnapshot(database, userId, now);
-  if (!snapshot?.goal || snapshot.evaluation.status !== 'requires_review') return snapshot;
+  if (!snapshot) return null;
+  if (!snapshot.goal || snapshot.evaluation.status !== 'requires_review') {
+    await retainDailyCaloriePlan(database, snapshot, now);
+    return snapshot;
+  }
 
   const reviewReason = snapshot.evaluation.reasonCode ?? 'HISTORICAL_PLAN_REQUIRES_REVIEW';
   if (snapshot.goal.calorie_plan_review_status !== 'REQUIRES_REVIEW' || snapshot.goal.calorie_plan_review_reason !== reviewReason) {
@@ -34,5 +40,7 @@ export async function markCurrentCaloriePlanForReviewIfUnsafe(
     where: { source_goal_id: snapshot.goal.id, status: 'PENDING' },
     data: { status: 'STALE' }
   });
-  return snapshot;
+  const reviewed = await buildStoredCaloriePlanningSnapshot(database, userId, now);
+  if (reviewed) await retainDailyCaloriePlan(database, reviewed, now);
+  return reviewed;
 }

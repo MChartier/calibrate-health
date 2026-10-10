@@ -1,4 +1,5 @@
 import type { FoodLog, MealPeriod } from '@prisma/client';
+import { observeFoodActivityPlan } from './dailyCaloriePlans';
 import { parseClientOperationId, recordSyncChange, type MutationDatabase } from './clientOperations';
 import { getFoodDayWriteBlock, type FoodDayWriteBlock } from './foodTracking';
 import { isValidIanaTimeZone, parseLocalDateOnly } from '../utils/date';
@@ -151,6 +152,7 @@ export async function copyFoodLogs(options: {
   request: ParsedFoodCopyRequest;
   operationId: string;
 }): Promise<{ status: 200; body: FoodCopyResponse } | FoodDayWriteBlock> {
+  await observeFoodActivityPlan(options.tx, options.userId, [options.request.targetDate]);
   const writeBlock = await getFoodDayWriteBlock({
     userId: options.userId,
     localDate: options.request.targetDate,

@@ -44,6 +44,8 @@ export type StoredCaloriePlanningSnapshot = {
     calorie_plan_review_reason: string | null;
   } | null;
   latestWeightGrams: number | null;
+  weightMetric: { id: number; date: Date; weight_grams: number } | null;
+  paceRevision: StoredPlanningRevision | null;
   localToday: string | null;
   effectiveRevision: StoredPlanningRevision | null;
   nextRevision: StoredPlanningRevision | null;
@@ -97,7 +99,7 @@ export async function buildStoredCaloriePlanningSnapshot(
   const latestMetric = localTodayDate ? await database.bodyMetric.findFirst({
     where: { user_id: userId, date: { lte: localTodayDate } },
     orderBy: [{ date: 'desc' }, { id: 'desc' }],
-    select: { weight_grams: true }
+    select: { id: true, date: true, weight_grams: true }
   }) : null;
 
   const revisionSelect = {
@@ -180,6 +182,8 @@ export async function buildStoredCaloriePlanningSnapshot(
     user,
     goal,
     latestWeightGrams: latestMetric?.weight_grams ?? null,
+    weightMetric: latestMetric,
+    paceRevision,
     localToday,
     effectiveRevision,
     nextRevision,

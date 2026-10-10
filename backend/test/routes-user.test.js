@@ -44,6 +44,7 @@ function loadUserRouter({ prismaStub, bcryptStub, accountLifecycleStub, mcpOAuth
   delete require.cache[mcpOAuthPath];
 
   const normalizedPrismaStub = {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     $executeRaw: async () => 1,
     ...prismaStub,
     caloriePlanRevision: {

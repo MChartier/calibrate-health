@@ -66,6 +66,9 @@ a child beyond a narrow parent, since native hit testing would still stop at tha
   Do not show the goal number; it remains in Progress's Snapshot. Incomplete, paused, or unavailable
   comparisons retain a neutral ring and the same metric space with status and logged calories, except
   paused days, which use the dedicated pause layout below.
+- Historical comparisons identify their source below the balance: **Compared with saved target**
+  or **Compared with current target**. Include the same distinction in the accessible description.
+  The current-target fallback is display-only; see [daily calorie comparisons](daily-calorie-comparisons.md).
 - Place the full-width weight control immediately below the balance, above food. It begins with
   **Weigh in** and an inviting supporting label, then becomes a measurement with **Logged today** or
   queued-sync status. Never use "No weigh-in yet" as its principal content. Use the existing scale

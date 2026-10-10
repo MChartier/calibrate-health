@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+process.env.DATABASE_URL ??= 'postgresql://test:test@localhost:5432/test';
 
 const {
   completeOnboardingInTransaction,
@@ -64,10 +65,11 @@ function createCounters() {
 function createTransactionStub(state, counters) {
   return {
     $queryRawUnsafe: async () => [{ id: state.user.id }],
+    $executeRaw: async () => 1,
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
+    caloriePlanRevision: { findFirst: async () => null, findMany: async () => [] },
     user: {
-      findUnique: async () => ({
-        onboarding_completed_at: state.user.onboarding_completed_at
-      }),
+      findUnique: async () => ({ ...state.user }),
       update: async ({ data }) => {
         Object.assign(state.user, data);
         counters.userWrites += 1;
@@ -75,6 +77,7 @@ function createTransactionStub(state, counters) {
       }
     },
     bodyMetric: {
+      findFirst: async () => state.metric,
       upsert: async ({ where, update, create }) => {
         counters.metricUpserts += 1;
         state.metric = {
@@ -87,7 +90,7 @@ function createTransactionStub(state, counters) {
       }
     },
     goal: {
-      findFirst: async () => state.goal ? { id: state.goal.id } : null,
+      findFirst: async () => state.goal,
       update: async ({ data }) => {
         counters.goalUpdates += 1;
         state.goal = { ...state.goal, ...data };

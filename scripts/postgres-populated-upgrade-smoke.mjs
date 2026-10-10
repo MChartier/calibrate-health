@@ -239,6 +239,7 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
   });
 
   const expectedNewTables = [
+    'DailyCaloriePlan',
     'ActivityDaySummary',
     'ActivityRecord',
     'ClientOperation',
@@ -257,6 +258,8 @@ async function verifyUpgradedSchema(client, schemaName, userId, migrationNames) 
     [schemaName, expectedNewTables]
   );
   assert.deepEqual(tableResult.rows.map((row) => row.table_name), [...expectedNewTables].sort());
+  assert.equal((await client.query(`SELECT count(*)::int AS count FROM ${schema}."DailyCaloriePlan"`)).rows[0].count, 0,
+    'Upgrade must not manufacture historical daily plans');
 
   const columnResult = await client.query(
     `SELECT "column_name" FROM information_schema.columns

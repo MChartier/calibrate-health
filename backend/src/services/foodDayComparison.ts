@@ -1,6 +1,6 @@
 import type { FoodLogDay } from '@prisma/client';
 import type { MutationDatabase } from './clientOperations';
-import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
+import { observeCurrentCaloriePlan } from './dailyCaloriePlans';
 import { localDateInTimeZone } from '../../../shared/caloriePolicy';
 
 export type FoodDayCalorieComparison = {
@@ -22,23 +22,31 @@ export async function readFoodDayComparison(db: MutationDatabase, day: FoodLogDa
   return foodDayCalorieComparison(day, consumed);
 }
 
-/** The caller has upserted (and locked) this day in the completion transaction. */
+/** Caller holds the account guard before locking/upserting the day, through commit. */
 export async function captureFoodDayComparison(db: MutationDatabase, day: FoodLogDay, now: Date): Promise<FoodLogDay> {
   if (day.status !== 'COMPLETE' || day.comparison_captured_at) return day;
   const user = await db.user.findUnique({ where: { id: day.user_id }, select: { timezone: true } });
-  if (!user || localDateInTimeZone(now, user.timezone) !== day.local_date.toISOString().slice(0, 10)) return day;
-  const plan = await buildStoredCaloriePlanningSnapshot(db, day.user_id, now);
-  const evaluation = plan?.evaluation;
-  const target = evaluation?.dailyCalorieTarget;
-  const maintenance = evaluation?.tdee;
-  const available = plan?.localToday === day.local_date.toISOString().slice(0, 10) && evaluation?.status === 'available' &&
+  const today = user && localDateInTimeZone(now, user.timezone);
+  const date = day.local_date.toISOString().slice(0, 10);
+  if (!user || !today || date > today) return day;
+  if (date === today) await observeCurrentCaloriePlan(db, day.user_id, now);
+  const observed = await db.dailyCaloriePlan.findUnique({
+    where: { user_id_local_date: { user_id: day.user_id, local_date: day.local_date } }
+  });
+  const target = observed?.target_kcal;
+  const maintenance = observed?.maintenance_kcal;
+  const available = observed && !observed.timezone_conflict && observed.timezone === user.timezone &&
+    observed.observed_at <= now && localDateInTimeZone(observed.observed_at, observed.timezone) === date &&
     typeof target === 'number' && Number.isSafeInteger(target) && target > 0 &&
-    typeof maintenance === 'number' && Number.isFinite(maintenance) && maintenance > 0;
+    typeof maintenance === 'number' && Number.isSafeInteger(maintenance) && maintenance > 0;
+  if (observed && !observed.consumed_at) {
+    await db.dailyCaloriePlan.update({ where: { id: observed.id }, data: { consumed_at: now } });
+  }
   // Capture unavailable too: later settings changes must not manufacture a plan for this completion.
   return db.foodLogDay.update({ where: { id: day.id }, data: {
     comparison_captured_at: now,
     comparison_target_kcal: available ? target : null,
-    comparison_maintenance_kcal: available ? Math.round(maintenance) : null
+    comparison_maintenance_kcal: available ? maintenance : null
   } });
 }
 
