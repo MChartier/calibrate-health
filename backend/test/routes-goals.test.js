@@ -23,6 +23,7 @@ function loadGoalsRouter(prismaStub) {
   delete require.cache[caloriePlanningPath];
 
   const normalizedPrismaStub = {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     $executeRaw: async () => 1,
     ...prismaStub,
     user: {

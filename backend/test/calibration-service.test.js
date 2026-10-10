@@ -21,10 +21,12 @@ function loadCalibrationService({ prisma, planning, operations = {}, trendModelV
     profile: require.resolve('../src/utils/profile'),
     operations: require.resolve('../src/services/clientOperations'),
     weightTrend: require.resolve('../src/services/weightTrend'),
+    dailyPlans: require.resolve('../src/services/dailyCaloriePlans'),
     service: require.resolve('../src/services/calibration')
   };
   const previous = new Map(Object.values(paths).map((path) => [path, require.cache[path]]));
   delete require.cache[paths.service];
+  delete require.cache[paths.dailyPlans];
   stubModule(paths.database, prisma);
   stubModule(paths.caloriePlanning, {
     getStoredCaloriePlanningSnapshot: async () => planning.current,
@@ -126,6 +128,7 @@ function createHarness({ scenarioId = 'target-too-high', scheduledRevision = nul
     }))
   };
   const prisma = {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     $executeRaw: async () => 1,
     user: { findUnique: async () => ({
       id: 7,

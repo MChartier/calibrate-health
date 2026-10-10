@@ -22,6 +22,8 @@ import {
 import { resolveInactiveReminderNotificationsForUser } from '../services/inAppNotifications';
 import { getAuthenticatedUser, requireAuthenticatedUser } from '../middleware/authenticatedUser';
 import { captureFoodDayComparison, readFoodDayComparison } from '../services/foodDayComparison';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+import { observeFoodActivityPlan } from '../services/dailyCaloriePlans';
 
 const router = express.Router();
 router.use(requireAuthenticatedUser);
@@ -208,7 +210,6 @@ router.patch('/', async (req, res) => {
 
   const operationId = parseOperationId(req);
   if (operationId === null) return res.status(400).json({ message: 'Invalid x-client-operation-id' });
-  const completedAt = status === 'COMPLETE' ? new Date() : null;
   try {
     const result = await executeIdempotentMutation({
       userId: user.id,
@@ -216,6 +217,9 @@ router.patch('/', async (req, res) => {
       operationKind,
       requestPayload: req.body,
       mutate: async (tx, claimedOperationId) => {
+        await lockCaloriePlanningInputs(tx, user.id);
+        const completedAt = status === 'COMPLETE' ? new Date() : null;
+        if (!completedAt) await observeFoodActivityPlan(tx, user.id, [parsed.dateValue]);
         let updated = await tx.foodLogDay.upsert({
           where: { user_id_local_date: { user_id: user.id, local_date: parsed.dateValue } },
           update: { status, origin: 'USER', completed_at: completedAt },

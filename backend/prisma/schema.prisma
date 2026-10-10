@@ -151,6 +151,7 @@ model User {
   metrics       BodyMetric[]
   food_logs     FoodLog[]
   food_log_days FoodLogDay[]
+  daily_calorie_plans DailyCaloriePlan[]
   food_tracking_pauses FoodTrackingPause[]
   /// User-owned library of reusable foods and recipes for quick logging.
   my_foods      MyFood[]
@@ -511,6 +512,26 @@ model FoodLog {
   @@index([user_id, local_date])
 }
 
+/// Last server-observed plan per local day; separate from food state and Wear revisions.
+model DailyCaloriePlan {
+  id Int @id @default(autoincrement())
+  user_id Int
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  local_date DateTime @db.Date
+  timezone String
+  observed_at DateTime
+  calculation_version Int
+  target_kcal Int?
+  maintenance_kcal Int?
+  /// Includes evaluated unavailable reasons and the exact profile, weight, goal and revisions used.
+  inputs Json
+  timezone_conflict Boolean @default(false)
+  /// Consumption freezes both available and unavailable observations.
+  consumed_at DateTime?
+
+  @@unique([user_id, local_date])
+}
+
 model FoodLogDay {
   id           Int      @id @default(autoincrement())
   user_id      Int
@@ -523,7 +544,7 @@ model FoodLogDay {
   origin       FoodLogDayOrigin @default(USER)
   /// Timestamp of when the day was marked complete (cleared for other statuses).
   completed_at DateTime?
-  /// Plan observed at the first same-local-day completion; never reconstructed for older days.
+  /// Frozen comparison from a trustworthy server observation, consumed at first completion.
   comparison_target_kcal Int?
   comparison_maintenance_kcal Int?
   comparison_captured_at DateTime?

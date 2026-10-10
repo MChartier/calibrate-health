@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 
 export const ACCOUNT_EXPORT_FORMAT = 'calibrate-account-export';
-export const ACCOUNT_EXPORT_VERSION = 10;
+export const ACCOUNT_EXPORT_VERSION = 11;
 
 // Auth sessions, password hashes, push endpoints/tokens, and internal replay metadata are
 // deliberately absent. User-visible account, tracking, and derived plan history is exported.
@@ -38,6 +38,9 @@ const ACCOUNT_EXPORT_SELECT = {
     orderBy: [{ local_date: 'asc' as const }, { created_at: 'asc' as const }, { id: 'asc' as const }]
   },
   food_log_days: {
+    orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
+  },
+  daily_calorie_plans: {
     orderBy: [{ local_date: 'asc' as const }, { id: 'asc' as const }]
   },
   food_tracking_pauses: {
@@ -155,6 +158,17 @@ export type AccountExport = {
     comparison_captured_at: string | null;
     created_at: string;
     updated_at: string;
+  }>;
+  daily_calorie_plans: Array<{
+    local_date: string;
+    timezone: string;
+    observed_at: string;
+    calculation_version: number;
+    target_kcal: number | null;
+    maintenance_kcal: number | null;
+    inputs: unknown;
+    timezone_conflict: boolean;
+    consumed_at: string | null;
   }>;
   food_tracking_pauses: Array<{
     id: number;
@@ -388,6 +402,13 @@ export function serializeAccountExport(user: AccountExportRow, now = new Date())
       updated_at: toIsoDateTime(day.updated_at)
     };
     }),
+    daily_calorie_plans: user.daily_calorie_plans.map((plan) => ({
+      local_date: toIsoDate(plan.local_date), timezone: plan.timezone,
+      observed_at: toIsoDateTime(plan.observed_at), calculation_version: plan.calculation_version,
+      target_kcal: plan.target_kcal, maintenance_kcal: plan.maintenance_kcal,
+      inputs: plan.inputs, timezone_conflict: plan.timezone_conflict,
+      consumed_at: plan.consumed_at ? toIsoDateTime(plan.consumed_at) : null
+    })),
     food_tracking_pauses: (user.food_tracking_pauses ?? []).map((pause) => ({
       id: pause.id,
       starts_on: toIsoDate(pause.starts_on),

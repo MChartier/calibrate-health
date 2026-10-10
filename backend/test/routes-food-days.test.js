@@ -23,6 +23,8 @@ function loadFoodDaysRouter(prismaStub) {
   delete require.cache[foodTrackingPath];
 
   const normalizedPrismaStub = {
+    $executeRaw: async () => 1,
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     ...prismaStub,
     syncChange: {
       create: async () => ({ id: 1n }),

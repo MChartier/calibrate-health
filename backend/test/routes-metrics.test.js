@@ -45,6 +45,7 @@ function loadMetricsRouter(prismaStub) {
   delete require.cache[caloriePlanReviewPath];
 
   const normalizedPrismaStub = {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     $executeRaw: async () => 1,
     ...prismaStub,
     $queryRaw: prismaStub.$queryRaw ?? (async () => []),
@@ -167,6 +168,7 @@ function baselineFixture({ goalDate, timeZone = 'UTC', initialWeight = 90000, on
   const user = { id: 7, timezone: timeZone, weight_unit: 'KG', date_of_birth: new Date('1990-01-01'),
     sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', height_unit: 'CM' };
   const stub = {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     $executeRaw: async () => { events.push('lock'); await onLock?.(); return 1; },
     user: { findUnique: async () => user },
     goal: {

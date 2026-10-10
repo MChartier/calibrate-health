@@ -6,7 +6,9 @@ import { isHeightUnit, isWeightUnit } from '../utils/units';
 import { ActivityLevel, HeightUnit, Prisma, Sex, WeightUnit } from '@prisma/client';
 import { isActivityLevel, isSex } from '../utils/profile';
 import { isValidIanaTimeZone } from '../utils/date';
-import { calorieSummaryWire, getStoredCaloriePlanningSnapshot } from '../services/caloriePlanning';
+import { calorieSummaryWire } from '../services/caloriePlanning';
+import { observeCurrentCaloriePlan, invalidateDailyPlanTimezone } from '../services/dailyCaloriePlans';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from '../services/caloriePlanReview';
 import { evaluateCalorieProfileEligibility, isPolicyHeight, normalizeDateOfBirth } from '../../../shared/caloriePolicy';
 import { resolveHeightMmUpdate } from '../utils/height';
@@ -488,7 +490,7 @@ router.patch('/preferences', async (req, res) => {
 router.get('/profile', async (req, res) => {
   const user = getAuthenticatedUser(req);
   try {
-    const snapshot = await getStoredCaloriePlanningSnapshot(user.id);
+    const snapshot = await prisma.$transaction(tx => observeCurrentCaloriePlan(tx, user.id));
     if (!snapshot) return res.status(404).json({ message: 'User not found' });
     const { evaluation } = snapshot;
     return res.json({
@@ -586,6 +588,7 @@ router.patch('/profile', async (req, res) => {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+      await lockCaloriePlanningInputs(tx, user.id);
       const current = await tx.user.findUnique({
         where: { id: user.id },
         select: { timezone: true, date_of_birth: true }
@@ -621,6 +624,7 @@ router.patch('/profile', async (req, res) => {
         }
       }
 
+      await invalidateDailyPlanTimezone(tx, user.id, current.timezone, candidateTimezone, new Date());
       const updatedUser = await tx.user.update({
         where: { id: user.id }, data: updateData, select: USER_CLIENT_SELECT
       });

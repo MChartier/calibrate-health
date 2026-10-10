@@ -12,6 +12,7 @@ type CalorieBalanceCardProps = ViewProps & {
     targetCalories: number | null | undefined;
     unavailableLabel?: string;
     supportingLabel?: string;
+    comparisonLabel?: string;
     compact?: boolean;
     open?: boolean;
 };
@@ -45,6 +46,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
     targetCalories,
     unavailableLabel = 'Target unavailable',
     supportingLabel,
+    comparisonLabel,
     compact = false,
     open = false,
     style,
@@ -72,7 +74,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
             density={compact ? 'compact' : 'comfortable'}
             accessible
             accessibilityLabel={hasTarget
-                ? `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.`
+                ? `Daily balance. ${balanceSummary}. ${formatNumber(totalCalories, 0)} eaten out of ${formatNumber(targetCalories, 0)} calorie target.${comparisonLabel ? ` ${comparisonLabel}.` : ''}`
                 : `Daily balance. ${balanceSummary}. ${supportingLabel ?? `${formatNumber(totalCalories, 0)} calories logged`}.`}
             style={[styles.surface, open && styles.open, style]}
         >
@@ -102,6 +104,7 @@ export const CalorieBalanceCard: React.FC<CalorieBalanceCardProps> = ({
                     <AppText style={[styles.balanceLabel, isOver && styles.dangerText]}>
                         {supportingLabel ?? (remaining === null ? `${formatNumber(totalCalories, 0)} kcal logged` : balanceLabel)}
                     </AppText>
+                    {hasTarget && comparisonLabel && <AppText variant="caption" style={styles.comparisonLabel}>{comparisonLabel}</AppText>}
                 </View>
             </View>
         </AppCard>
@@ -246,6 +249,7 @@ function createStyles(colors: AppThemeColors) {
             lineHeight: 22,
             fontWeight: '600'
         },
+        comparisonLabel: { color: colors.muted, marginTop: spacing.xs },
         unavailable: {
             color: colors.muted,
             fontSize: 20,

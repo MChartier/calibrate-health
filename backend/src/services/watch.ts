@@ -15,6 +15,7 @@ import { getFoodDayWriteBlock } from './foodTracking';
 import { buildStoredCaloriePlanningSnapshot } from './caloriePlanning';
 import { markCurrentCaloriePlanForReviewIfUnsafe } from './caloriePlanReview';
 import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+import { observeFoodActivityPlan, retainDailyCaloriePlan } from './dailyCaloriePlans';
 import { correctSameDayGoalStartingWeight, recordCorrectedGoalStartingWeight } from './goalStartingWeight';
 import { calculateCanonicalGoalProgress } from '../../../shared/goalProgress';
 import { isPolicyWeight, localDateInTimeZone } from '../../../shared/caloriePolicy';
@@ -337,6 +338,7 @@ export async function executeWatchMutation(options: {
     mutate: async (tx, claimedOperationId) => {
       const mutation = options.mutation;
       if (mutation.type === 'food.create') {
+        await observeFoodActivityPlan(tx, options.userId, [mutation.parsedFood.localDate]);
         const writeBlock = await getFoodDayWriteBlock({
           userId: options.userId,
           localDate: mutation.parsedFood.localDate,
@@ -346,10 +348,13 @@ export async function executeWatchMutation(options: {
         return createFoodLog({ tx, userId: options.userId, operationId: claimedOperationId, parsed: mutation.parsedFood });
       }
       if (mutation.type === 'food.delete') {
+        await lockCaloriePlanningInputs(tx, options.userId);
         const candidate = await findCurrentSessionUndoCandidate({ tx, userId: options.userId, mobileAuthSessionId: options.mobileAuthSessionId });
         if (!candidate || candidate.food_log_id !== mutation.payload.food_log_id) {
           return { status: 409, body: { message: 'Food log is not the current session undo candidate', code: 'WATCH_UNDO_NOT_ALLOWED', retryable: false } };
         }
+        const log = await tx.foodLog.findFirst({ where: { id: candidate.food_log_id, user_id: options.userId } });
+        if (log) await observeFoodActivityPlan(tx, options.userId, [log.local_date]);
         const deleted = await tx.foodLog.deleteMany({ where: { id: candidate.food_log_id, user_id: options.userId } });
         if (deleted.count !== 1) return { status: 404, body: { message: 'Food log not found' } };
         await recordSyncChange({ tx, userId: options.userId, entityType: 'food_log', entityId: candidate.food_log_id, action: 'delete', operationId: claimedOperationId });
@@ -408,6 +413,7 @@ export async function executeWatchMutation(options: {
         };
       }
 
+      await lockCaloriePlanningInputs(tx, options.userId);
       const existingDay = await tx.foodLogDay.findUnique({
         where: { user_id_local_date: { user_id: options.userId, local_date: mutation.localDate } }
       });
@@ -432,6 +438,7 @@ export async function executeWatchMutation(options: {
         };
       }
       const completedAt = mutation.payload.is_complete ? new Date() : null;
+      if (!completedAt) await observeFoodActivityPlan(tx, options.userId, [mutation.localDate]);
       const status = mutation.payload.is_complete ? 'COMPLETE' : 'OPEN';
       let day = await tx.foodLogDay.upsert({
         where: { user_id_local_date: { user_id: options.userId, local_date: mutation.localDate } },
@@ -555,13 +562,28 @@ export function buildWatchGoalSnapshot(
   };
 }
 
-export async function buildWatchSnapshot(options: {
+type WatchSnapshotOptions = {
   userId: number;
   mobileAuthSessionId: number;
   now?: Date;
-}) {
-  const now = options.now ?? new Date();
+};
+
+export async function buildWatchSnapshot(options: WatchSnapshotOptions) {
+  // Concurrent authoritative reads also update the account guard; retry the whole consistent read.
+  const maxAttempts = 3;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await readWatchSnapshot(options);
+    } catch (error) {
+      if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2034' || attempt >= maxAttempts) throw error;
+    }
+  }
+}
+
+async function readWatchSnapshot(options: WatchSnapshotOptions) {
   return prisma.$transaction(async (tx) => {
+    await lockCaloriePlanningInputs(tx, options.userId);
+    const now = options.now ?? new Date();
     const user = await tx.user.findUnique({
       where: { id: options.userId },
       select: { id: true, timezone: true, language: true, weight_unit: true, height_unit: true, sex: true, date_of_birth: true, height_mm: true, activity_level: true }
@@ -574,6 +596,7 @@ export async function buildWatchSnapshot(options: {
     const operationalTimezone = user.timezone;
     const planning = await buildStoredCaloriePlanningSnapshot(tx, options.userId, now);
     if (!planning) return null;
+    await retainDailyCaloriePlan(tx, planning, now);
     const goal = planning.goal;
     const caloriePlan = planning.evaluation;
     const goalProjection = planning.projection;

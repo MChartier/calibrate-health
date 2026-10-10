@@ -1,4 +1,5 @@
 import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
+import { observeCurrentCaloriePlan, retainDailyCaloriePlan } from '../services/dailyCaloriePlans';
 import express from 'express';
 import { Prisma } from '@prisma/client';
 import { goalWire, goalPaceOptions, goalPaceVersion } from '../services/goalPace';
@@ -144,6 +145,7 @@ router.post('/', async (req, res) => {
                         calorie_plan_review_reason: null
                     }
                 });
+                await observeCurrentCaloriePlan(tx, user.id);
                 await recordSyncChange({
                     tx, userId: user.id, entityType: 'goal', entityId: goal.id, action: 'upsert',
                     operationId: claimedOperationId, payload: goal
@@ -242,6 +244,7 @@ router.patch('/:id/pace', async (req, res) => {
                     where: { user_id: user.id, status: 'PENDING' }, data: { status: 'STALE' }
                 });
                 const updated = await buildStoredCaloriePlanningSnapshot(tx, user.id, now);
+                if (updated) await retainDailyCaloriePlan(tx, updated, now);
                 const body = goalWire(updated!);
                 await recordSyncChange({ tx, userId: user.id, entityType: 'goal', entityId: goalId,
                     action: 'upsert', operationId: claimedOperationId, payload: updated!.goal });

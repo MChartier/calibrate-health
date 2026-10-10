@@ -15,6 +15,10 @@ function stubModule(resolvedPath, exports) {
 }
 
 function loadFoodRouter({ prismaStub, foodDataStub }) {
+  prismaStub.$executeRaw ??= async () => 1;
+  prismaStub.user ??= { findUnique: async () => ({ id: 7, timezone: 'UTC' }) };
+  prismaStub.foodLog ??= {};
+  prismaStub.foodLog.findFirst ??= async () => null;
   const dbPath = require.resolve('../src/config/database');
   const foodDataPath = require.resolve('../src/services/foodData');
   const clientOperationsPath = require.resolve('../src/services/clientOperations');
@@ -962,6 +966,7 @@ test('food route: POST /copy executes the owned copy in one idempotent transacti
 
 test('food route: PATCH /:id validates and computes updateData', async () => {
   const existingRow = {
+    local_date: new Date('2025-01-01Z'),
     id: 1,
     user_id: 7,
     calories_per_serving_snapshot: 110,

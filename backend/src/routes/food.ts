@@ -1,4 +1,6 @@
 import express from 'express';
+import { observeFoodActivityPlan } from '../services/dailyCaloriePlans';
+import { lockCaloriePlanningInputs } from '../services/caloriePlanningLock';
 import type { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import {
@@ -286,6 +288,7 @@ router.post('/', async (req, res) => {
             operationKind: 'food_log.create',
             requestPayload: req.body,
             mutate: async (tx, claimedOperationId) => {
+                await observeFoodActivityPlan(tx, user.id, [parsedBody.localDate]);
                 const writeBlock = await getFoodDayWriteBlock({
                     userId: user.id,
                     localDate: parsedBody.localDate,
@@ -449,6 +452,7 @@ router.patch('/:id', async (req, res) => {
             operationKind: 'food_log.update',
             requestPayload: { id, ...req.body },
             mutate: async (tx, claimedOperationId) => {
+                await observeFoodActivityPlan(tx, user.id, [existing.local_date]);
                 const updated = await tx.foodLog.update({
                     where: { id },
                     data: parsedUpdate.updateData
@@ -500,6 +504,9 @@ router.delete('/:id', async (req, res) => {
             operationKind: 'food_log.delete',
             requestPayload: { id },
             mutate: async (tx, claimedOperationId) => {
+                await lockCaloriePlanningInputs(tx, user.id);
+                const existing = await tx.foodLog.findFirst({ where: { id, user_id: user.id } });
+                if (existing) await observeFoodActivityPlan(tx, user.id, [existing.local_date]);
                 const deleteResult = await tx.foodLog.deleteMany({ where: { id, user_id: user.id } });
                 if (deleteResult.count > 0) await recordSyncChange({
                     tx,

@@ -1,4 +1,5 @@
 import { lockCaloriePlanningInputs } from './caloriePlanningLock';
+import { observeCurrentCaloriePlan } from './dailyCaloriePlans';
 import crypto from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import {
@@ -585,6 +586,7 @@ export async function applyCalibrationRecommendation(options: {
                     where: { id: recommendation.id },
                     data: { status: 'APPLIED', applied_at: options.now ?? new Date() }
                 });
+                await observeCurrentCaloriePlan(tx, options.userId, options.now);
                 const body = {
                     recommendationId: recommendation.id,
                     targetAdjustmentKcal: revision.target_adjustment_kcal,
@@ -655,6 +657,7 @@ export async function cancelScheduledCalibrationChange(options: {
                 where: { id: recommendation.id },
                 data: { status: 'PENDING', applied_at: null }
             });
+            await observeCurrentCaloriePlan(tx, options.userId, options.now);
             await recordSyncChange({
                 tx,
                 userId: options.userId,

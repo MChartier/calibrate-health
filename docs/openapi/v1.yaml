@@ -2008,14 +2008,14 @@ components:
     AccountExport:
       type: object
       additionalProperties: false
-      required: [format, version, exported_at, account, legal_acceptances, goals, body_metrics, food_logs, food_log_days, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calibration_recommendations, calorie_plan_revisions]
+      required: [format, version, exported_at, account, legal_acceptances, goals, body_metrics, food_logs, food_log_days, daily_calorie_plans, food_tracking_pauses, my_foods, in_app_notifications, activity_records, activity_day_summaries, calibration_recommendations, calorie_plan_revisions]
       properties:
         format:
           type: string
           const: calibrate-account-export
         version:
           type: integer
-          const: 10
+          const: 11
         exported_at:
           type: string
           format: date-time
@@ -2041,6 +2041,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AccountExportFoodLogDay'
+        daily_calorie_plans:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountExportDailyCaloriePlan'
         food_tracking_pauses:
           type: array
           items:
@@ -2166,6 +2170,19 @@ components:
         comparison_captured_at: { type: [string, 'null'], format: date-time }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    AccountExportDailyCaloriePlan:
+      type: object
+      required: [local_date, timezone, observed_at, calculation_version, target_kcal, maintenance_kcal, inputs, timezone_conflict, consumed_at]
+      properties:
+        local_date: { type: string, format: date }
+        timezone: { type: string }
+        observed_at: { type: string, format: date-time }
+        calculation_version: { type: integer }
+        target_kcal: { type: [integer, 'null'] }
+        maintenance_kcal: { type: [integer, 'null'] }
+        inputs: { type: object, additionalProperties: true }
+        timezone_conflict: { type: boolean }
+        consumed_at: { type: [string, 'null'], format: date-time }
     AccountExportFoodTrackingPause:
       type: object
       required: [id, starts_on, expected_resume_on, resumed_on, started_at, resumed_at, materialized_through, created_at, updated_at]

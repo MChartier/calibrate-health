@@ -10,6 +10,8 @@ function fixture() {
   const goal = { id: 1, user_id: 7, start_weight_grams: 90000, target_weight_grams: 80000, daily_deficit: 500, calorie_plan_review_status: 'CLEAR', created_at: now };
   let logs = [];
   const db = {
+    $executeRaw: async () => 1,
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     user: { findUnique: async () => user },
     goal: { findFirst: async () => goal },
     bodyMetric: { findFirst: async () => ({ weight_grams: 90000 }) },
@@ -33,7 +35,8 @@ test('captures only the actual local day and preserves the first plan through re
 test('does not reconstruct past/future history or turn unsafe plans into colors', async () => {
   for (const date of ['2025-12-30', '2026-01-01']) {
     const {db,day} = fixture(); day.local_date = new Date(date + 'T00:00:00Z');
-    await captureFoodDayComparison(db, day, now); assert.equal(day.comparison_captured_at, undefined);
+    await captureFoodDayComparison(db, day, now);
+    assert.equal(day.comparison_captured_at, date === '2025-12-30' ? now : undefined);
     assert.equal(foodDayCalorieComparison(day, 0), null);
   }
   const {db,day,goal} = fixture(); goal.calorie_plan_review_status = 'REQUIRES_REVIEW';
