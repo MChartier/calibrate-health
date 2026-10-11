@@ -46,11 +46,9 @@ one-time pairing exchange. Browser cookie sessions omit these headers and are un
 
 Expo retains its normal update lifecycle; the client does not veto an update download based on the selected server.
 If an incompatible bundle starts, the runtime preflight blocks normal authenticated use before session refresh and
-synchronization. Longer term, production/public channel promotion should require an explicit deployment-readiness
-signal that the declared server rollout is compatible with the candidate bundle. Internal publication remains
-available for validation, and CI does not poll private self-hosted servers. That signal can attest readiness only for
-the release owner's declared server rollout; independently managed self-hosts still rely on the runtime mismatch
-guard.
+synchronization. Both internal and production OTA publication now require the configured server's Compose upgrade
+and application health check to succeed. This checks only that target's health, not an exact server/OTA version
+match; independently managed self-hosts still rely on the runtime mismatch guard.
 
 An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
 a non-retryable user message. Phone keeps its credentials and offline outbox behind an update-required screen. Wear
@@ -199,19 +197,19 @@ The four credential stages remain separate from source export. The repository `E
 approval controls workflow sequencing rather than providing a channel-scoped credential boundary. A missing, unattested, or
 incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
 release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
-manual OTA workflow with an exact source that descends from the installed native baseline. Neither OTA path waits for
-or triggers self-host deployment.
+manual OTA workflow with an exact source that descends from the installed native baseline. Both OTA entrypoints
+first deploy the configured self-host over WireGuard/SSH and require its application health check to succeed.
 
-An opted-in deployment job updates the configured self-host alongside OTA using the receipt-verified immutable image
-digest. It also runs when the native baseline is unavailable and OTA is skipped. OTA does not wait for deployment.
+Deployment pulls the image configured in the existing Compose stack (`latest`) and upgrades only `app`. It does not
+write image overrides or require deployment state, a lock, or a backup marker. When the native baseline is unavailable,
+the release publisher still deploys the server after image publication and skips OTA.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
 running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
 server contract version before restoring the saved session or synchronizing. An incompatible update can therefore
 download and start before the runtime gate blocks normal authenticated use. Protected production approval is the
-current public-channel promotion control. A future automated gate may require an explicit deployment-readiness signal
-for the release owner's declared server rollout, but independent self-hosts still require the runtime guard. The
-optional deployment job verifies only its configured target; CI must not poll independent private servers to gate OTA.
+additional public-channel promotion control after successful deployment and internal publication. The deployment job
+checks only its configured target; independent self-hosts still require the runtime guard and are not polled by CI.
 
 The preparation command is also available for isolated release tooling tests:
 
@@ -241,10 +239,10 @@ version and source-SHA image identities are write-once. Only a registry config d
 attestation is authoritative: recovery fills a missing alias only from that attested manifest, fails if immutable
 identities disagree, and never adopts an unattested pre-existing digest. A fresh publication also proves the pushed
 config digest equals the credential-free build identity. Moving `latest` is created only from that verified immutable
-digest. Validated releases publish version, source-SHA, and moving `latest` tags to GHCR. Operators can opt one existing
-Compose stack into [deployment over WireGuard](../deploy/self-hosted/README.md), or keep deploying manually.
-**Deploy self-hosted server** retries a published digest without rebuilding or republishing OTA. No GitHub Release
-object or generated changelog is created.
+digest. Validated releases publish version, source-SHA, and moving `latest` tags to GHCR. The release owner configures
+one existing Compose stack for [deployment over WireGuard](../deploy/self-hosted/README.md). Other installations can
+continue deploying manually. **Deploy self-hosted server** retries the normal `latest` upgrade without rebuilding
+or publishing OTA. No GitHub Release object or generated changelog is created.
 
 **Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
 Affected pull-request and scheduled workflows own the broader test, production-image, and migration gates. Package

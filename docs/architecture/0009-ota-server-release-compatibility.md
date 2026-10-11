@@ -5,9 +5,9 @@
 
 ## Context
 
-Server image publication, deployment to a self-host, and Expo OTA publication are independent. An OTA may therefore
-start before an operator deploys the corresponding server image. The release workflow also cannot reliably contact a
-private self-host, and one EAS channel can serve clients that have selected different servers.
+Independently managed self-host deployments can lag Expo OTA publication. An OTA may therefore start before an
+operator deploys the corresponding server image. One EAS channel can serve clients that have selected different
+servers; the configured release owner's deployment gate cannot establish readiness for all of them.
 
 The Android native application version is independent of the server/web release. It identifies native runtime
 compatibility and cannot describe which server contract an OTA JavaScript bundle expects.
@@ -32,11 +32,10 @@ Expo's automatic and manual update behavior remains unchanged. The client does n
 based on the selected server, so this decision requires no native Expo configuration change or replacement signed
 build.
 
-Longer term, an incompatible update should be kept out of production/public channels. Promotion should require an
-explicit deployment-readiness signal that the declared server rollout is compatible with the candidate bundle while
-internal publication remains available for validation. That signal covers the release owner's declared server
-rollout, not every independently managed self-host. CI must not infer readiness by polling a private or manually
-deployed self-host, so the runtime guard remains necessary.
+Both OTA channels require a successful Compose upgrade and application health check on the configured release
+owner's server over WireGuard/SSH. Production additionally requires its existing approval. The upgrade follows
+`latest` and checks health without asserting an exact server/OTA version match. Other self-hosts are not polled,
+so the runtime guard remains necessary.
 
 ## Consequences
 
@@ -46,4 +45,4 @@ deployed self-host, so the runtime guard remains necessary.
 - Within a major, a server minor can advance before clients, but a client minor cannot advance ahead of the server.
 - A major mismatch blocks in either direction until the server and client converge.
 - This short-term runtime guard does not prevent an incompatible bundle from being downloaded.
-- Public-channel promotion gating is a separate release-workflow follow-up.
+- The configured deployment gate and production approval complement the runtime guard.

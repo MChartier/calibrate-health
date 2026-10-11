@@ -4,14 +4,11 @@ import { isIPv4 } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateRequest } from './self-hosted-deploy.mjs';
 
 const INTERFACE = 'calibrate-ci';
 const KEY_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
 
 export function deploymentInputs(env) {
-  const request = validateRequest({ imageRef: env.DEPLOY_IMAGE_REF, releaseTag: env.DEPLOY_RELEASE_TAG },
-    env.DEPLOY_IMAGE_REPOSITORY?.toLowerCase());
   for (const key of ['DEPLOY_HOST', 'DEPLOY_WG_ADDRESS']) {
     if (!isIPv4(env[key] || '')) throw new Error(`${key} must be a single IPv4 address.`);
   }
@@ -28,11 +25,10 @@ export function deploymentInputs(env) {
   for (const key of ['DEPLOY_SSH_PRIVATE_KEY', 'DEPLOY_SSH_KNOWN_HOSTS']) {
     if (!env[key]?.trim()) throw new Error(`Set ${key} in the self-hosted-testing environment.`);
   }
-  return request;
 }
 
 export function connectAndDeploy(env = process.env, run = execFileSync) {
-  const request = deploymentInputs(env);
+  deploymentInputs(env);
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-deploy-'));
   const wireguardKey = path.join(directory, 'wireguard.key');
   const sshKey = path.join(directory, 'id_ed25519');
@@ -55,18 +51,18 @@ export function connectAndDeploy(env = process.env, run = execFileSync) {
       'allowed-ips', `${env.DEPLOY_HOST}/32`, 'endpoint', env.DEPLOY_WG_ENDPOINT, 'persistent-keepalive', '25']);
     command('sudo', ['ip', 'link', 'set', 'dev', INTERFACE, 'mtu', '1420', 'up']);
     command('sudo', ['ip', 'route', 'add', `${env.DEPLOY_HOST}/32`, 'dev', INTERFACE]);
-    command('ssh', ['-F', '/dev/null', '-T', '-i', sshKey,
+    command('ssh', ['-F', '/dev/null', '-n', '-T', '-i', sshKey,
       '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=yes',
       '-o', `UserKnownHostsFile=${knownHosts}`, '-o', 'GlobalKnownHostsFile=/dev/null',
       '-o', 'ConnectTimeout=15', '-o', 'ConnectionAttempts=3', '-o', 'ServerAliveInterval=15',
       '-o', 'ServerAliveCountMax=3', `${env.DEPLOY_SSH_USER}@${env.DEPLOY_HOST}`], {
-      input: JSON.stringify(request), stdio: ['pipe', 'inherit', 'inherit'], timeout: 12 * 60 * 1000,
+      stdio: ['ignore', 'inherit', 'inherit'], timeout: 12 * 60 * 1000,
     });
     if (env.GITHUB_STEP_SUMMARY) {
-      fs.appendFileSync(env.GITHUB_STEP_SUMMARY, `Deployed ${request.releaseTag}: \`${request.imageRef}\`\n`);
+      fs.appendFileSync(env.GITHUB_STEP_SUMMARY, 'Compose app upgrade and application health check succeeded.\n');
     }
   } catch {
-    throw new Error('Deployment failed. Check environment configuration, peer routing, SSH host key, and host deployment state.');
+    throw new Error('Deployment failed. Check environment configuration, peer routing, SSH host key, and application health on the host.');
   } finally {
     try {
       if (tunnelCreated) command('sudo', ['ip', 'link', 'delete', INTERFACE]);

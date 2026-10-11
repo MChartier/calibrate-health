@@ -5,6 +5,14 @@ on:
     secrets:
       EXPO_TOKEN:
         required: false
+      DEPLOY_WG_ENDPOINT:
+        required: true
+      DEPLOY_WG_PRIVATE_KEY:
+        required: true
+      DEPLOY_SSH_PRIVATE_KEY:
+        required: true
+      DEPLOY_SSH_KNOWN_HOSTS:
+        required: true
     inputs:
       release_commit:
         description: Exact validated release commit that is now an ancestor of master
@@ -515,15 +523,19 @@ jobs:
       publish_latest: true
 
   deploy_self_hosted:
-    name: Deploy opted-in self-host
+    name: Deploy server when OTA is unavailable
     needs: [tag_release, build_release_image]
-    if: vars.SELF_HOSTED_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/master'
+    # The OTA workflow owns deployment when a compatible native baseline is available.
+    if: needs.tag_release.outputs.native_release_ready != 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/deploy-self-hosted.yml
+    secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
     with:
-      image_ref: ${{ needs.build_release_image.outputs.image_ref }}
-      release_tag: ${{ needs.tag_release.outputs.release_tag }}
       release_commit: ${{ inputs.release_commit }}
 
   publish_ota:
@@ -534,6 +546,10 @@ jobs:
       contents: read
     uses: ./.github/workflows/expo-ota-update.yml
     secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       source_ref: ${{ inputs.release_commit }}

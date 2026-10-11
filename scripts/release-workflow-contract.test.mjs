@@ -715,19 +715,40 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.doesNotMatch(workflow, /calibratehealth\.app\/api\/v1\/client-config|wait_for_hosted_release/);
 });
 
-test('optional self-host deployment consumes the published digest without gating OTA', () => {
+test('server releases deploy latest and both OTA entrypoints require successful deployment', () => {
   const publisher = readWorkflow('publish-release.yml');
   const deployment = workflowJobBlock(publisher, 'deploy_self_hosted');
   const ota = workflowJobBlock(publisher, 'publish_ota');
   assert.match(deployment, /needs: \[tag_release, build_release_image\]/);
-  assert.match(deployment, /vars\.SELF_HOSTED_DEPLOY_ENABLED == 'true'/);
-  assert.match(deployment, /github\.ref == 'refs\/heads\/master'/);
-  assert.match(deployment, /image_ref: \$\{\{ needs\.build_release_image\.outputs\.image_ref \}\}/);
-  assert.match(deployment, /release_tag: \$\{\{ needs\.tag_release\.outputs\.release_tag \}\}/);
+  assert.match(deployment, /if: needs\.tag_release\.outputs\.native_release_ready != 'true'/);
   assert.match(deployment, /release_commit: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(deployment, /permissions:\n\s+contents: read/);
-  assert.doesNotMatch(deployment, /native_release_ready|publish_ota/);
-  assert.doesNotMatch(ota, /deploy_self_hosted/);
+  assert.doesNotMatch(deployment, /image_ref:|release_tag:|SELF_HOSTED_DEPLOY_ENABLED/);
+  assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);
+  assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
+
+  const otaWorkflow = readWorkflow('expo-ota-update.yml');
+  const gate = workflowJobBlock(otaWorkflow, 'deploy-server');
+  assert.match(gate, /needs: preflight-release-target/);
+  assert.match(gate, /uses: \.\/\.github\/workflows\/deploy-self-hosted\.yml/);
+  assert.doesNotMatch(gate, /\n    if:|continue-on-error/);
+  assert.match(otaWorkflow, /workflow_call:/);
+  assert.match(otaWorkflow, /workflow_dispatch:/);
+  // Every stage on either channel must inherit the deployment's success requirement.
+  for (const [job, predecessor] of [
+    ['resolve-internal-environment', 'deploy-server'],
+    ['build-internal-update', 'resolve-internal-environment'],
+    ['publish-internal', 'build-internal-update'],
+    ['approve-production', 'publish-internal'],
+    ['resolve-production-environment', 'approve-production'],
+    ['build-production-update', 'resolve-production-environment'],
+    ['publish-production', 'build-production-update'],
+  ]) {
+    const block = workflowJobBlock(otaWorkflow, job);
+    const needs = block.match(/^    needs: (.+)$/m)?.[1];
+    assert.ok(needs?.includes(predecessor), job + ' must wait for ' + predecessor);
+    assert.doesNotMatch(block, /\n    if:|continue-on-error/);
+  }
 
   const image = readWorkflow('container.yml');
   const publishImage = workflowJobBlock(image, 'publish_image');
@@ -752,7 +773,9 @@ test('optional self-host deployment consumes the published digest without gating
   const workflow = readWorkflow('deploy-self-hosted.yml');
   assert.match(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /vars\.SELF_HOSTED_DEPLOY_ENABLED == 'true'.*github\.ref == 'refs\/heads\/master'/);
+  assert.doesNotMatch(workflow, /SELF_HOSTED_DEPLOY_ENABLED|image_ref:|release_tag:|\n    if:/);
+  assert.match(workflow, /GITHUB_REF.*!=.*refs\/heads\/master/);
+  assert.match(workflow, /DEPLOY_WG_ENDPOINT: \$\{\{ secrets\.DEPLOY_WG_ENDPOINT \}\}/);
   assert.match(workflow, /runs-on: ubuntu-latest/);
   assert.match(workflow, /environment: self-hosted-testing/);
   assert.match(workflow, /group: self-hosted-testing-deploy\n\s+cancel-in-progress: false/);
@@ -767,6 +790,28 @@ test('optional self-host deployment consumes the published digest without gating
   assert.doesNotMatch(workflow, /pull_request:|workflow_run:|packages: write|contents: write/);
   assert.doesNotMatch(workflow, /runs-on:.*self-hosted|continue-on-error|ssh-keyscan/);
   for (const match of workflow.matchAll(/uses: ([^\n]+)/g)) assert.match(match[1], /@[a-f0-9]{40}(?: |$)/);
+});
+
+test('deployment environment secrets are forwarded through every reusable release caller', () => {
+  const secretNames = ['DEPLOY_WG_ENDPOINT', 'DEPLOY_WG_PRIVATE_KEY', 'DEPLOY_SSH_PRIVATE_KEY', 'DEPLOY_SSH_KNOWN_HOSTS'];
+  const callees = new Set(['cut-release.yml', 'publish-release.yml', 'expo-ota-update.yml', 'deploy-self-hosted.yml']);
+  for (const name of callees) {
+    const declarations = readWorkflow(name).split('    inputs:')[0];
+    for (const secret of secretNames) assert.ok(declarations.includes('      ' + secret + ':\n        required: true'), name + ': ' + secret);
+  }
+  for (const file of readdirSync(workflowsDirectory).filter((name) => name.endsWith('.yml'))) {
+    const source = readWorkflow(file);
+    const jobs = source.slice(source.indexOf('\njobs:\n'));
+    for (const [, job] of jobs.matchAll(/^  ([a-z0-9_-]+):$/gm)) {
+      const block = workflowJobBlock(source, job);
+      const callee = block.match(/^    uses: \.\/\.github\/workflows\/([^\s]+)$/m)?.[1];
+      if (!callees.has(callee)) continue;
+      for (const secret of secretNames) {
+        assert.ok(block.includes('      ' + secret + ': ${{ secrets.' + secret + ' }}'), file + '/' + job + ': ' + secret);
+      }
+      assert.doesNotMatch(block, /secrets: inherit/);
+    }
+  }
 });
 
 test('pull requests build and smoke only Web-impacting changes while exhaustive suites stay manual', () => {
@@ -1592,7 +1637,7 @@ test('Expo OTA separates source export from clean environment-scoped publication
   assert.match(otaPreflightSource, /ls-remote', '--tags', 'origin', tagRef, `\$\{tagRef\}\^\{\}`/);
   assert.match(otaPreflightSource, /verifyNativeTagAttestation/);
   assert.match(otaPreflightSource, /verifyNativeOtaReleaseTarget[\s\S]*merge-base', '--is-ancestor', publishedTag\.commit, sourceCommit/);
-  assert.match(resolveInternal, /needs: preflight-release-target/);
+  assert.match(resolveInternal, /needs: \[preflight-release-target, deploy-server\]/);
   assert.match(buildInternal, /needs: \[preflight-release-target, resolve-internal-environment\]/);
   assert.match(publishInternal, /needs: \[preflight-release-target, build-internal-update\]/);
   const productionApproval = workflowJobBlock(workflow, 'approve-production');

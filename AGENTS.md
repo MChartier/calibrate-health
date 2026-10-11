@@ -351,11 +351,14 @@ UI code style:
   used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
   a commit signature is insufficient. A reserved
   but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
-  release or use the manual OTA workflow after the signed native baseline is published. Expo publication itself never
-  waits for or triggers self-host deployment.
-- An opted-in self-host deployment runs alongside OTA using the receipt-verified immutable image digest, including
-  recovered publications. OTA does not wait for deployment or require it to succeed. Configure the restricted
-  WireGuard/SSH target through `deploy/self-hosted/README.md`; deployment credentials stay in `self-hosted-testing`.
+  release or use the manual OTA workflow after the signed native baseline is published. Both release-driven and manual OTA publication require a successful
+  deployment and application health check before internal publication; production retains its later approval.
+- The configured self-host follows `latest` through its existing Compose files. The restricted WireGuard/SSH command
+  pulls `app`, runs Compose up with health waiting, and returns success or failure. Keep it free of deployment locks,
+  backup prerequisites, digest overrides, and deployment receipts. Releases without an available native baseline
+  still deploy the server after image publication. Configure the host through `deploy/self-hosted/README.md`; the
+  endpoint and credentials stay in the master-only `self-hosted-testing` environment. Forward the named environment
+  secrets through reusable callers; expose them only to the deployment step.
 - Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
   `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
   every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit
@@ -371,9 +374,9 @@ UI code style:
   not add candidate-manifest inspection or a download/restart veto.
 - Startup, server-selection, and manual-recheck compatibility requests must use `cache: 'no-store'`; response headers
   alone cannot invalidate a response cached before the server began sending the no-store policy.
-- Protected production approval is the current public-channel promotion gate. A future explicit readiness signal may
-  cover the release owner's declared server rollout, but independent self-hosts still require the runtime guard. Do
-  not poll independent private servers to gate OTA. The optional deployment job verifies only its configured target.
+- Successful deployment and application health gate both OTA channels; protected production approval additionally
+  gates public-channel promotion. The deployment job checks only its configured target, and does not assert an exact
+  server/OTA version match. Independent self-hosts still require the runtime guard and are not polled to gate OTA.
 - Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image
   failures and OTA failures whose prepared manifest already records a compatible protected native tag. Historical releases
   with an incompatible recorded native baseline require **Publish Expo OTA Update** from an exact compatible source

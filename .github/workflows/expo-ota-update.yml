@@ -5,6 +5,14 @@ on:
     secrets:
       EXPO_TOKEN:
         required: true
+      DEPLOY_WG_ENDPOINT:
+        required: true
+      DEPLOY_WG_PRIVATE_KEY:
+        required: true
+      DEPLOY_SSH_PRIVATE_KEY:
+        required: true
+      DEPLOY_SSH_KNOWN_HOSTS:
+        required: true
     inputs:
       source_ref:
         description: Exact released commit to publish
@@ -147,9 +155,23 @@ jobs:
           echo "native_build_ref=${native_build_ref}" >> "${GITHUB_OUTPUT}"
           echo "OTA preflight bound source ${source_commit} to ${native_build_ref} (${native_build_commit}); tag object ${native_tag_object}; trust set ${TRUST_SET_COMMIT}."
 
+  deploy-server:
+    name: Deploy server and require application health before OTA
+    needs: preflight-release-target
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-self-hosted.yml
+    secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+    with:
+      release_commit: ${{ needs.preflight-release-target.outputs.source_commit }}
+
   resolve-internal-environment:
     name: Resolve internal public EAS environment
-    needs: preflight-release-target
+    needs: [preflight-release-target, deploy-server]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: preview

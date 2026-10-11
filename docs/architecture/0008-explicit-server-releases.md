@@ -33,16 +33,17 @@ ancestry/tree afterward. Repository
 required-status-check rules are still recommended as a separate administrator-controlled boundary: client polling
 and the merge API do not form an atomic CI-and-base transaction. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
-manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone, Wear,
-and self-host deployment remain independent. After the GHCR image is published, the publisher invokes the reusable
+manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone and
+Wear store releases remain independent. After the GHCR image is published, the publisher invokes the reusable
 Expo OTA workflow for the exact release commit only when the canonical manifest's native-build tag has been published.
 A reserved but missing native tag records an OTA skip without failing the server/image release; recovery can rerun the
 publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
-protected production approval; it is never triggered by an ordinary `master` push or self-host deployment.
+protected production approval; it is never triggered by an ordinary `master` push or a standalone deployment action.
 
-An optional deployment job updates the owner's configured self-host over WireGuard/SSH using the image publisher's
-receipt-verified immutable digest, including recovered publications. It runs independently alongside OTA, even when
-OTA is skipped for an unavailable native baseline, and does not gate OTA. See
+The shared OTA workflow first updates the owner's configured self-host over WireGuard/SSH using its existing Compose
+`latest` image and waits for application health. Failed deployment blocks both OTA channels, including manual OTA
+publication. When OTA is skipped for an unavailable native baseline, the release publisher still deploys the server
+after image publication. See
 [automatic self-host deployment](../../deploy/self-hosted/README.md).
 
 Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
@@ -50,10 +51,10 @@ Expo's automatic check and download lifecycle remains unchanged. Client configur
 compatibility recheck also request it with Fetch `cache: 'no-store'`. Once a bundle runs, the phone compares its bundled
 expected server contract version with that response. Different majors block in either direction. Within a major, a
 client minor may trail the server minor but may not lead it; patch drift remains compatible. This runtime check does
-not claim to prevent the update from downloading or starting. Protected production approval is the current
-public-channel promotion control. A future automated promotion rule may require an explicit readiness signal for the
-release owner's declared server rollout, but it cannot attest every independent self-host. The optional deployment
-job verifies only its configured target; independent installations retain the runtime guard and are not polled to gate OTA.
+not claim to prevent the update from downloading or starting. Successful deployment and health gate both channels,
+and protected production approval additionally gates public promotion. Deployment checks only the configured target
+and does not assert an exact server/OTA version match. Independent installations retain the runtime guard and are
+not polled to gate OTA.
 
 ## Consequences
 

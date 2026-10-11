@@ -3,6 +3,5 @@ set -eu
 
 # The SSH account cannot select a command, config, environment, or Compose path.
 [ "$#" -eq 0 ] || exit 1
-exec /usr/bin/flock --nonblock /var/lib/calibrate-deploy/deploy.lock \
-  /usr/bin/env -i PATH=/usr/bin:/bin DOCKER_CONFIG=/etc/calibrate/registry \
-  /usr/bin/node /usr/local/lib/calibrate-deploy.mjs
+exec /usr/bin/env -i PATH=/usr/bin:/bin DOCKER_CONFIG=/etc/calibrate/registry \
+  /usr/bin/node /usr/local/lib/calibrate-deploy.mjs </dev/null
