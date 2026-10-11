@@ -44,9 +44,39 @@ for (const colorScheme of ['light', 'dark'] as const) {
     }
     await expect(page.getByTestId('calendar-day-2026-07-17')).toHaveAccessibleName(/completed, comparison unavailable/);
     await expect(page.getByTestId('calendar-date-badge-2026-07-17')).toHaveText('17');
-    for (const label of ['Complete: target met', 'Complete: toward target from maintenance', 'Complete: beyond maintenance', 'Complete: comparison unavailable']) {
+    await expect(page.getByTestId('calendar-date-badge-2026-07-17')).toHaveCSS('background-color', rgb(colors.success));
+    const keyToggle = page.getByRole('button', { name: 'Calendar key', exact: true });
+    await expect(keyToggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByTestId('calendar-key-content')).toHaveCount(0);
+    await keyToggle.click();
+    await expect(keyToggle).toHaveAttribute('aria-expanded', 'true');
+    for (const label of ['Met target', 'Near target', 'Off target']) {
       await expect(page.getByText(label, { exact: true })).toBeVisible();
     }
+    await expect(page.getByText('Complete: comparison unavailable', { exact: true })).toHaveCount(0);
+    const alignment = await Promise.all(['Met target', 'Near target', 'Off target'].map(label =>
+      page.getByText(label, { exact: true }).locator('..').evaluate(element => {
+        const column = element.getBoundingClientRect();
+        const children = Array.from(element.children).map(child => child.getBoundingClientRect());
+        return { columnLeft: column.left, columnRight: column.right, contentLeft: children[0].left, contentRight: children[children.length - 1].right };
+      })));
+    expect(Math.abs(alignment[0].contentLeft - alignment[0].columnLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs((alignment[1].contentLeft + alignment[1].contentRight) - (alignment[1].columnLeft + alignment[1].columnRight))).toBeLessThanOrEqual(1);
+    expect(Math.abs(alignment[2].contentRight - alignment[2].columnRight)).toBeLessThanOrEqual(1);
+    const pausedCircle = (await page.getByTestId('calendar-date-badge-2026-07-20').boundingBox())!;
+    const pauseGlyph = (await page.getByTestId('calendar-pause-glyph-2026-07-20').boundingBox())!;
+    expect(pauseGlyph.width).toBe(8);
+    expect(pauseGlyph.height).toBe(8);
+    expect(pauseGlyph.y + pauseGlyph.height).toBeLessThanOrEqual(pausedCircle.y + pausedCircle.height - 3);
+    expect(pauseGlyph.x).toBeGreaterThan(pausedCircle.x + 3);
+    await page.getByRole('dialog', { name: 'Calendar' }).screenshot({ path: testInfo.outputPath('calendar-key-expanded.png') });
+    await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'overlay', surfaceId: 'expanded-calendar-key' });
+    await expect(page.getByTestId('calendar-color-guide')).toHaveCount(0);
+    await page.getByRole('button', { name: 'How colors work', exact: true }).click();
+    await expect(page.getByText('Between the saved target and maintenance.', { exact: true })).toBeVisible();
+    await keyToggle.click();
+    await expect(page.getByTestId('calendar-key-content')).toHaveCount(0);
+    await page.getByRole('dialog', { name: 'Calendar' }).screenshot({ path: testInfo.outputPath('calendar-key-collapsed.png') });
     await expect(page.getByTestId('calendar-day-2026-07-18')).toHaveAccessibleName(/incomplete/);
     await expect(page.getByTestId('calendar-day-2026-07-19')).toHaveAccessibleName(/not started/);
     await expect(page.getByTestId('calendar-day-2026-07-20')).toHaveAccessibleName(/tracking paused/);
@@ -54,6 +84,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.getByTestId('calendar-day-2026-07-09').click();
     await expect(page.getByRole('dialog', { name: 'Calendar' })).toHaveCount(0);
     await page.getByRole('button', { name: 'Choose date', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Calendar key', exact: true })).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByTestId('calendar-day-2026-07-09')).toHaveAccessibleName(/completed, below target, at or above maintenance, selected$/);
     await page.evaluate(() => document.fonts.ready);
     await expectNoBlockingAccessibilityViolations(page, testInfo, { kind: 'route', surfaceId: 'completed-calendar' });
@@ -128,10 +159,20 @@ test('calendar remains usable with enlarged text on a small browser viewport', a
   await page.getByRole('button', { name: 'Choose date', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-07-17')).toBeVisible();
   await applyTwoHundredPercentText(page);
-  const legend = page.getByText('Complete: comparison unavailable', { exact: true });
+  const pausedBadge = page.getByTestId('calendar-date-badge-2026-07-20');
+  const pausedCircle = (await pausedBadge.boundingBox())!;
+  const pauseGlyph = (await page.getByTestId('calendar-pause-glyph-2026-07-20').boundingBox())!;
+  expect(pauseGlyph.y + pauseGlyph.height).toBeLessThanOrEqual(pausedCircle.y + pausedCircle.height - 3);
+  await pausedBadge.screenshot({ path: testInfo.outputPath('calendar-pause-enlarged.png') });
+  await page.getByRole('button', { name: 'Calendar key', exact: true }).click();
+  const legend = page.getByText('Off target', { exact: true });
   await legend.scrollIntoViewIfNeeded(); await expect(legend).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   const dialog = page.getByRole('dialog', { name: 'Calendar' });
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await page.getByRole('button', { name: 'How colors work', exact: true }).click();
+  const help = page.getByTestId('calendar-color-guide');
+  await help.scrollIntoViewIfNeeded();
   expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await page.getByTestId('calendar-day-2026-07-12').scrollIntoViewIfNeeded();
   await page.getByTestId('calendar-day-2026-07-12').click();

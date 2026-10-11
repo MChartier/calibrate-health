@@ -116,7 +116,7 @@ describe('HistoricalDatePicker', () => {
                 minWidth: 34,
                 minHeight: 34,
                 borderRadius: 17,
-                backgroundColor: themes.light.colors.surfaceContainerHigh
+                backgroundColor: themes.light.colors.success
             })
         );
         expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style)).toEqual(
@@ -231,7 +231,7 @@ it('browses the target month without requesting future history or enabling futur
     screen.unmount(); queryClient.clear();
 });
 
-it('keeps completed circles date-only with factual accessible meanings and an explanatory legend', async () => {
+it('keeps factual date labels while revealing the short calendar key and color guide on demand', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
     const comparisons = [
         { consumed_kcal: 2000, target_kcal: 2000, maintenance_kcal: 2500 },
@@ -248,17 +248,54 @@ it('keeps completed circles date-only with factual accessible meanings and an ex
     expect(screen.getByLabelText(/Jul 12, 2026, completed, above target, at or below maintenance/)).toBeTruthy();
     expect(screen.getByLabelText(/Jul 13, 2026, completed, above maintenance/)).toBeTruthy();
     expect(screen.getByLabelText(/Jul 14, 2026, completed, below maintenance/)).toBeTruthy();
-    expect(screen.getByText('Complete: comparison unavailable')).toBeTruthy();
+    expect(screen.queryByTestId('calendar-key-content')).toBeNull();
+    expect(screen.queryByText('Completing your log is worth recognizing.')).toBeNull();
+    const keyToggle = screen.getByRole('button', { name: 'Calendar key' });
+    expect(keyToggle.props.accessibilityState.expanded).toBe(false);
+    fireEvent.press(keyToggle);
+    expect(screen.getByRole('button', { name: 'Calendar key' }).props.accessibilityState.expanded).toBe(true);
+    expect(screen.queryByText(/comparison unavailable/i)).toBeNull();
     for (const number of [11, 12, 13, 14]) {
         const badge = within(screen.getByTestId('calendar-date-badge-2026-07-' + number));
         expect(badge.getByText(String(number))).toBeTruthy();
         expect(badge.queryByText(/^[TMB?]$/, { includeHiddenElements: true })).toBeNull();
     }
-    for (const label of ['Complete: target met', 'Complete: toward target from maintenance', 'Complete: beyond maintenance']) {
+    for (const label of ['Met target', 'Near target', 'Off target']) {
         expect(screen.getByText(label)).toBeTruthy();
     }
+    expect(screen.queryByTestId('calendar-color-guide')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'How colors work' }));
+    expect(screen.getByTestId('calendar-color-guide')).toBeTruthy();
+    expect(screen.getByText('Between the saved target and maintenance.')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Calendar key' }));
+    expect(screen.queryByTestId('calendar-key-content')).toBeNull();
+    expect(screen.queryByTestId('calendar-color-guide')).toBeNull();
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-12').props.style).backgroundColor).toBe(themes.light.colors.calendarBetween);
     expect(StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-13').props.style).backgroundColor).toBe(themes.light.colors.calendarBeyond);
+    screen.unmount(); queryClient.clear();
+});
+
+it('starts with the key collapsed each time the picker opens', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const renderContents = (visible: boolean) => (
+        <QueryClientProvider client={queryClient}>
+            <HistoricalDatePicker
+                visible={visible}
+                selectedDate="2026-07-12"
+                minDate="2026-07-11"
+                maxDate="2026-07-18"
+                onSelectDate={jest.fn()}
+                onRequestClose={jest.fn()}
+            />
+        </QueryClientProvider>
+    );
+    const screen = render(renderContents(true));
+    fireEvent.press(await screen.findByRole('button', { name: 'Calendar key' }));
+    expect(screen.getByTestId('calendar-key-content')).toBeTruthy();
+    screen.rerender(renderContents(false));
+    screen.rerender(renderContents(true));
+    expect(screen.getByRole('button', { name: 'Calendar key' }).props.accessibilityState.expanded).toBe(false);
+    expect(screen.queryByTestId('calendar-key-content')).toBeNull();
     screen.unmount(); queryClient.clear();
 });
 

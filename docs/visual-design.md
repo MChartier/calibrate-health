@@ -162,6 +162,13 @@ date selection, and Add food, plus Trend controls and Plan check review/apply/un
 
 ## Supporting surfaces
 
+The date picker keeps its calendar key collapsed behind **Calendar key**. Completed-day colors use
+**Met target**, **Near target**, and **Off target**, with the marker-and-label groups aligned left,
+center, and right. Put comparison explanations behind **How colors work** and the remaining tracking
+states below a quiet divider. Completed days without a saved comparison use the green completion
+fill while retaining factual accessible labels. Date numbers and pause glyphs fit inside each badge;
+allow the sheet to grow and scroll for expanded help and enlarged text.
+
 The full Food log retains all six meal periods in chronological order. Empty meals show compact
 rows with neutral **No entries** text, matching Today. A logged zero-calorie meal shows its total.
 Only populated meals expose expansion, food entries, copy, and save-recipe actions.

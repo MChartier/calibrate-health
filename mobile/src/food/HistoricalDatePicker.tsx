@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
 import { useOfflineOutbox } from '../offline/provider';
@@ -40,6 +40,8 @@ const CALENDAR_DAY_HEIGHT = 48; // Keeps each compact calendar row physically ta
 const CALENDAR_STATUS_BADGE_SIZE = 34; // Makes the historical state the primary calendar-day silhouette.
 const CALENDAR_LEGEND_MARKER_SIZE = 10; // Keeps legend symbols proportional to their compact labels.
 const CALENDAR_CONTENT_MAX_WIDTH = 560; // Prevents calendar cells from stretching across wide browser sheets.
+const CALENDAR_PAUSE_ICON_SIZE = 8; // Leaves room for the date and pause glyph inside the status circle.
+const CALENDAR_PAUSE_ICON_GAP = 2; // Separates the pause glyph from the date number without enlarging the circle.
 
 function formatMonth(monthKey: string): string {
     const [yearString, monthString] = monthKey.split('-');
@@ -49,10 +51,10 @@ function formatMonth(monthKey: string): string {
 }
 
 const COMPLETED_MARKERS = {
-    'complete-target': { label: 'Complete: target met' },
-    'complete-between': { label: 'Complete: toward target from maintenance' },
-    'complete-beyond': { label: 'Complete: beyond maintenance' },
-    'complete-unavailable': { label: 'Complete: comparison unavailable' }
+    'complete-target': { label: 'Met target' },
+    'complete-between': { label: 'Near target' },
+    'complete-beyond': { label: 'Off target' },
+    'complete-unavailable': { label: 'Completed' }
 } as const;
 
 function completedMarker(marker: FoodDayCalendarMarker) {
@@ -62,7 +64,8 @@ function completedMarker(marker: FoodDayCalendarMarker) {
 
 function completedColors(marker: FoodDayCalendarMarker, theme: AppTheme) {
     switch (marker) {
-        case 'complete-target': return { backgroundColor: theme.colors.success, color: theme.colors.onSuccess };
+        case 'complete-target':
+        case 'complete-unavailable': return { backgroundColor: theme.colors.success, color: theme.colors.onSuccess };
         case 'complete-between': return { backgroundColor: theme.colors.calendarBetween, color: theme.colors.onCalendarBetween };
         case 'complete-beyond': return { backgroundColor: theme.colors.calendarBeyond, color: theme.colors.onCalendarBeyond };
         default: return { backgroundColor: theme.colors.surfaceContainerHigh, color: theme.colors.onSurfaceVariant };
@@ -92,8 +95,9 @@ const LegendItem: React.FC<{
     marker: FoodDayCalendarMarker;
     theme: AppTheme;
     styles: ReturnType<typeof createStyles>;
-}> = ({ label, marker, theme, styles }) => (
-    <View style={styles.legendItem}>
+    style?: StyleProp<ViewStyle>;
+}> = ({ label, marker, theme, styles, style }) => (
+    <View style={[styles.legendItem, style]}>
         <View style={styles.legendMarker}>
             <CalendarMarker marker={marker} theme={theme} styles={styles} />
         </View>
@@ -117,6 +121,8 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
     const [visibleMonth, setVisibleMonth] = useState(() => getMonthKey(selectedDate));
+    const [keyExpanded, setKeyExpanded] = useState(false);
+    const [colorGuideExpanded, setColorGuideExpanded] = useState(false);
     const pauseQuery = useFoodTrackingPause(visible);
     const pausePlan = getActivePausePlan(pauseQuery.data?.pause, maxDate);
     const lastBrowseMonth = getPauseBrowseMonth(maxDate, pausePlan);
@@ -126,7 +132,11 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
     }, [lastBrowseMonth]);
 
     useLayoutEffect(() => {
-        if (visible) setVisibleMonth(getMonthKey(selectedDate));
+        if (visible) {
+            setVisibleMonth(getMonthKey(selectedDate));
+            setKeyExpanded(false);
+            setColorGuideExpanded(false);
+        }
     }, [selectedDate, visible]);
 
     const displayMonth = visibleMonth > lastBrowseMonth ? lastBrowseMonth : visibleMonth;
@@ -176,7 +186,6 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                 <View style={styles.heading}>
                     <View style={styles.headingCopy}>
                         <AppText variant="subtitle">Choose a day</AppText>
-                        <AppText variant="caption">Completing your log is worth recognizing.</AppText>
                     </View>
                     <Pressable
                         accessibilityRole="button"
@@ -288,6 +297,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                 complete && { backgroundColor: colors.backgroundColor },
                                                 marker === 'incomplete' && styles.incompleteDateBadge,
                                                 marker === 'not-started' && styles.notStartedDateBadge,
+                                                (marker === 'paused' || planned) && styles.pauseBadgeLayout,
                                                 marker === 'paused' && styles.pausedDateBadge,
                                                 planned && styles.plannedDateBadge
                                             ]}
@@ -307,11 +317,15 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                 {Number(date.slice(-2))}
                                             </AppText>
                                             {(marker === 'paused' || planned) && (
-                                                <Ionicons
-                                                    name="pause"
-                                                    size={9}
-                                                    color={theme.colors.onSurfaceVariant}
-                                                />
+                                                <View testID={`calendar-pause-glyph-${date}`} style={styles.pauseGlyphContainer} accessible={false} aria-hidden>
+                                                    <Ionicons
+                                                        name="pause"
+                                                        size={CALENDAR_PAUSE_ICON_SIZE}
+                                                        allowFontScaling={false}
+                                                        style={styles.pauseGlyph}
+                                                        color={theme.colors.onSurfaceVariant}
+                                                    />
+                                                </View>
                                             )}
                                         </View>
                                     </Pressable>
@@ -321,18 +335,72 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                     ))}
                         </View>
 
-                        <AppText variant="caption">When target is at/below maintenance, target met means at/below target and beyond means above maintenance. When target is above maintenance, target met means at/above target and beyond means below maintenance.</AppText>
-                        <View style={styles.legend}>
-                            {pausePlan && <View style={styles.legendItem}>
-                                <View style={styles.plannedLegendMarker}><Ionicons name="pause" size={13} color={theme.colors.onSurfaceVariant} /></View>
-                                <AppText variant="caption" style={styles.legendLabel}>Planned pause{pausePlan.expectedResumeOn === null ? ': until resumed' : ''} (future, view only)</AppText>
-                            </View>}
-                            {Object.entries(COMPLETED_MARKERS).map(([marker, complete]) => (
-                                <LegendItem key={marker} label={complete.label} marker={marker as FoodDayCalendarMarker} theme={theme} styles={styles} />
-                            ))}
-                            <LegendItem label="Incomplete" marker="incomplete" theme={theme} styles={styles} />
-                            <LegendItem label="Not started" marker="not-started" theme={theme} styles={styles} />
-                            <LegendItem label="Paused" marker="paused" theme={theme} styles={styles} />
+                        <View style={styles.key}>
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Calendar key"
+                                accessibilityState={{ expanded: keyExpanded }}
+                                aria-expanded={keyExpanded}
+                                onPress={() => setKeyExpanded((expanded) => !expanded)}
+                                style={({ pressed }) => [styles.keyToggle, pressed && styles.pressed]}
+                            >
+                                <View style={styles.keyPreview} accessible={false} aria-hidden>
+                                    <CalendarMarker marker="complete-target" theme={theme} styles={styles} />
+                                    <CalendarMarker marker="complete-between" theme={theme} styles={styles} />
+                                    <CalendarMarker marker="complete-beyond" theme={theme} styles={styles} />
+                                </View>
+                                <AppText variant="caption" style={styles.keyToggleLabel}>Calendar key</AppText>
+                                <Ionicons name={keyExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={theme.colors.onSurfaceVariant} />
+                            </Pressable>
+                            {keyExpanded && (
+                                <View testID="calendar-key-content" style={styles.keyContent}>
+                                    <View style={styles.keyHeading}>
+                                        <AppText variant="caption" style={styles.keyHeadingLabel}>Completed days</AppText>
+                                        <Pressable
+                                            accessibilityRole="button"
+                                            accessibilityLabel="How colors work"
+                                            accessibilityState={{ expanded: colorGuideExpanded }}
+                                            aria-expanded={colorGuideExpanded}
+                                            onPress={() => setColorGuideExpanded((expanded) => !expanded)}
+                                            style={({ pressed }) => [styles.colorHelp, pressed && styles.pressed]}
+                                        >
+                                            <AppText variant="caption">How colors work</AppText>
+                                            <Ionicons name={colorGuideExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={theme.colors.onSurfaceVariant} />
+                                        </Pressable>
+                                    </View>
+                                    <View style={styles.completedLegend}>
+                                        <LegendItem label={COMPLETED_MARKERS['complete-target'].label} marker="complete-target" theme={theme} styles={styles} style={styles.legendColumn} />
+                                        <LegendItem label={COMPLETED_MARKERS['complete-between'].label} marker="complete-between" theme={theme} styles={styles} style={[styles.legendColumn, styles.legendCenter]} />
+                                        <LegendItem label={COMPLETED_MARKERS['complete-beyond'].label} marker="complete-beyond" theme={theme} styles={styles} style={[styles.legendColumn, styles.legendEnd]} />
+                                    </View>
+                                    {colorGuideExpanded && (
+                                        <View testID="calendar-color-guide" style={styles.colorGuide}>
+                                            <AppText variant="caption">Colors use each day's saved target and maintenance calories.</AppText>
+                                            <View style={styles.colorGuideItem}>
+                                                <AppText variant="caption" style={styles.keyHeadingLabel}>Met target</AppText>
+                                                <AppText variant="caption">At/below target when the target is at/below maintenance. At/above target when the target is above maintenance.</AppText>
+                                            </View>
+                                            <View style={styles.colorGuideItem}>
+                                                <AppText variant="caption" style={styles.keyHeadingLabel}>Near target</AppText>
+                                                <AppText variant="caption">Between the saved target and maintenance.</AppText>
+                                            </View>
+                                            <View style={styles.colorGuideItem}>
+                                                <AppText variant="caption" style={styles.keyHeadingLabel}>Off target</AppText>
+                                                <AppText variant="caption">Above maintenance when the target is at/below maintenance. Below maintenance when the target is above maintenance.</AppText>
+                                            </View>
+                                        </View>
+                                    )}
+                                    <View style={styles.trackingLegend}>
+                                        <LegendItem label="Incomplete" marker="incomplete" theme={theme} styles={styles} style={styles.legendColumn} />
+                                        <LegendItem label="Not started" marker="not-started" theme={theme} styles={styles} style={[styles.legendColumn, styles.legendCenter]} />
+                                        <LegendItem label="Paused" marker="paused" theme={theme} styles={styles} style={[styles.legendColumn, styles.legendEnd]} />
+                                    </View>
+                                    {pausePlan && <View style={styles.legendItem}>
+                                        <View style={styles.plannedLegendMarker}><Ionicons name="pause" size={13} color={theme.colors.onSurfaceVariant} /></View>
+                                        <AppText variant="caption" style={styles.legendLabel}>Planned pause{pausePlan.expectedResumeOn === null ? ': until resumed' : ''} (future, view only)</AppText>
+                                    </View>}
+                                </View>
+                            )}
                         </View>
                     </>
                 </AsyncStateBoundary>
@@ -352,7 +420,7 @@ function createStyles(theme: AppTheme) {
         },
         heading: {
             flexDirection: 'row',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'space-between',
             gap: theme.spacing.md
         },
@@ -426,6 +494,20 @@ function createStyles(theme: AppTheme) {
             borderColor: theme.colors.outline,
             backgroundColor: theme.colors.surfaceContainerHigh
         },
+        pauseBadgeLayout: {
+            gap: CALENDAR_PAUSE_ICON_GAP,
+            paddingVertical: theme.spacing.xs
+        },
+        pauseGlyphContainer: {
+            width: CALENDAR_PAUSE_ICON_SIZE,
+            height: CALENDAR_PAUSE_ICON_SIZE,
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        },
+        pauseGlyph: {
+            lineHeight: CALENDAR_PAUSE_ICON_SIZE
+        },
         plannedDateBadge: {
             borderWidth: theme.stroke.control,
             borderStyle: 'dashed',
@@ -489,12 +571,62 @@ function createStyles(theme: AppTheme) {
             justifyContent: 'center',
             gap: theme.spacing.sm
         },
-        legend: {
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: theme.spacing.md
+        key: {
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.colors.outlineVariant
         },
+        keyToggle: {
+            minHeight: theme.interaction.minimumTouchTarget,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.sm
+        },
+        keyPreview: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs
+        },
+        keyToggleLabel: { flex: 1 },
+        keyContent: { gap: theme.spacing.sm },
+        keyHeading: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            columnGap: theme.spacing.sm
+        },
+        keyHeadingLabel: { fontWeight: '600' },
+        colorHelp: {
+            minHeight: theme.interaction.minimumTouchTarget,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.spacing.xs
+        },
+        completedLegend: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs
+        },
+        trackingLegend: {
+            flexDirection: 'row',
+            gap: theme.spacing.xs,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.colors.outlineVariant,
+            paddingTop: theme.spacing.sm,
+            marginTop: theme.spacing.xs
+        },
+        legendColumn: {
+            flex: 1,
+            minWidth: 0
+        },
+        legendCenter: { justifyContent: 'center' },
+        legendEnd: { justifyContent: 'flex-end' },
+        colorGuide: {
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.colors.outlineVariant,
+            paddingTop: theme.spacing.sm,
+            gap: theme.spacing.sm
+        },
+        colorGuideItem: { gap: theme.spacing.xs },
         legendItem: {
             flexDirection: 'row',
             alignItems: 'center',
@@ -503,7 +635,8 @@ function createStyles(theme: AppTheme) {
         },
         legendLabel: { flexShrink: 1 },
         legendMarker: {
-            minWidth: theme.spacing.md,
+            width: CALENDAR_LEGEND_MARKER_SIZE,
+            flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'center'
         },
