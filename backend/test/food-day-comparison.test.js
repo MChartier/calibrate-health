@@ -52,16 +52,64 @@ test('uses the evaluated adjusted target while maintenance remains profile-estim
   assert.equal(day.comparison_maintenance_kcal - day.comparison_target_kcal, 400);
   assert.ok(Number.isInteger(day.comparison_maintenance_kcal));
 });
-test('range returns known zero, sums immutable entry calories, hides non-complete comparisons, and rejects invalid totals', async () => {
+test('range returns known zero, sums immutable entry calories, keeps reopened comparisons, and rejects invalid totals', async () => {
   const {db,day,setLogs} = fixture(); await captureFoodDayComparison(db,day,now);
   const range = () => getEffectiveFoodDayRange(7,day.local_date,day.local_date,now,db);
   assert.equal((await range())[0].calorie_comparison.consumed_kcal, 0);
   setLogs([{local_date:day.local_date,calories:1000},{local_date:day.local_date,calories:500}]);
   assert.equal((await range())[0].calorie_comparison.consumed_kcal, 1500);
-  day.status = 'OPEN'; assert.equal((await range())[0].calorie_comparison, null);
+  day.status = 'OPEN'; assert.equal((await range())[0].calorie_comparison.consumed_kcal, 1500);
+  day.status = 'INCOMPLETE'; assert.equal((await range())[0].calorie_comparison.consumed_kcal, 1500);
+  day.status = 'PAUSED'; assert.equal((await range())[0].calorie_comparison, null);
   day.status = 'COMPLETE'; setLogs([{local_date:day.local_date,calories:2001}]);
   assert.equal((await range())[0].calorie_comparison.consumed_kcal, 2001);
   setLogs([{local_date:day.local_date,calories:-1}]); assert.equal((await range())[0].calorie_comparison,null);
+});
+
+test('unfinished days compare current intake to their retained local-day plan without freezing or rebuilding it', async () => {
+  const {db, day, setLogs} = fixture();
+  day.status = 'INCOMPLETE'; day.completed_at = null; day.local_date = new Date('2025-12-30T00:00:00Z');
+  const observed = await db.dailyCaloriePlan.upsert({
+    where: { user_id_local_date: { user_id: 7, local_date: day.local_date } },
+    create: { user_id: 7, local_date: day.local_date, timezone: 'America/Los_Angeles', observed_at: new Date('2025-12-30T20:00:00Z'), target_kcal: 2000, maintenance_kcal: 2500 },
+    update: {}
+  });
+  db.goal.findFirst = async () => { throw new Error('A past day must not use current settings'); };
+  const range = async () => (await getEffectiveFoodDayRange(7, day.local_date, day.local_date, now, db))[0];
+  for (const status of ['INCOMPLETE', 'OPEN']) {
+    day.status = status;
+    for (const consumed of [1000, 2300, 2600]) {
+      setLogs([{ local_date: day.local_date, calories: consumed }]);
+      const single = await getEffectiveFoodDay(7, day.local_date, now, db);
+      assert.deepEqual(single.calorie_comparison, (await range()).calorie_comparison);
+      assert.deepEqual(single.calorie_comparison, { consumed_kcal: consumed, target_kcal: 2000, maintenance_kcal: 2500, captured_at: observed.observed_at.toISOString() });
+      assert.equal(day.comparison_captured_at, undefined);
+      assert.equal(observed.consumed_at, null);
+    }
+  }
+  day.status = 'COMPLETE'; await captureFoodDayComparison(db, day, now);
+  assert.equal((await range()).calorie_comparison.target_kcal, 2000);
+  assert.equal((await range()).calorie_comparison.consumed_kcal, 2600);
+});
+
+test('unfinished ranges reject missing, conflicted, wrong-zone and wrong-day observations, and leave empty days unstarted', async () => {
+  const {db, day, setLogs} = fixture();
+  day.status = 'INCOMPLETE'; day.completed_at = null;
+  const plan = { user_id: 7, local_date: day.local_date, timezone: 'America/Los_Angeles', timezone_conflict: false, observed_at: now, target_kcal: 2000, maintenance_kcal: 2500 };
+  setLogs([{ local_date: day.local_date, calories: 2300 }]);
+  for (const invalid of [null, { ...plan, timezone_conflict: true }, { ...plan, timezone: 'UTC' },
+    { ...plan, observed_at: new Date('2025-12-30T20:00:00Z') }, { ...plan, observed_at: new Date('2026-01-01T08:00:00Z') },
+    { ...plan, target_kcal: null }]) {
+    db.dailyCaloriePlan.findMany = async () => invalid ? [invalid] : [];
+    assert.equal((await getEffectiveFoodDayRange(7, day.local_date, day.local_date, now, db))[0].calorie_comparison, null);
+  }
+  db.dailyCaloriePlan.findMany = async () => [plan]; db.foodLogDay.findMany = async () => [];
+  const partial = (await getEffectiveFoodDayRange(7, day.local_date, day.local_date, now, db))[0];
+  assert.equal(partial.status, 'OPEN'); assert.equal(partial.source, 'DEFAULT');
+  assert.equal(partial.calorie_comparison.consumed_kcal, 2300);
+  setLogs([]);
+  const empty = (await getEffectiveFoodDayRange(7, new Date('2025-12-30Z'), new Date('2025-12-30Z'), now, db))[0];
+  assert.equal(empty.source, 'INFERRED_EMPTY'); assert.equal(empty.calorie_comparison, undefined);
 });
 
 test('an invalid timezone leaves completion intact and comparison unavailable', async () => {

@@ -17,6 +17,7 @@ function stubModule(resolvedPath, exports) {
 function loadFoodRouter({ prismaStub, foodDataStub }) {
   prismaStub.$executeRaw ??= async () => 1;
   prismaStub.user ??= { findUnique: async () => ({ id: 7, timezone: 'UTC' }) };
+  prismaStub.dailyCaloriePlan ??= require('./helpers/dailyCaloriePlanStore')();
   prismaStub.foodLog ??= {};
   prismaStub.foodLog.findFirst ??= async () => null;
   const dbPath = require.resolve('../src/config/database');

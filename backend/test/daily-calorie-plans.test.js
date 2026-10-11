@@ -45,7 +45,7 @@ test('observe D, change all inputs on D+1, complete D keeps the last D plan and 
   assert.equal(evidence.inputs.weight_metric.id, 9);
   assert.equal(evidence.inputs.profile.height_mm, 1800);
   assert.equal(f.db.dailyCaloriePlan.rows[0].consumed_at, nextDay);
-  f.day.status = 'OPEN'; assert.equal(await readFoodDayComparison(f.db, f.day), null);
+  f.day.status = 'OPEN'; assert.deepEqual(await readFoodDayComparison(f.db, f.day), comparison);
   f.day.status = 'COMPLETE'; f.intake(1700);
   await captureFoodDayComparison(f.db, f.day, new Date('2026-04-01Z'));
   assert.deepEqual(await readFoodDayComparison(f.db, f.day), { ...comparison, consumed_kcal: 1700 });

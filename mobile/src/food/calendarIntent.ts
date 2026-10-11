@@ -9,6 +9,7 @@ export function calendarDayWithIntent(date: string, day: FoodLogDay | undefined,
     return {
         date, status, origin: 'USER', source: 'STORED',
         is_representative: status === 'COMPLETE', is_complete: status === 'COMPLETE',
-        completed_at: null, updated_at: null
+        completed_at: null, updated_at: null,
+        calorie_comparison: status === 'PAUSED' || day?.status === 'PAUSED' ? undefined : day?.calorie_comparison
     };
 }

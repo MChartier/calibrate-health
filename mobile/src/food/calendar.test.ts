@@ -4,6 +4,7 @@ import {
     getCalendarWeeks,
     getFoodDayCalendarMarker,
     getFoodDayCalendarLabel,
+    getFoodDayCalorieBand,
     shiftMonth
 } from './calendar';
 
@@ -81,7 +82,7 @@ describe('completed calorie comparisons', () => {
     it.each([NaN, Infinity, -1, 1999.9])('does not round or guess invalid intake %s', (value) => {
         expect(getFoodDayCalendarMarker(completed(value), '2026-07-18')).toBe('complete-unavailable');
     });
-    it('ignores comparison fields on non-complete days and rejects malformed plans', () => {
+    it('keeps pause state separate from comparison colors and rejects malformed plans', () => {
         expect(getFoodDayCalendarMarker({ ...completed(2000), status: 'PAUSED' }, '2026-07-18')).toBe('paused');
         expect(getFoodDayCalendarMarker({ ...completed(2000), status: 'OPEN' }, '2026-07-19')).toBe('incomplete');
         expect(getFoodDayCalendarMarker(completed(2000, 0), '2026-07-18')).toBe('complete-unavailable');
@@ -89,5 +90,19 @@ describe('completed calorie comparisons', () => {
         const invalid = completed(2000);
         invalid.calorie_comparison!.captured_at = 'unknown';
         expect(getFoodDayCalendarMarker(invalid, '2026-07-18')).toBe('complete-unavailable');
+    });
+    it.each([
+        [0, 2000, 'target'], [2000, 2000, 'target'], [2001, 2000, 'between'], [2500, 2000, 'between'], [2501, 2000, 'beyond'],
+        [2499, 3000, 'beyond'], [2500, 3000, 'between'], [2999, 3000, 'between'], [3000, 3000, 'target'],
+        [2500, 2500, 'target'], [2501, 2500, 'beyond']
+    ])('uses the same %s/%s calorie band for complete, incomplete and open days', (consumed, target, band) => {
+        const complete = completed(Number(consumed), Number(target));
+        for (const status of ['COMPLETE', 'INCOMPLETE', 'OPEN'] as const) {
+            const current = { ...complete, status };
+            expect(getFoodDayCalorieBand(current)).toBe(band);
+            if (status !== 'COMPLETE') expect(getFoodDayCalendarMarker(current, '2026-07-18')).toBe('incomplete');
+        }
+        expect(getFoodDayCalendarLabel({ ...complete, status: 'INCOMPLETE' }, '2026-07-18')).toMatch(/^incomplete, /);
+        expect(getFoodDayCalendarLabel({ ...complete, status: 'OPEN' }, '2026-07-18')).toMatch(/^in progress, /);
     });
 });

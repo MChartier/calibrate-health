@@ -33,6 +33,7 @@ const baseGoal = {
 
 function planningDelegates(options = {}) {
   return {
+    dailyCaloriePlan: require('./helpers/dailyCaloriePlanStore')(),
     user: { findUnique: async () => ({ ...baseUser, ...(options.user ?? {}) }) },
     goal: { findFirst: async () => (options.goal === undefined ? baseGoal : options.goal) },
     caloriePlanRevision: {

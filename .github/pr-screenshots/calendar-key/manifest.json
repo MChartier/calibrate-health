@@ -1,0 +1,88 @@
+{
+  "source_commit": "90a81ddcb4d86b83a6ebbfc073ae211d26c38a94",
+  "base_commit": "5a0cc095766e854e6fe52425bb0f0568f77254a4",
+  "captured_date": "2026-10-11",
+  "runtime": "Expo production web export, Chromium, Windows",
+  "fixtures": "Deterministic July 2026 food-day history from completed-calendar.spec.ts",
+  "native_device_execution": false,
+  "validation": {
+    "calendar_browser_passed": 10,
+    "calendar_browser_skipped": 6,
+    "mobile_suites_passed": 234,
+    "mobile_tests_passed": 1301,
+    "backend_tests_passed": 793,
+    "backend_tests_skipped": 3,
+    "ux_passed": 191,
+    "ux_failed": 5,
+    "ux_skipped": 79,
+    "ux_not_run": 54
+  },
+  "captures": [
+    {
+      "file": "phone-dark-collapsed.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-android-phone-chrome/calendar-key-collapsed.png",
+      "sha256": "200c9f193f464cdc638edab1417d03d1626738319db2f9366e4348df02ddca56"
+    },
+    {
+      "file": "phone-dark-expanded.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-android-phone-chrome/calendar-key-expanded.png",
+      "sha256": "dc0268114604faee4e020105f50e408aab19405666279c15c65a85327dfe2e36"
+    },
+    {
+      "file": "phone-light-collapsed.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-android-phone-chrome/calendar-key-collapsed.png",
+      "sha256": "c5462dd9f10d130df88d6889c5d9ede9338361cde537f87296a0b8385573185e"
+    },
+    {
+      "file": "phone-light-expanded.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-android-phone-chrome/calendar-key-expanded.png",
+      "sha256": "1299224e690fe49f87a5c7e5324e4d4b1f2e3dfe001532d95087f7c4f33abd4b"
+    },
+    {
+      "file": "compact-light-expanded.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-compact-phone-chrome/calendar-key-expanded.png",
+      "sha256": "5faea4d8ca9f1cab90b03f68fdb95163f92567b044ecf5959557e0ac0e4d9211"
+    },
+    {
+      "file": "desktop-dark-expanded.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-desktop-chrome/calendar-key-expanded.png",
+      "sha256": "1187b19dc870f7743edec8a2b11f9cb9a8334bf315556a8ea289f9c1c95fb34a"
+    },
+    {
+      "file": "pause-200-percent.png",
+      "original": "completed-calendar-calenda-237b0-on-a-small-browser-viewport-compact-phone-chrome/calendar-pause-enlarged.png",
+      "sha256": "694926044755c9ad0981f39f8477bd2cd4c85a984338e56303b5a2f2c364c91d"
+    },
+    {
+      "file": "not-started-200-percent.png",
+      "original": "completed-calendar-calenda-237b0-on-a-small-browser-viewport-compact-phone-chrome/calendar-not-started-enlarged.png",
+      "sha256": "585c10a3ae3304e8bb69b9c4aff2213269894150acddbb586fd68334c3003fca"
+    }
+  ],
+  "sources": [
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "sha256": "5d0320f91d861118c9c83e6ba3c8e7fafb5a133fb3f474f475abba82f2591bb4"
+    },
+    {
+      "path": "mobile/src/food/calendar.ts",
+      "sha256": "ab834e29fb5f583b00dd546dcaae6feccca16a8bd133137c1044d3183ec6c7a4"
+    },
+    {
+      "path": "mobile/src/food/calendarIntent.ts",
+      "sha256": "219732a018aa09e8dbf0c84e7a11247126370304680d588471d3d04f52ccd021"
+    },
+    {
+      "path": "backend/src/services/foodDayComparison.ts",
+      "sha256": "b84a0548d80eca5366f97dd4db895c6b53ea1e628bd8198cce138d3ce456a9e2"
+    },
+    {
+      "path": "backend/src/services/foodTracking.ts",
+      "sha256": "3a5ce4e2ab0855ba1f5418128cdc43634edd822f0c41e4895579970de1b3449b"
+    },
+    {
+      "path": "e2e/expo-web/completed-calendar.spec.ts",
+      "sha256": "b05558e7d9b81baeaaa8f0ab8dc6c42b762a0ed2dd8ad17b078dc3665ee800b5"
+    }
+  ]
+}

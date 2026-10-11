@@ -26,3 +26,11 @@ it('preserves missing data with no applicable intent and drops stale comparisons
     const day = { date, status: 'COMPLETE', calorie_comparison: { consumed_kcal: 1 } } as FoodLogDay;
     expect(calendarDayWithIntent(date, day, [pause])?.calorie_comparison).toBeUndefined();
 });
+it('keeps the comparison color when queued completion or reopening changes only the tracking shape', () => {
+    const comparison = { consumed_kcal: 2600, target_kcal: 2000, maintenance_kcal: 2500, captured_at: '2026-07-21T20:00:00Z' };
+    const day = { date, status: 'COMPLETE', calorie_comparison: comparison } as FoodLogDay;
+    const reopened = calendarDayWithIntent(date, day, [row('food-day.set-status', { date, status: 'OPEN' })]);
+    expect(reopened).toMatchObject({ status: 'OPEN', calorie_comparison: comparison });
+    expect(calendarDayWithIntent(date, reopened, [row('food-day.set-status', { date, status: 'COMPLETE' })]))
+        .toMatchObject({ status: 'COMPLETE', calorie_comparison: comparison });
+});

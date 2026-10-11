@@ -6,6 +6,8 @@ module.exports = function dailyCaloriePlanStore() {
   return {
     rows,
     findUnique: async ({ where }) => find(where) ?? null,
+    findMany: async ({ where }) => rows.filter(row => row.user_id === where.user_id &&
+      row.local_date >= where.local_date.gte && row.local_date <= where.local_date.lte),
     upsert: async ({ where, create, update }) => {
       const existing = find(where);
       if (existing) return Object.assign(existing, update);

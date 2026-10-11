@@ -160,7 +160,9 @@ test('planned pause remains readable at enlarged text', async ({ page, ux }, inf
     await install(page, ux); await open(page); await applyTwoHundredPercentText(page);
     await page.getByText('Expected to resume Aug 3, 2026').scrollIntoViewIfNeeded();
     await expect(page.getByText('Expected to resume Aug 3, 2026')).toBeInViewport();
-    await calendar(page); await page.getByText('Planned pause (future, view only)', { exact: true }).scrollIntoViewIfNeeded();
+    await calendar(page);
+    await page.getByRole('button', { name: 'Calendar key', exact: true }).click();
+    await page.getByText('Planned pause (future, view only)', { exact: true }).scrollIntoViewIfNeeded();
     await expect(page.getByText('Planned pause (future, view only)', { exact: true })).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });

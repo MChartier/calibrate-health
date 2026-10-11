@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { foodDayCalorieComparison, readFoodDayComparison, type FoodDayCalorieComparison } from './foodDayComparison';
+import { foodDayCalorieComparison, observedFoodDayCalorieComparison, readFoodDayComparison, type FoodDayCalorieComparison } from './foodDayComparison';
 import {
   addUtcDays,
   formatDateToLocalDateString,
@@ -158,7 +158,7 @@ export async function getEffectiveFoodDay(
   const stored = await db.foodLogDay.findUnique({
     where: { user_id_local_date: { user_id: userId, local_date: localDate } }
   });
-  if (stored) return { ...serializeStoredDay(stored), calorie_comparison: await readFoodDayComparison(db, stored) };
+  if (stored) return { ...serializeStoredDay(stored), calorie_comparison: await readFoodDayComparison(db, stored, now) };
   const trackingStart = await getTrackingStartDate(userId, db);
   if (!trackingStart) return null;
 
@@ -281,6 +281,13 @@ export async function getEffectiveFoodDayRange(
   ]);
   const storedByDate = new Map(storedDays.map((day) => [formatDateKey(day.local_date), day]));
   const foodDateKeys = new Set(foodDates.map((row) => formatDateKey(row.local_date)));
+  const needsObservations = storedDays.some(day => (day.status === 'OPEN' || day.status === 'INCOMPLETE') && !day.comparison_captured_at)
+    || foodDates.some(row => !storedByDate.has(formatDateKey(row.local_date)));
+  const observations = needsObservations ? await db.dailyCaloriePlan.findMany({
+    where: { user_id: userId, local_date: { gte: startDate, lte: endDate } },
+    select: { local_date: true, timezone: true, timezone_conflict: true, observed_at: true, target_kcal: true, maintenance_kcal: true }
+  }) : [];
+  const observationByDate = new Map(observations.map(plan => [formatDateKey(plan.local_date), plan]));
   const totals = new Map<string, number>();
   for (const food of foodDates) {
     const key = formatDateKey(food.local_date);
@@ -293,11 +300,17 @@ export async function getEffectiveFoodDayRange(
     const dateKey = formatDateKey(cursor);
     const stored = storedByDate.get(dateKey);
     if (stored) {
+      let comparison: FoodDayCalorieComparison | null = null;
+      if (stored.status !== 'PAUSED') {
+        if (stored.status === 'COMPLETE' || stored.comparison_captured_at) {
+          comparison = foodDayCalorieComparison(stored, totals.get(dateKey) ?? 0);
+        } else {
+          comparison = observedFoodDayCalorieComparison(observationByDate.get(dateKey), cursor, trackingStart.timezone, totals.get(dateKey) ?? 0, now);
+        }
+      }
       days.push({
         ...serializeStoredDay(stored),
-        calorie_comparison: stored.status === 'COMPLETE'
-          ? foodDayCalorieComparison(stored, totals.get(dateKey) ?? 0)
-          : null
+        calorie_comparison: comparison
       });
       continue;
     }
@@ -335,7 +348,10 @@ export async function getEffectiveFoodDayRange(
       is_representative: false,
       is_complete: false,
       completed_at: null,
-      updated_at: null
+      updated_at: null,
+      ...(source === 'DEFAULT' && foodDateKeys.has(dateKey) ? {
+        calorie_comparison: observedFoodDayCalorieComparison(observationByDate.get(dateKey), cursor, trackingStart.timezone, totals.get(dateKey) ?? 0, now)
+      } : {})
     });
   }
   return days;
