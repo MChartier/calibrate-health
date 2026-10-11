@@ -1,0 +1,55 @@
+{
+  "source_commit": "3f2cdb53bf6d13785e126b1ee7ed5de07e222da9",
+  "base_commit": "5a0cc095766e854e6fe52425bb0f0568f77254a4",
+  "captured_date": "2026-10-11",
+  "runtime": "Expo production web export, Chromium, Windows",
+  "fixtures": "Deterministic July 2026 food-day history from completed-calendar.spec.ts",
+  "native_device_execution": false,
+  "captures": [
+    {
+      "file": "phone-dark-collapsed.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-android-phone-chrome/calendar-key-collapsed.png",
+      "sha256": "a15b087a57487f3bb72052b7c355c2ca75405405f5f88c508c289d17d77b6a2b"
+    },
+    {
+      "file": "phone-dark-expanded.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-android-phone-chrome/calendar-key-expanded.png",
+      "sha256": "fda7bbcb5bdfaf9293e4f41dd2267d4d665c048e145656dbe99b6fe92db45da5"
+    },
+    {
+      "file": "phone-light-collapsed.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-android-phone-chrome/calendar-key-collapsed.png",
+      "sha256": "c83ce63ea6d2a3a8a4a8027ae4c8092c6457a9c20c8d9ecf572cc5f39610d433"
+    },
+    {
+      "file": "phone-light-expanded.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-android-phone-chrome/calendar-key-expanded.png",
+      "sha256": "5f9d26aa7b7a8a484a74a9091cd4da525fea291ec0f77605618dbcabb8f85c46"
+    },
+    {
+      "file": "compact-light-expanded.png",
+      "original": "completed-calendar-complet-ba216-ries-and-selection-in-light-compact-phone-chrome/calendar-key-expanded.png",
+      "sha256": "132dfc157d05e8bd629b3e215553e85088bc7527de98d064874ce25d390a8ab4"
+    },
+    {
+      "file": "desktop-dark-expanded.png",
+      "original": "completed-calendar-complet-4797d-aries-and-selection-in-dark-desktop-chrome/calendar-key-expanded.png",
+      "sha256": "cc9c0e3242e410cf9e59887e188213008c3678bfae72da9feb7eed47801289b3"
+    },
+    {
+      "file": "pause-200-percent.png",
+      "original": "completed-calendar-calenda-237b0-on-a-small-browser-viewport-compact-phone-chrome/calendar-pause-enlarged.png",
+      "sha256": "694926044755c9ad0981f39f8477bd2cd4c85a984338e56303b5a2f2c364c91d"
+    }
+  ],
+  "sources": [
+    {
+      "path": "mobile/src/food/HistoricalDatePicker.tsx",
+      "sha256": "6b73902de20572f55a63921aeb742e37bbabc5ac361b68a6107ae74adf58ee50"
+    },
+    {
+      "path": "e2e/expo-web/completed-calendar.spec.ts",
+      "sha256": "f0b56ec3d6b90aacd02d8e441e5a75bf8acfb462a8c6b67a3c7f73ec187d5ce2"
+    }
+  ]
+}
