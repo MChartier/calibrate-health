@@ -299,6 +299,30 @@ it('starts with the key collapsed each time the picker opens', async () => {
     screen.unmount(); queryClient.clear();
 });
 
+it('uses comparison-colored outlines and neutral tracking shapes, with an x inside not-started badges', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity, retry: false } } });
+    const days = [2000, 2300, 2600].map((consumed, index) => ({
+        ...day(`2026-07-${11 + index}`, 'INCOMPLETE', 'STORED'),
+        calorie_comparison: { consumed_kcal: consumed, target_kcal: 2000, maintenance_kcal: 2500, captured_at: '2026-07-11T18:00:00Z' }
+    }));
+    mockGetFoodDays.mockResolvedValue({ ...RANGE_RESPONSE, days: [...days, day('2026-07-14', 'INCOMPLETE', 'INFERRED_EMPTY')] });
+    const screen = renderPicker(client);
+    await screen.findByLabelText(/Jul 12, 2026, incomplete, above target, at or below maintenance/);
+    for (const [index, color] of [themes.light.colors.success, themes.light.colors.calendarBetween, themes.light.colors.calendarBeyond].entries()) {
+        expect(StyleSheet.flatten(screen.getByTestId(`calendar-date-badge-2026-07-${11 + index}`).props.style))
+            .toEqual(expect.objectContaining({ borderWidth: 2, borderColor: color }));
+    }
+    const notStarted = StyleSheet.flatten(screen.getByTestId('calendar-date-badge-2026-07-14').props.style);
+    expect(notStarted.backgroundColor).toBe(themes.light.colors.surfaceContainer);
+    expect(notStarted.borderWidth).toBeUndefined();
+    expect(screen.getByTestId('calendar-not-started-glyph-2026-07-14', { includeHiddenElements: true })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Calendar key' }));
+    expect(StyleSheet.flatten(screen.getByTestId('calendar-marker-incomplete').props.style).borderColor).toBe(themes.light.colors.onSurfaceVariant);
+    expect(screen.getByTestId('calendar-marker-not-started')).toBeTruthy();
+    expect(screen.getByTestId('calendar-marker-paused')).toBeTruthy();
+    screen.unmount(); client.clear();
+});
+
 it('projects durable receipts then pending controls on absent range dates across refetch and remount', async () => {
     const namespace = createOutboxNamespace('https://example.test', 1);
     const row = (operation: string, payload: QueuedMutation['payload'], id: string): QueuedMutation => ({ namespace, id, operation, payload, sequence: 1, state: 'pending', attemptCount: 0, lastError: null, createdAt: 1, updatedAt: 1 });

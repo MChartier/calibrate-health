@@ -1,6 +1,7 @@
 import type { FoodLogDay } from '@calibrate/api-client';
 
 export type FoodDayCalendarMarker = 'complete-target' | 'complete-between' | 'complete-beyond' | 'complete-unavailable' | 'incomplete' | 'not-started' | 'paused' | 'none';
+export type FoodDayCalorieBand = 'target' | 'between' | 'beyond' | 'unavailable';
 
 export const foodDayRangeQueryRoot = ['mobile-food-days'] as const;
 
@@ -8,50 +9,60 @@ export function foodDayRangeQueryKey(startDate: string, endDate: string) {
     return [...foodDayRangeQueryRoot, startDate, endDate] as const;
 }
 
+export function getFoodDayCalorieBand(day: FoodLogDay | undefined): FoodDayCalorieBand {
+    const comparison = day?.calorie_comparison;
+    if (!comparison) return 'unavailable';
+    const { consumed_kcal: consumed, target_kcal: target, maintenance_kcal: maintenance, captured_at: captured } = comparison;
+    if (!Number.isSafeInteger(consumed) || consumed < 0 ||
+        !Number.isSafeInteger(target) || target <= 0 ||
+        !Number.isSafeInteger(maintenance) || maintenance <= 0 ||
+        typeof captured !== 'string' || !Number.isFinite(Date.parse(captured))) return 'unavailable';
+    // Issue #408 follows the saved target ordering, including accepted corrections that cross maintenance.
+    if (target > maintenance) {
+        if (consumed >= target) return 'target';
+        return consumed >= maintenance ? 'between' : 'beyond';
+    }
+    if (consumed <= target) return 'target';
+    return consumed <= maintenance ? 'between' : 'beyond';
+}
+
 export function getFoodDayCalendarMarker(
     day: FoodLogDay | undefined,
     today: string
 ): FoodDayCalendarMarker {
     if (!day) return 'none';
-    if (day.status === 'COMPLETE') {
-        const comparison = day.calorie_comparison;
-        if (!comparison) return 'complete-unavailable';
-        const { consumed_kcal: consumed, target_kcal: target, maintenance_kcal: maintenance, captured_at: captured } = comparison;
-        if (!Number.isSafeInteger(consumed) || consumed < 0 ||
-            !Number.isSafeInteger(target) || target <= 0 ||
-            !Number.isSafeInteger(maintenance) || maintenance <= 0 ||
-            typeof captured !== 'string' || !Number.isFinite(Date.parse(captured))) return 'complete-unavailable';
-        // Issue #408 follows the saved target ordering, including accepted corrections that cross maintenance.
-        if (target > maintenance) {
-            if (consumed >= target) return 'complete-target';
-            return consumed >= maintenance ? 'complete-between' : 'complete-beyond';
-        }
-        if (consumed <= target) return 'complete-target';
-        return consumed <= maintenance ? 'complete-between' : 'complete-beyond';
-    }
+    if (day.status === 'COMPLETE') return `complete-${getFoodDayCalorieBand(day)}`;
     if (day.status === 'PAUSED') return 'paused';
     if (day.source === 'INFERRED_EMPTY' || day.source === 'BEFORE_TRACKING_START') {
         return 'not-started';
     }
     if (day.status === 'INCOMPLETE') return 'incomplete';
-    if (day.date < today && day.status === 'OPEN') return 'incomplete';
+    if (day.status === 'OPEN' && (day.date < today || getFoodDayCalorieBand(day) !== 'unavailable')) return 'incomplete';
     return 'none';
 }
 
 export function getFoodDayCalendarLabel(day: FoodLogDay | undefined, today: string): string {
     const marker = getFoodDayCalendarMarker(day, today);
-    const targetAboveMaintenance = (day?.calorie_comparison?.target_kcal ?? 0) > (day?.calorie_comparison?.maintenance_kcal ?? 0);
+    if (marker === 'incomplete' || day?.status === 'COMPLETE') {
+        let status = 'completed';
+        if (marker === 'incomplete') status = 'incomplete';
+        if (day?.status === 'OPEN' && day.date >= today) status = 'in progress';
+        return `${status}, ${getFoodDayComparisonLabel(day)}`;
+    }
     switch (marker) {
-        case 'complete-target': return targetAboveMaintenance ? 'completed, at or above target' : 'completed, at or below target';
-        case 'complete-between': return targetAboveMaintenance
-            ? 'completed, below target, at or above maintenance'
-            : 'completed, above target, at or below maintenance';
-        case 'complete-beyond': return targetAboveMaintenance ? 'completed, below maintenance' : 'completed, above maintenance';
-        case 'complete-unavailable': return 'completed, comparison unavailable';
-        case 'incomplete': return 'incomplete';
         case 'not-started': return 'not started';
         case 'paused': return 'tracking paused';
         default: return 'in progress';
+    }
+}
+
+function getFoodDayComparisonLabel(day: FoodLogDay | undefined): string {
+    const targetAboveMaintenance = (day?.calorie_comparison?.target_kcal ?? 0) > (day?.calorie_comparison?.maintenance_kcal ?? 0);
+    switch (getFoodDayCalorieBand(day)) {
+        case 'target': return targetAboveMaintenance ? 'at or above target' : 'at or below target';
+        case 'between': return targetAboveMaintenance ? 'below target, at or above maintenance' : 'above target, at or below maintenance';
+        case 'beyond': return targetAboveMaintenance ? 'below maintenance' : 'above maintenance';
+        default: return 'comparison unavailable';
     }
 }
 

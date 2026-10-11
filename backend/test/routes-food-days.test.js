@@ -286,7 +286,7 @@ test('PATCH completion captures its local-day plan once and reopening/recompleti
   const snapshot = stored.comparison_target_kcal;
   const reopened = await change('OPEN');
   assert.equal(reopened.is_complete, false);
-  assert.equal(reopened.calorie_comparison, null);
+  assert.deepEqual(reopened.calorie_comparison, complete.calorie_comparison);
   goal.daily_deficit = -500;
   assert.deepEqual((await change('COMPLETE')).calorie_comparison, complete.calorie_comparison);
   assert.equal(stored.comparison_target_kcal, snapshot);

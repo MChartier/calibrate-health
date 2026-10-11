@@ -162,11 +162,14 @@ date selection, and Add food, plus Trend controls and Plan check review/apply/un
 
 ## Supporting surfaces
 
-The date picker keeps its calendar key collapsed behind **Calendar key**. Completed-day colors use
+The date picker keeps its calendar key collapsed behind **Calendar key**. Calorie-balance colors use
 **Met target**, **Near target**, and **Off target**, with the marker-and-label groups aligned left,
 center, and right. Put comparison explanations behind **How colors work** and the remaining tracking
-states below a quiet divider. Completed days without a saved comparison use the green completion
-fill while retaining factual accessible labels. Date numbers and pause glyphs fit inside each badge;
+states below a quiet divider, using neutral shapes: an outline for incomplete, a borderless gray
+circle with an x for not started, and a circle with a pause glyph for paused. An incomplete outline
+uses the same calorie-balance color as its completed fill, based on current intake and the retained
+plan for that local date. Complete and incomplete days without a trustworthy comparison retain the green legacy fallback
+while keeping factual accessible labels. Date numbers and state glyphs fit inside each badge;
 allow the sheet to grow and scroll for expanded help and enlarged text.
 
 The full Food log retains all six meal periods in chronological order. Empty meals show compact

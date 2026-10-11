@@ -12,6 +12,7 @@ import {
     getCalendarWeeks,
     getFoodDayCalendarMarker,
     getFoodDayCalendarLabel,
+    getFoodDayCalorieBand,
     getMonthKey,
     shiftMonth,
     type FoodDayCalendarMarker
@@ -40,8 +41,9 @@ const CALENDAR_DAY_HEIGHT = 48; // Keeps each compact calendar row physically ta
 const CALENDAR_STATUS_BADGE_SIZE = 34; // Makes the historical state the primary calendar-day silhouette.
 const CALENDAR_LEGEND_MARKER_SIZE = 10; // Keeps legend symbols proportional to their compact labels.
 const CALENDAR_CONTENT_MAX_WIDTH = 560; // Prevents calendar cells from stretching across wide browser sheets.
-const CALENDAR_PAUSE_ICON_SIZE = 8; // Leaves room for the date and pause glyph inside the status circle.
-const CALENDAR_PAUSE_ICON_GAP = 2; // Separates the pause glyph from the date number without enlarging the circle.
+const CALENDAR_STATE_ICON_SIZE = 8; // Fits the pause or not-started glyph beneath a date inside its badge.
+const CALENDAR_STATE_ICON_GAP = 2; // Separates each state glyph from its date without enlarging the normal badge.
+const CALENDAR_LEGEND_STATE_SIZE = 14; // Makes neutral tracking shapes large enough to distinguish their glyphs.
 
 function formatMonth(monthKey: string): string {
     const [yearString, monthString] = monthKey.split('-');
@@ -78,7 +80,9 @@ const CalendarMarker: React.FC<{
     styles: ReturnType<typeof createStyles>;
 }> = ({ marker, theme, styles }) => {
     if (marker === 'paused') {
-        return <Ionicons name="pause" size={13} color={theme.colors.onSurfaceVariant} />;
+        return <View testID="calendar-marker-paused" style={styles.pausedMarker}>
+            <Ionicons name="pause" size={CALENDAR_STATE_ICON_SIZE} allowFontScaling={false} style={styles.stateGlyph} color={theme.colors.onSurfaceVariant} />
+        </View>;
     }
     const complete = completedMarker(marker);
     if (complete) {
@@ -86,7 +90,9 @@ const CalendarMarker: React.FC<{
         return <View style={[styles.completeMarker, { backgroundColor: colors.backgroundColor }]} />;
     }
     if (marker === 'incomplete') return <View testID="calendar-marker-incomplete" style={styles.incompleteMarker} />;
-    if (marker === 'not-started') return <View testID="calendar-marker-not-started" style={styles.notStartedMarker} />;
+    if (marker === 'not-started') return <View testID="calendar-marker-not-started" style={styles.notStartedMarker}>
+        <Ionicons name="close" size={CALENDAR_STATE_ICON_SIZE} allowFontScaling={false} style={styles.stateGlyph} color={theme.colors.onSurfaceVariant} />
+    </View>;
     return <View style={styles.markerPlaceholder} />;
 };
 
@@ -267,7 +273,10 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                 if (date > maxDate) statusLabel = planned ? 'planned tracking pause' : 'future date';
                                 if (planned && pausePlan?.expectedResumeOn === null) statusLabel += ', until resumed';
                                 const complete = completedMarker(marker);
-                                const colors = completedColors(marker, theme);
+                                const colors = completedColors(`complete-${getFoodDayCalorieBand(day)}`, theme);
+                                const hasStateGlyph = marker === 'paused' || marker === 'not-started' || planned;
+                                const stateGlyph = marker === 'not-started' ? 'close' : 'pause';
+                                const stateGlyphTestId = marker === 'not-started' ? `calendar-not-started-glyph-${date}` : `calendar-pause-glyph-${date}`;
                                 const accessibilityLabel = [
                                     formatDateOnlyForDisplay(date),
                                     isToday ? 'today' : null,
@@ -295,9 +304,9 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                             style={[
                                                 styles.dateBadge,
                                                 complete && { backgroundColor: colors.backgroundColor },
-                                                marker === 'incomplete' && styles.incompleteDateBadge,
+                                                marker === 'incomplete' && [styles.incompleteDateBadge, { borderColor: colors.backgroundColor }],
                                                 marker === 'not-started' && styles.notStartedDateBadge,
-                                                (marker === 'paused' || planned) && styles.pauseBadgeLayout,
+                                                hasStateGlyph && styles.stateBadgeLayout,
                                                 marker === 'paused' && styles.pausedDateBadge,
                                                 planned && styles.plannedDateBadge
                                             ]}
@@ -311,18 +320,18 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                                     complete && [styles.completeDayNumber, { color: colors.color }],
                                                     marker === 'incomplete' && styles.incompleteDayNumber,
                                                     marker === 'not-started' && styles.notStartedDayNumber,
-                                                    (marker === 'paused' || planned) && styles.pausedDayNumber
+                                                    hasStateGlyph && styles.glyphDayNumber
                                                 ]}
                                             >
                                                 {Number(date.slice(-2))}
                                             </AppText>
-                                            {(marker === 'paused' || planned) && (
-                                                <View testID={`calendar-pause-glyph-${date}`} style={styles.pauseGlyphContainer} accessible={false} aria-hidden>
+                                            {hasStateGlyph && (
+                                                <View testID={stateGlyphTestId} style={styles.stateGlyphContainer} accessible={false} aria-hidden>
                                                     <Ionicons
-                                                        name="pause"
-                                                        size={CALENDAR_PAUSE_ICON_SIZE}
+                                                        name={stateGlyph}
+                                                        size={CALENDAR_STATE_ICON_SIZE}
                                                         allowFontScaling={false}
-                                                        style={styles.pauseGlyph}
+                                                        style={styles.stateGlyph}
                                                         color={theme.colors.onSurfaceVariant}
                                                     />
                                                 </View>
@@ -355,7 +364,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                             {keyExpanded && (
                                 <View testID="calendar-key-content" style={styles.keyContent}>
                                     <View style={styles.keyHeading}>
-                                        <AppText variant="caption" style={styles.keyHeadingLabel}>Completed days</AppText>
+                                        <AppText variant="caption" style={styles.keyHeadingLabel}>Calorie balance</AppText>
                                         <Pressable
                                             accessibilityRole="button"
                                             accessibilityLabel="How colors work"
@@ -375,7 +384,7 @@ export const HistoricalDatePicker: React.FC<HistoricalDatePickerProps> = ({
                                     </View>
                                     {colorGuideExpanded && (
                                         <View testID="calendar-color-guide" style={styles.colorGuide}>
-                                            <AppText variant="caption">Colors use each day's saved target and maintenance calories.</AppText>
+                                            <AppText variant="caption">Colors use each day's retained target and maintenance calories. Filled circles are complete; outlines are incomplete.</AppText>
                                             <View style={styles.colorGuideItem}>
                                                 <AppText variant="caption" style={styles.keyHeadingLabel}>Met target</AppText>
                                                 <AppText variant="caption">At/below target when the target is at/below maintenance. At/above target when the target is above maintenance.</AppText>
@@ -483,8 +492,7 @@ function createStyles(theme: AppTheme) {
             borderRadius: CALENDAR_STATUS_BADGE_SIZE / 2
         },
         incompleteDateBadge: {
-            borderWidth: 2,
-            borderColor: theme.colors.success
+            borderWidth: 2
         },
         notStartedDateBadge: {
             backgroundColor: theme.colors.surfaceContainer
@@ -494,19 +502,19 @@ function createStyles(theme: AppTheme) {
             borderColor: theme.colors.outline,
             backgroundColor: theme.colors.surfaceContainerHigh
         },
-        pauseBadgeLayout: {
-            gap: CALENDAR_PAUSE_ICON_GAP,
+        stateBadgeLayout: {
+            gap: CALENDAR_STATE_ICON_GAP,
             paddingVertical: theme.spacing.xs
         },
-        pauseGlyphContainer: {
-            width: CALENDAR_PAUSE_ICON_SIZE,
-            height: CALENDAR_PAUSE_ICON_SIZE,
+        stateGlyphContainer: {
+            width: CALENDAR_STATE_ICON_SIZE,
+            height: CALENDAR_STATE_ICON_SIZE,
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0
         },
-        pauseGlyph: {
-            lineHeight: CALENDAR_PAUSE_ICON_SIZE
+        stateGlyph: {
+            lineHeight: CALENDAR_STATE_ICON_SIZE
         },
         plannedDateBadge: {
             borderWidth: theme.stroke.control,
@@ -532,13 +540,13 @@ function createStyles(theme: AppTheme) {
             fontWeight: '800'
         },
         incompleteDayNumber: {
-            color: theme.colors.success,
+            color: theme.colors.onSurface,
             fontWeight: '800'
         },
         notStartedDayNumber: {
             color: theme.colors.onSurfaceVariant
         },
-        pausedDayNumber: {
+        glyphDayNumber: {
             color: theme.colors.onSurfaceVariant,
             fontWeight: '700',
             lineHeight: 14
@@ -553,17 +561,28 @@ function createStyles(theme: AppTheme) {
             borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2
         },
         incompleteMarker: {
-            width: CALENDAR_LEGEND_MARKER_SIZE,
-            height: CALENDAR_LEGEND_MARKER_SIZE,
-            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
+            width: CALENDAR_LEGEND_STATE_SIZE,
+            height: CALENDAR_LEGEND_STATE_SIZE,
+            borderRadius: CALENDAR_LEGEND_STATE_SIZE / 2,
             borderWidth: 2,
-            borderColor: theme.colors.success
+            borderColor: theme.colors.onSurfaceVariant
         },
         notStartedMarker: {
-            width: CALENDAR_LEGEND_MARKER_SIZE,
-            height: CALENDAR_LEGEND_MARKER_SIZE,
-            borderRadius: CALENDAR_LEGEND_MARKER_SIZE / 2,
-            backgroundColor: theme.colors.surfaceContainer
+            width: CALENDAR_LEGEND_STATE_SIZE,
+            height: CALENDAR_LEGEND_STATE_SIZE,
+            borderRadius: CALENDAR_LEGEND_STATE_SIZE / 2,
+            backgroundColor: theme.colors.surfaceContainer,
+            alignItems: 'center',
+            justifyContent: 'center'
+        },
+        pausedMarker: {
+            width: CALENDAR_LEGEND_STATE_SIZE,
+            height: CALENDAR_LEGEND_STATE_SIZE,
+            borderRadius: CALENDAR_LEGEND_STATE_SIZE / 2,
+            borderWidth: theme.stroke.control,
+            borderColor: theme.colors.onSurfaceVariant,
+            alignItems: 'center',
+            justifyContent: 'center'
         },
         queryLoading: {
             minHeight: CALENDAR_DAY_HEIGHT * 3,
@@ -635,7 +654,7 @@ function createStyles(theme: AppTheme) {
         },
         legendLabel: { flexShrink: 1 },
         legendMarker: {
-            width: CALENDAR_LEGEND_MARKER_SIZE,
+            width: CALENDAR_LEGEND_STATE_SIZE,
             flexShrink: 0,
             alignItems: 'center',
             justifyContent: 'center'

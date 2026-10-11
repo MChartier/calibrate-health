@@ -1439,7 +1439,7 @@ export interface components {
             captured_at: string;
         };
         FoodLogDay: {
-            /** @description Comparison on day reads and completion responses against the plan captured on the first same-local-day completion. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, or non-complete days. Snapshots survive reopening; consumed calories reflect current stored food logs. */
+            /** @description Comparison against a frozen completion plan or, for unfinished calendar days, a trustworthy retained observation from that local date. Whole kcal; maintenance rounded once from profile-estimated TDEE. Absent or null for unverifiable history, unavailable plans, paused days, or days not started. Snapshots survive reopening; consumed calories reflect current stored food logs. captured_at is the completion capture time or the unfinished plan observation time. */
             calorie_comparison?: components["schemas"]["FoodDayCalorieComparison"] | null;
             /** Format: date */
             date: string;
