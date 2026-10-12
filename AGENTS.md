@@ -362,6 +362,9 @@ UI code style:
   Debian hosts with local wg-quick use `sudo node deploy/scripts/setup-self-hosted.mjs` for consolidated setup;
   setup prints the GitHub environment values on success, and reruns preserve existing CI keys. The optional
   `github-values` mode reprints saved values without running setup.
+  Setup and `sudo node deploy/scripts/uninstall-self-hosted.mjs` describe and confirm each host mutation with a
+  default-no prompt. Unchanged assets are skipped. Keep the root-only installation record for resuming or undoing
+  partial setup; uninstall removes created assets and restores pre-existing settings, without touching Compose/data.
 - Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
   `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
   every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit

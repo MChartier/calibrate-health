@@ -42,6 +42,11 @@ project name shown by `docker compose ls` and the files used by your normal Comp
 `docker-compose.traefik.yml`; omit `docker-compose.postgres.yml` for an external database. Keep `app` on `latest` with
 its DB-backed `/api/v1/readyz` healthcheck; setup verifies those settings before changing the host.
 
+Setup describes each proposed change and asks **`Apply this change? [y/N]`** before applying it. Enter `y` or `yes`
+to proceed. Any other answer stops before that change; earlier approved changes remain recorded. Rerun setup to
+continue, or use uninstall below to undo them. An interactive terminal is required. Read-only checks and already
+correct assets are reported without confirmation; there is no blanket approval flag.
+
 The one command:
 
 - Creates `calibrate-deploy`, generates dedicated SSH and WireGuard keys, and installs the deployment helper/config.
@@ -56,13 +61,20 @@ The one command:
 Existing peers, Compose files, and `.env` are preserved. Setup does not deploy the application. Keep an administrative
 SSH session open during setup. Existing host firewall policies must also permit the CI peer to reach TCP 22; an
 accept rule in the installer's table cannot override another table's deny rule. The installer adds only the
-`inet calibrate_ci` table and its own systemd unit; after a firewall tool flushes the whole ruleset, reapply it with
-`sudo systemctl restart calibrate-ci-firewall` before CI connects.
+`inet calibrate_ci` table and its own systemd unit; if a firewall tool flushes the whole ruleset, rerun setup and
+approve restoring the missing CI rules before CI connects.
 
-Run the same installer again to update installed helpers and reapply configuration. It reuses
+Run the same installer again to update installed helpers or repair missing configuration. It reuses
 `/etc/calibrate/setup.json` and the root-only `ci-ssh-key` / `ci-wireguard.key` files in `/etc/calibrate`; it does not
-rotate keys or add duplicate peers. To adjust Compose settings or the endpoint, edit `setup.json` and rerun.
+rotate existing keys or add duplicate peers. An unchanged rerun does not rewrite files, recreate the account, reset
+the route, or reload/restart services; it reports what is already correct and prints the GitHub values again.
+To adjust Compose settings or the endpoint, edit `setup.json` and rerun.
 Changing the installed interface, addresses, or keys requires an explicit administrator migration.
+
+The root-only `/var/lib/calibrate-deployment-setup/state.json` records created assets and original contents/settings
+for changes that setup approves. It supports resuming partial runs and undoing changes; keep it until uninstall is
+complete. This record is used only for host setup/uninstall, not for CI deployment. Before overwriting an existing
+file, setup retains its original contents for restoration. Imported keys and pre-existing accounts/peers remain yours.
 
 If a deployment authorized-key file already exists from manual setup, import its matching unencrypted Ed25519 private
 key as `/etc/calibrate/ci-ssh-key` (root-owned, mode 0600) before running the installer. It refuses to replace existing
@@ -113,6 +125,31 @@ values resolve in the deployment job's protected environment. See GitHub's
 [environment secrets in reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#using-inputs-and-secrets-in-a-reusable-workflow).
 The job also checks current protected-master workflow authority before using deployment credentials.
 
+## Uninstall server integration
+
+From the same checkout, run:
+
+```sh
+sudo node deploy/scripts/uninstall-self-hosted.mjs
+```
+
+Uninstall reports and confirms each change with the same default-no prompt. It removes the CI peer/route, firewall
+table and service enablement, SSH/sudo configuration, helper files, keys, and account/group **when setup created them**.
+It restores prior file contents, account shell, and firewall settings where setup modified existing assets. It removes
+only empty directories created by setup; externally added files such as registry credentials are retained and reported.
+The Compose stack, application/database, server host keys, and unrelated VPN peers are preserved. It does not deploy,
+stop, or roll back the application, and does not uninstall system packages.
+
+An interrupted uninstall can be rerun to finish; setup refuses to run until that uninstall is complete. A second
+completed uninstall is a no-op. Files edited after setup are identified in their deletion/restoration prompts, so
+you can decline before replacing those edits. Uninstall also handles wg-quick `SaveConfig` removing peer comments.
+Run one setup or uninstall process at a time.
+
+Installations made with an earlier script that did not record ownership are treated as pre-existing assets. Their
+assets are not silently claimed or deleted. Without an installation record, uninstall reports that there is nothing
+tracked to remove. Remove the deployment environment credentials in GitHub separately when retiring the integration;
+these host scripts do not authenticate to GitHub. Release/OTA jobs remain gated on a working deployment target.
+
 ## Upgrade, verify, and retry
 
 The manual host command and automated SSH command are the same:
@@ -150,8 +187,9 @@ or upgrade the proxy/database as part of this operation.
 
 ## Validation
 
-`npm run test:deploy` exercises installer reruns, key preservation, prerequisite failures, SSH validation, peer
-conflicts, firewall restrictions, upgrades, affirmative health, and cleanup with mocked system/Docker/network commands.
+`npm run test:deploy` exercises unchanged reruns, per-change confirmation, interrupted setup/uninstall, restoration of
+pre-existing assets, key preservation, prerequisite failures, SSH validation, peer conflicts, firewall restrictions,
+upgrades, affirmative health, and cleanup with mocked system/Docker/network commands.
 The release workflow contract tests cover both OTA entrypoints, production approval ordering, environment-secret
 forwarding, and server-only releases.
 These checks do not connect to the private server; complete the rollout checks above on the configured host.
