@@ -359,6 +359,8 @@ UI code style:
   still deploy the server after image publication. Configure the host through `deploy/self-hosted/README.md`; the
   endpoint and credentials stay in the master-only `self-hosted-testing` environment. Forward the named environment
   secrets through reusable callers; expose them only to the deployment step.
+  Debian hosts with local wg-quick use `sudo node deploy/scripts/setup-self-hosted.mjs` for consolidated setup;
+  reruns preserve existing CI keys. Its `github-values` mode explicitly prints the saved environment values.
 - Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
   `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
   every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit

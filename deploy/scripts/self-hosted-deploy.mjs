@@ -18,7 +18,7 @@ function dockerCommand(args, cwd) {
   }
 }
 
-function validateConfig(config) {
+export function validateConfig(config) {
   if (typeof config.projectDirectory !== 'string' || !path.isAbsolute(config.projectDirectory)) {
     throw new Error('projectDirectory must be an absolute host path.');
   }

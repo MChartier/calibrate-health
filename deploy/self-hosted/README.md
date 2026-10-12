@@ -22,90 +22,67 @@ The image publisher retains its existing release verification before updating `l
 This uses GitHub's [WireGuard networking guidance](https://docs.github.com/en/actions/how-tos/manage-runners/github-hosted-runners/connect-to-a-private-network/connect-with-wireguard).
 No persistent GitHub runner or publicly reachable application/SSH port is needed.
 
-## Install on the server
+## Set up the Debian host
 
-The target needs Docker Engine, Compose v2 supporting `pull --policy always` and `up --wait`, OpenSSH, `sudo`, and
-Node 22+ at `/usr/bin/node`. Provision the Compose stack, database, and proxy normally first. Keep the existing
-`app` healthcheck: it checks the DB-backed `/api/v1/readyz` endpoint after startup migrations.
-
-From a reviewed checkout on the server:
+Use the consolidated installer from a reviewed checkout on the server:
 
 ```sh
-sudo install -d -o root -g root -m 0700 /etc/calibrate /etc/calibrate/registry
-sudo install -o root -g root -m 0644 deploy/scripts/self-hosted-deploy.mjs /usr/local/lib/calibrate-deploy.mjs
-sudo install -o root -g root -m 0755 deploy/self-hosted/calibrate-deploy /usr/local/sbin/calibrate-deploy
-sudo install -o root -g root -m 0600 deploy/self-hosted/deploy.example.json /etc/calibrate/deploy.json
-sudoedit /etc/calibrate/deploy.json
+sudo node deploy/scripts/setup-self-hosted.mjs
 ```
 
-Set `projectName` to the **existing** name from `docker compose ls`, `projectDirectory` to the stack directory, and
-`composeFiles` / `envFile` to the files used by your normal Compose commands. File paths are relative to that directory.
-For Traefik, choose `docker-compose.traefik.yml`; for an external database, omit `docker-compose.postgres.yml`.
-`waitTimeoutSeconds` is 300 in the example (maximum 480). No image, backup, or deployment-state settings are needed.
+The installer targets **Debian with WireGuard running directly on this host through `wg-quick@<interface>.service`**.
+It requires an existing reachable WireGuard UDP endpoint, Docker Engine, Compose v2 supporting `pull --policy always`
+and `up --wait`, and Node 22+ at `/usr/bin/node`. The Debian packages `openssh-server`, `sudo`, `wireguard-tools`, and
+`nftables` must be installed. Container-managed VPNs and separate gateways need their manager's peer configuration;
+the installer refuses an inactive local wg-quick service. It does not install or upgrade system packages.
 
-Keep the installed wrapper, script, config, selected Compose files, application `.env`, and their parent directories
-owned by root and unwritable by the SSH account. The account must not belong to the Docker group or have other sudo
-privileges. The wrapper clears its environment and accepts no arguments or input. The caller cannot supply a shell
-command, image reference, Compose file, or database setting.
+The prompts collect the existing Compose directory, project name, file list, and environment file, then the existing
+WireGuard interface, server tunnel IPv4, an unused CI peer IPv4, and public endpoint (`hostname:UDP-port`). Use the
+project name shown by `docker compose ls` and the files used by your normal Compose command. For Traefik, select
+`docker-compose.traefik.yml`; omit `docker-compose.postgres.yml` for an external database. Keep `app` on `latest` with
+its DB-backed `/api/v1/readyz` healthcheck; setup verifies those settings before changing the host.
 
-Public GHCR images need no login. For a private package, provision a read-only package credential on the host with
-`sudo docker --config /etc/calibrate/registry login ghcr.io`. Application and registry credentials stay on the host.
+The one command:
 
-When replacing the previous deployment helper, update both installed scripts. Preserve your actual Compose paths
-when updating the configuration. Stop adding `/var/lib/calibrate-deploy/image.env` to administrative Compose commands
-and ensure the normal `.env` selects `latest`. The new helper neither reads nor writes the old `image.env` or
-`state.json`; those files can be archived locally. It does not use the old lock or backup marker.
+- Creates `calibrate-deploy`, generates dedicated SSH and WireGuard keys, and installs the deployment helper/config.
+- Installs root-owned authorized keys, an SSH forced command, and a sudo rule allowing only the fixed wrapper without
+  arguments. Password login, forwarding, user SSH startup scripts, tunnels, and PTYs are disabled for this account.
+- Validates the effective SSH policy before reloading SSH and rejects Compose paths writable by the deployment account.
+- Adds the CI peer with one `/32` address, applies it without restarting the VPN, and installs persistent nftables
+  restrictions allowing this peer only TCP 22 to the server's tunnel address. Forwarded traffic is blocked.
+- Saves the GitHub values, including the SSH host key read locally, in root-only `/etc/calibrate/github-environment.json`.
 
-## Restrict SSH access
+Existing peers, Compose files, and `.env` are preserved. Setup does not deploy the application. Keep an administrative
+SSH session open during setup. Existing host firewall policies must also permit the CI peer to reach TCP 22; an
+accept rule in the installer's table cannot override another table's deny rule. The installer adds only the
+`inet calibrate_ci` table and its own systemd unit; after a firewall tool flushes the whole ruleset, reapply it with
+`sudo systemctl restart calibrate-ci-firewall` before CI connects.
 
-Create a dedicated account and a separate Ed25519 key for CI. For example on Debian/Ubuntu:
+Run the same installer again to update installed helpers and reapply configuration. It reuses
+`/etc/calibrate/setup.json` and the root-only `ci-ssh-key` / `ci-wireguard.key` files in `/etc/calibrate`; it does not
+rotate keys or add duplicate peers. To adjust Compose settings or the endpoint, edit `setup.json` and rerun.
+Changing the installed interface, addresses, or keys requires an explicit administrator migration.
+
+If a deployment authorized-key file already exists from manual setup, import its matching unencrypted Ed25519 private
+key as `/etc/calibrate/ci-ssh-key` (root-owned, mode 0600) before running the installer. It refuses to replace existing
+SSH access with a newly generated key. Keep the account out of the Docker/sudo groups and do not grant additional sudo
+permissions. Selected Compose files, `.env`, and their parent directories must remain unwritable by this account.
+
+Public GHCR images need no login. A private package needs a host-local read-only credential supplied once with
+`sudo docker --config /etc/calibrate/registry login ghcr.io`. If replacing the earlier deployment helper, stop adding
+`/var/lib/calibrate-deploy/image.env` to administrative Compose commands; the normal `.env` must select `latest`.
+The new helper ignores the old image override, state, lock, and backup-marker files.
+
+## Copy the GitHub configuration
+
+Display the saved values through your trusted administrative session:
 
 ```sh
-sudo useradd --create-home --shell /bin/sh calibrate-deploy
-sudo install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
-sudoedit /etc/ssh/authorized_keys/calibrate-deploy
+sudo node deploy/scripts/setup-self-hosted.mjs github-values
 ```
 
-Place this single line in the root-owned authorized-keys file, replacing the example public key:
-
-```text
-restrict,command="sudo -n /usr/local/sbin/calibrate-deploy" ssh-ed25519 REPLACE_WITH_CI_PUBLIC_KEY calibrate-ci
-```
-
-Add `/etc/ssh/sshd_config.d/calibrate-deploy.conf`:
-
-```text
-Match User calibrate-deploy
-    AuthorizedKeysFile /etc/ssh/authorized_keys/calibrate-deploy
-    AuthenticationMethods publickey
-    PasswordAuthentication no
-    KbdInteractiveAuthentication no
-    PermitTTY no
-    AllowTcpForwarding no
-    AllowAgentForwarding no
-    X11Forwarding no
-Match all
-```
-
-Validate with `sudo sshd -t`, then reload SSH using the distribution's service name. Keep your administrative SSH
-session open while testing. Ensure the account can authenticate with its key under the distribution's account policy.
-
-Use `sudo visudo -f /etc/sudoers.d/calibrate-deploy` to add:
-
-```sudoers
-calibrate-deploy ALL=(root) NOPASSWD: /usr/local/sbin/calibrate-deploy ""
-```
-
-The empty argument string permits only this wrapper with no arguments. SSH requests cannot change what it runs.
-
-## Configure WireGuard and GitHub
-
-Create a dedicated CI peer with its own key pair and unique IPv4 address. On the WireGuard server, allow only that
-peer's `/32` source address. Restrict its traffic with the server/gateway firewall to **TCP port 22 on the deployment
-host**, including forwarded traffic if the gateway and Docker host differ. Client `AllowedIPs` is not a firewall.
-
-The WireGuard endpoint must be reachable from the internet on its UDP port. The runner routes only the deployment
-host through the tunnel; it does not need the application's internal domain to resolve.
+This explicitly displays private CI keys. Copy each named value into GitHub; do not paste the output into an issue,
+PR, or shared log. The installer never needs a GitHub token, and normal setup output contains no private keys.
 
 Create the GitHub environment **`self-hosted-testing`**. Under deployment branches and tags, choose **Selected branches
 and tags**, allow the branch **`master`** only, and add no tag rules. Keep `master` protected. Leave reviewers and wait
@@ -116,7 +93,7 @@ Set these **environment variables**:
 
 | Variable | Value |
 | --- | --- |
-| `DEPLOY_HOST` | Docker host's reachable IPv4 address, e.g. `192.168.1.10` |
+| `DEPLOY_HOST` | Server's WireGuard IPv4 address, e.g. `10.8.0.1` |
 | `DEPLOY_SSH_USER` | `calibrate-deploy` |
 | `DEPLOY_WG_ADDRESS` | Dedicated CI peer's IPv4 address, e.g. `10.8.0.20`, without CIDR suffix |
 | `DEPLOY_WG_PUBLIC_KEY` | WireGuard server's public key |
@@ -128,14 +105,14 @@ Set these **environment secrets**:
 | `DEPLOY_WG_ENDPOINT` | Public VPN hostname/IPv4 and UDP port, e.g. `vpn.example.com:51820` |
 | `DEPLOY_WG_PRIVATE_KEY` | Dedicated CI peer's WireGuard private key |
 | `DEPLOY_SSH_PRIVATE_KEY` | Dedicated CI SSH private key without a passphrase |
-| `DEPLOY_SSH_KNOWN_HOSTS` | Verified known-hosts line for `DEPLOY_HOST`, e.g. `192.168.1.10 ssh-ed25519 AAAA...` |
+| `DEPLOY_SSH_KNOWN_HOSTS` | Installer-generated host-key line, e.g. `10.8.0.1 ssh-ed25519 AAAA...` |
 
 If upgrading the previous configuration, move `DEPLOY_WG_ENDPOINT` from an environment variable to an environment
 secret. The other three secrets and four variables keep their names. `SELF_HOSTED_DEPLOY_ENABLED` is no longer used.
 The existing repository `EXPO_TOKEN`, Expo `preview` settings, and GitHub `production` approval remain required for OTA.
 
-Obtain the SSH host key through a trusted administrative session. The job pins that key; it never learns it with an
-unverified `ssh-keyscan` during deployment. Reusable workflow callers explicitly forward the four secret names; their
+The job pins the host key collected by the installer; it never learns it with an unverified `ssh-keyscan` during
+deployment. Reusable workflow callers explicitly forward the four secret names; their
 values resolve in the deployment job's protected environment. See GitHub's
 [environment secrets in reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#using-inputs-and-secrets-in-a-reusable-workflow).
 The job also checks current protected-master workflow authority before using deployment credentials.
@@ -159,8 +136,9 @@ It then requires exactly one `app` container with Docker health status `healthy`
 backup prerequisites, image overrides, or deployment receipts. It leaves Compose and `.env` unchanged. Health confirms
 the application's configured readiness check, not proxy/DNS/TLS availability or exact OTA/server version identity.
 
-For rollout, first run the host command above, then run **Deploy self-hosted server** from `master` with no inputs.
-Both commands perform a real upgrade to `latest` and may briefly restart `app`. Once that succeeds, use **Cut release**
+For rollout, run **Deploy self-hosted server** from `master` with no inputs after merge. This checks the entire
+WireGuard/SSH/upgrade/health path and performs a real upgrade to `latest`, which may briefly restart `app`. The host
+command above is also available for local troubleshooting. Once the Actions deployment succeeds, use **Cut release**
 or the existing manual OTA workflow. Internal publication waits for deployment success; production follows internal
 publication and its existing approval. No deployment credentials are exposed to Expo export/publisher steps.
 
@@ -176,7 +154,8 @@ or upgrade the proxy/database as part of this operation.
 
 ## Validation
 
-`npm run test:deploy` exercises upgrades, failure propagation, affirmative health, configuration preservation,
-WireGuard/SSH restrictions, and cleanup with mocked Docker/network commands. The release workflow contract tests
-cover both OTA entrypoints, production approval ordering, environment-secret forwarding, and server-only releases.
+`npm run test:deploy` exercises installer reruns, key preservation, prerequisite failures, SSH validation, peer
+conflicts, firewall restrictions, upgrades, affirmative health, and cleanup with mocked system/Docker/network commands.
+The release workflow contract tests cover both OTA entrypoints, production approval ordering, environment-secret
+forwarding, and server-only releases.
 These checks do not connect to the private server; complete the rollout checks above on the configured host.
