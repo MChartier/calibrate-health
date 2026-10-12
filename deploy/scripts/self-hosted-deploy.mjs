@@ -1,3 +1,7 @@
+/**
+ * @file Upgrade the existing Compose app using its configured image and require
+ * affirmative Docker health before the restricted SSH command reports success.
+ */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -6,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 // Allow time for image pulls and startup migrations, with bounded Docker commands.
 const DOCKER_TIMEOUT_MS = 10 * 60 * 1000;
 
+/** Execute a bounded Docker command without returning potentially secret-bearing errors to CI. */
 function dockerCommand(args, cwd) {
   try {
     return execFileSync('docker', args, {
@@ -18,6 +23,7 @@ function dockerCommand(args, cwd) {
   }
 }
 
+/** Require an existing stack, project-local configuration files, and a bounded health timeout. */
 export function validateConfig(config) {
   if (typeof config.projectDirectory !== 'string' || !path.isAbsolute(config.projectDirectory)) {
     throw new Error('projectDirectory must be an absolute host path.');
@@ -35,9 +41,12 @@ export function validateConfig(config) {
   }
 }
 
+/** Pull and restart only app, preserving Compose configuration and failing unless one container is healthy. */
 export function deploy(config, { runDocker = dockerCommand, log = console.log } = {}) {
   validateConfig(config);
+  /** Keep every Docker operation in the configured stack directory. */
   const docker = (args) => runDocker(args, config.projectDirectory);
+  /** Apply the existing Compose project identity and files to each upgrade operation. */
   const compose = (args) => docker([
     'compose', '--project-name', config.projectName, '--project-directory', config.projectDirectory,
     '--env-file', path.join(config.projectDirectory, config.envFile),
@@ -59,6 +68,7 @@ export function deploy(config, { runDocker = dockerCommand, log = console.log } 
   log('Deployment and application health check succeeded.');
 }
 
+/** Accept no SSH-controlled arguments and load only the installed root-owned configuration. */
 function main() {
   if (process.getuid?.() !== 0) throw new Error('Run through the installed root-owned deployment wrapper.');
   if (process.argv.length !== 2) throw new Error('No command-line arguments are accepted.');

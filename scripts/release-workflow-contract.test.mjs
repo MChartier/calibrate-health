@@ -1,3 +1,7 @@
+/**
+ * @file Verify release workflow authority, credential boundaries, and job
+ * sequencing from repository sources without publishing or deploying anything.
+ */
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -7,6 +11,7 @@ import { REQUIRED_CI } from './release-ci-gate.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const workflowsDirectory = path.join(repositoryRoot, '.github', 'workflows');
+/** Normalize workflow line endings for the same contract checks on Windows and Linux. */
 const readWorkflow = (name) => readFileSync(path.join(workflowsDirectory, name), 'utf8')
   .replaceAll('\r\n', '\n');
 
@@ -26,6 +31,7 @@ const reviewedReleaseActionPins = new Map([
   ['dorny/paths-filter', '0e4a8c6effa4802afeda77dc8d303f8176d7dfad']
 ]);
 
+/** Require every external action to match its reviewed immutable commit. */
 function assertReviewedReleaseActionPins(workflowName) {
   const workflow = readWorkflow(workflowName);
   for (const match of workflow.matchAll(/^\s*uses:\s+(\S+)/gm)) {
@@ -43,6 +49,7 @@ function assertReviewedReleaseActionPins(workflowName) {
   }
 }
 
+/** Select one literal job block without allowing a test selector to act as a regex. */
 function workflowJobBlock(workflow, jobName) {
   assert.match(jobName, /^[a-z0-9_-]+$/, 'workflow job selector must be a literal safe identifier');
   const match = workflow.match(new RegExp(`\\n  ${jobName}:\\n[\\s\\S]*?(?=\\n  [a-z0-9_-]+:|$)`));
@@ -50,7 +57,7 @@ function workflowJobBlock(workflow, jobName) {
   return match[0];
 }
 
-// Workflow contracts use explicit, block-style permission maps at these two indentation levels.
+/** Read an explicit block-style permission map at the workflow or job indentation level. */
 function workflowPermissions(block, indent) {
   const prefix = ' '.repeat(indent);
   const declaration = block.match(new RegExp(`^${prefix}permissions:([^\\n]*)`, 'm'));
@@ -125,6 +132,7 @@ test('Cut release reuses every required CI surface with explicit read-only candi
     /MIGRATIONS_CHANGED: \$\{\{ inputs\.release_sha == '' &&/);
 });
 
+/** Extract a named path filter from the repository's block-style workflow declarations. */
 function workflowPathFilterBlock(job, filterName) {
   assert.match(filterName, /^[a-z_]+$/, 'workflow path filter selector must be a literal safe identifier');
   const match = job.match(
@@ -134,11 +142,13 @@ function workflowPathFilterBlock(job, filterName) {
   return match[0];
 }
 
+/** Collect the single-quoted path patterns declared by one workflow filter. */
 function workflowPathFilterPaths(job, filterName) {
   return [...workflowPathFilterBlock(job, filterName).matchAll(/- '([^']+)'/g)]
     .map((match) => match[1]);
 }
 
+/** Match the star and double-star glob subset used by these path-filter contracts. */
 function pathFilterPatternMatches(pattern, candidatePath) {
   const escaped = pattern
     .replace(/[|\\{}()[\]^$+?.]/g, '\\$&')
@@ -148,6 +158,7 @@ function pathFilterPatternMatches(pattern, candidatePath) {
   return new RegExp(`^${escaped}$`).test(candidatePath);
 }
 
+/** Evaluate positive and excluded path patterns under the filter's selected quantifier. */
 function pathFilterMatches(job, filterName, candidatePath, predicateQuantifier = 'some') {
   const matches = workflowPathFilterPaths(job, filterName).map((pattern) => {
     const excluded = pattern.startsWith('!');
@@ -161,6 +172,7 @@ function pathFilterMatches(job, filterName, candidatePath, predicateQuantifier =
   return matches.some(Boolean);
 }
 
+/** Require reviewed path classification and explicit job outputs for every expected category. */
 function assertPathFilterOutputs(job, outputNames, stepId = 'filter', revision = 'v3') {
   assert.match(job, /pull-requests: read/);
   assert.ok(job.includes(`uses: dorny/paths-filter@${revision}`));
@@ -701,7 +713,7 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.match(image, /packages: write/);
   assert.doesNotMatch(image, /secrets: inherit/);
   assert.match(image, /publish_latest: true/);
-  assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);
+  assert.match(ota, /needs: \[tag_release, deploy_self_hosted\]/);
   assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
   assert.match(ota, /uses: \.\/\.github\/workflows\/expo-ota-update\.yml/);
   assert.match(ota, /source_ref: \$\{\{ inputs\.release_commit \}\}/);
@@ -715,28 +727,27 @@ test('prepared release publishing is reusable, recoverable, and idempotent', () 
   assert.doesNotMatch(workflow, /calibratehealth\.app\/api\/v1\/client-config|wait_for_hosted_release/);
 });
 
-test('server releases deploy latest and both OTA entrypoints require successful deployment', () => {
+test('end-to-end releases gate OTA on server health while OTA-only publishing stays independent', () => {
   const publisher = readWorkflow('publish-release.yml');
   const deployment = workflowJobBlock(publisher, 'deploy_self_hosted');
   const ota = workflowJobBlock(publisher, 'publish_ota');
-  assert.match(deployment, /needs: \[tag_release, build_release_image\]/);
-  assert.match(deployment, /if: needs\.tag_release\.outputs\.native_release_ready != 'true'/);
+  assert.match(deployment, /needs: build_release_image/);
+  assert.doesNotMatch(deployment, /\n    if:|continue-on-error/);
+  assert.match(deployment, /uses: \.\/\.github\/workflows\/deploy-self-hosted\.yml/);
   assert.match(deployment, /release_commit: \$\{\{ inputs\.release_commit \}\}/);
   assert.match(deployment, /permissions:\n\s+contents: read/);
   assert.doesNotMatch(deployment, /image_ref:|release_tag:|SELF_HOSTED_DEPLOY_ENABLED/);
-  assert.match(ota, /needs: \[tag_release, publish_release_tag, build_release_image\]/);
+  assert.match(ota, /needs: \[tag_release, deploy_self_hosted\]/);
   assert.match(ota, /if: needs\.tag_release\.outputs\.native_release_ready == 'true'/);
+  assert.doesNotMatch(ota, /always\(|continue-on-error|DEPLOY_/);
 
   const otaWorkflow = readWorkflow('expo-ota-update.yml');
-  const gate = workflowJobBlock(otaWorkflow, 'deploy-server');
-  assert.match(gate, /needs: preflight-release-target/);
-  assert.match(gate, /uses: \.\/\.github\/workflows\/deploy-self-hosted\.yml/);
-  assert.doesNotMatch(gate, /\n    if:|continue-on-error/);
+  assert.doesNotMatch(otaWorkflow, /deploy-server|deploy-self-hosted|DEPLOY_|self-hosted-testing/);
   assert.match(otaWorkflow, /workflow_call:/);
   assert.match(otaWorkflow, /workflow_dispatch:/);
-  // Every stage on either channel must inherit the deployment's success requirement.
+  // Both entrypoints retain signed-source preflight and production approval sequencing.
   for (const [job, predecessor] of [
-    ['resolve-internal-environment', 'deploy-server'],
+    ['resolve-internal-environment', 'preflight-release-target'],
     ['build-internal-update', 'resolve-internal-environment'],
     ['publish-internal', 'build-internal-update'],
     ['approve-production', 'publish-internal'],
@@ -794,7 +805,7 @@ test('server releases deploy latest and both OTA entrypoints require successful 
 
 test('deployment environment secrets are forwarded through every reusable release caller', () => {
   const secretNames = ['DEPLOY_WG_ENDPOINT', 'DEPLOY_WG_PRIVATE_KEY', 'DEPLOY_SSH_PRIVATE_KEY', 'DEPLOY_SSH_KNOWN_HOSTS'];
-  const callees = new Set(['cut-release.yml', 'publish-release.yml', 'expo-ota-update.yml', 'deploy-self-hosted.yml']);
+  const callees = new Set(['cut-release.yml', 'publish-release.yml', 'deploy-self-hosted.yml']);
   for (const name of callees) {
     const declarations = readWorkflow(name).split('    inputs:')[0];
     for (const secret of secretNames) assert.ok(declarations.includes('      ' + secret + ':\n        required: true'), name + ': ' + secret);
@@ -805,7 +816,10 @@ test('deployment environment secrets are forwarded through every reusable releas
     for (const [, job] of jobs.matchAll(/^  ([a-z0-9_-]+):$/gm)) {
       const block = workflowJobBlock(source, job);
       const callee = block.match(/^    uses: \.\/\.github\/workflows\/([^\s]+)$/m)?.[1];
-      if (!callees.has(callee)) continue;
+      if (!callees.has(callee)) {
+        if (file !== 'deploy-self-hosted.yml') assert.doesNotMatch(block, /DEPLOY_/);
+        continue;
+      }
       for (const secret of secretNames) {
         assert.ok(block.includes('      ' + secret + ': ${{ secrets.' + secret + ' }}'), file + '/' + job + ': ' + secret);
       }
@@ -1637,7 +1651,7 @@ test('Expo OTA separates source export from clean environment-scoped publication
   assert.match(otaPreflightSource, /ls-remote', '--tags', 'origin', tagRef, `\$\{tagRef\}\^\{\}`/);
   assert.match(otaPreflightSource, /verifyNativeTagAttestation/);
   assert.match(otaPreflightSource, /verifyNativeOtaReleaseTarget[\s\S]*merge-base', '--is-ancestor', publishedTag\.commit, sourceCommit/);
-  assert.match(resolveInternal, /needs: \[preflight-release-target, deploy-server\]/);
+  assert.match(resolveInternal, /needs: preflight-release-target/);
   assert.match(buildInternal, /needs: \[preflight-release-target, resolve-internal-environment\]/);
   assert.match(publishInternal, /needs: \[preflight-release-target, build-internal-update\]/);
   const productionApproval = workflowJobBlock(workflow, 'approve-production');

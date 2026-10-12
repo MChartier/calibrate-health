@@ -297,7 +297,8 @@ A separate Expo project/account or a
 channel-enforcing broker would be required for that stronger capability boundary. After image publication, the
 pipeline deploys the configured Compose server and requires its application health check to succeed before publishing
 the exact release commit's Android phone JavaScript/assets to `internal`, then proceeds through the same protected
-workflow boundary for production. Manual OTA publication uses the same deployment gate. If the manifest
+workflow boundary for production. Manual OTA publication handles only the client; it does not deploy the server or
+require deployment credentials. Ensure server compatibility separately for manual updates. If the manifest
 reserves a native tag that has not yet been created by a successful Play internal upload,
 or its signed annotated tag does not verify with the workflow-SHA-pinned verifier against the allowlist fetched from
 current protected `master`, exact name, and exact target, or its tagged build has a different app version/native fingerprint, the independent server/image release
@@ -320,12 +321,13 @@ compatibility recheck also request it with Fetch `cache: 'no-store'`. When a dow
 its bundled expected server contract version with that response. Different majors block in either direction. Within a
 major, an older client minor remains compatible with a newer server minor, but a newer client minor blocks against an
 older server minor; patch drift remains compatible. The runtime block does not prevent the update from downloading or
-starting. Both channels require successful deployment and health on the configured server; protected production
-approval remains an additional control for public promotion. The deployment follows `latest` without asserting an
+starting. End-to-end releases require successful deployment and health on the configured server before either OTA
+channel; all OTA publication retains protected production approval for public promotion. Deployment follows `latest` without asserting an
 exact server/OTA version match. Independently managed self-hosts still rely on the runtime guard and are not polled.
 
-Before its first use, complete the [WireGuard/SSH host and environment setup](../deploy/self-hosted/README.md),
-including a successful **Deploy self-hosted server** run from `master`. Then configure OTA:
+For end-to-end releases, complete the [WireGuard/SSH host and environment setup](../deploy/self-hosted/README.md),
+including a successful **Deploy self-hosted server** run from `master`. OTA-only publication needs just the following
+Expo configuration:
 
 1. Configure the repository `EXPO_TOKEN` secret using the existing Expo project identity. No separate Expo robot or
    `expo-publication` environment is required. The token must have access to the project's update publication.

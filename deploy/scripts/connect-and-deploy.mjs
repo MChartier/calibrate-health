@@ -1,3 +1,7 @@
+/**
+ * @file Connect a hosted Actions runner to the deployment host through a temporary
+ * WireGuard peer, invoke its restricted SSH command, and remove local credentials.
+ */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { isIPv4 } from 'node:net';
@@ -8,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 const INTERFACE = 'calibrate-ci';
 const KEY_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
 
+/** Reject missing credentials and malformed network inputs before creating the tunnel. */
 export function deploymentInputs(env) {
   for (const key of ['DEPLOY_HOST', 'DEPLOY_WG_ADDRESS']) {
     if (!isIPv4(env[key] || '')) throw new Error(`${key} must be a single IPv4 address.`);
@@ -27,12 +32,14 @@ export function deploymentInputs(env) {
   }
 }
 
+/** Run the host's fixed upgrade command with pinned SSH trust, cleaning up on success or failure. */
 export function connectAndDeploy(env = process.env, run = execFileSync) {
   deploymentInputs(env);
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-deploy-'));
   const wireguardKey = path.join(directory, 'wireguard.key');
   const sshKey = path.join(directory, 'id_ed25519');
   const knownHosts = path.join(directory, 'known_hosts');
+  /** Bound subprocess execution and withhold private diagnostics unless explicitly overridden. */
   const command = (binary, args, options = {}) => run(binary, args, {
     stdio: ['ignore', 'ignore', 'pipe'], timeout: 30000, ...options,
   });

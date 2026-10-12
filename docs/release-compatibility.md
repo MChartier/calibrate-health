@@ -197,8 +197,10 @@ The four credential stages remain separate from source export. The repository `E
 approval controls workflow sequencing rather than providing a channel-scoped credential boundary. A missing, unattested, or
 incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
 release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
-manual OTA workflow with an exact source that descends from the installed native baseline. Both OTA entrypoints
-first deploy the configured self-host over WireGuard/SSH and require its application health check to succeed.
+manual OTA workflow with an exact source that descends from the installed native baseline. The end-to-end release
+publisher deploys the configured self-host over WireGuard/SSH and requires its application health check before calling
+the OTA workflow. Manual OTA publication handles only the client and has no deployment inputs or credentials;
+ensure server compatibility separately when using it.
 
 Deployment pulls the image configured in the existing Compose stack (`latest`) and upgrades only `app`. It does not
 write image overrides or require deployment state, a lock, or a backup marker. When the native baseline is unavailable,
@@ -208,7 +210,8 @@ Expo's automatic check and download lifecycle remains unchanged. Compatibility i
 running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
 server contract version before restoring the saved session or synchronizing. An incompatible update can therefore
 download and start before the runtime gate blocks normal authenticated use. Protected production approval is the
-additional public-channel promotion control after successful deployment and internal publication. The deployment job
+public-channel promotion control after internal publication. End-to-end releases additionally require successful
+server deployment before either channel. The deployment job
 checks only its configured target; independent self-hosts still require the runtime guard and are not polled by CI.
 
 The preparation command is also available for isolated release tooling tests:

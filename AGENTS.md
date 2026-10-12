@@ -351,20 +351,24 @@ UI code style:
   used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
   a commit signature is insufficient. A reserved
   but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
-  release or use the manual OTA workflow after the signed native baseline is published. Both release-driven and manual OTA publication require a successful
-  deployment and application health check before internal publication; production retains its later approval.
+  release or use the manual OTA workflow after the signed native baseline is published. The end-to-end release publisher
+  requires successful deployment and application health before invoking OTA; production retains its later approval.
+  Keep manual/reusable OTA publication client-only, with no deployment jobs, inputs, or credentials.
 - The configured self-host follows `latest` through its existing Compose files. The restricted WireGuard/SSH command
   pulls `app`, runs Compose up with health waiting, and returns success or failure. Keep it free of deployment locks,
   backup prerequisites, digest overrides, and deployment receipts. Releases without an available native baseline
   still deploy the server after image publication. Configure the host through `deploy/self-hosted/README.md`; the
   endpoint and credentials stay in the master-only `self-hosted-testing` environment. Forward the named environment
-  secrets through reusable callers; expose them only to the deployment step.
+  secrets through the end-to-end release callers; GitHub requires forwarding even though values resolve in the
+  deployment job's environment. Expose them only to the deployment step. Server deployment belongs only in the
+  standalone test-server deployment workflow and the end-to-end release publisher.
   Debian hosts with local wg-quick use `sudo node deploy/scripts/setup-self-hosted.mjs` for consolidated setup;
   setup prints the GitHub environment values on success, and reruns preserve existing CI keys. The optional
   `github-values` mode reprints saved values without running setup.
   Setup and `sudo node deploy/scripts/uninstall-self-hosted.mjs` describe and confirm each host mutation with a
   default-no prompt. Unchanged assets are skipped. Keep the root-only installation record for resuming or undoing
   partial setup; uninstall removes created assets and restores pre-existing settings, without touching Compose/data.
+  Modified scripts require file-level and function-level documentation comments.
 - Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
   `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
   every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit
@@ -380,7 +384,7 @@ UI code style:
   not add candidate-manifest inspection or a download/restart veto.
 - Startup, server-selection, and manual-recheck compatibility requests must use `cache: 'no-store'`; response headers
   alone cannot invalidate a response cached before the server began sending the no-store policy.
-- Successful deployment and application health gate both OTA channels; protected production approval additionally
+- Successful deployment and application health gate both OTA channels in end-to-end releases; protected production approval additionally
   gates public-channel promotion. The deployment job checks only its configured target, and does not assert an exact
   server/OTA version match. Independent self-hosts still require the runtime guard and are not polled to gate OTA.
 - Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image

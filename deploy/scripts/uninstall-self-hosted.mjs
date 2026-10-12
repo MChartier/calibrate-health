@@ -1,3 +1,7 @@
+/**
+ * @file Undo recorded deployment setup changes with confirmation before each
+ * mutation. Restore pre-existing assets and retain progress for interrupted runs.
+ */
 import fs from 'node:fs';
 import { isIPv4 } from 'node:net';
 import path from 'node:path';
@@ -6,6 +10,7 @@ import { removeWireGuardPeer } from './setup-self-hosted.mjs';
 import { ACCOUNT, ACCOUNT_HOME, FIREWALL_SERVICE, fingerprint, HostChanges, SSH_FILE,
   STATE_DIRECTORY, STATE_FILE, withConfirmation } from './self-hosted-setup-state.mjs';
 
+/** Limit uninstall to known installer resources and validated network identities. */
 function validateRecord(state) {
   for (const name of Object.keys(state.resources)) {
     if (!['peer', 'route', 'firewallService', 'firewall', 'account'].includes(name)) throw new Error(`Unexpected recorded resource: ${name}`);
@@ -36,6 +41,7 @@ function validateRecord(state) {
   }
 }
 
+/** Resume removal or restoration of recorded assets while preserving Compose, data, and unrelated host state. */
 export async function uninstall(options = {}) {
   const host = new HostChanges(options);
   const { run, log } = host;
@@ -43,6 +49,7 @@ export async function uninstall(options = {}) {
   validateRecord(host.state);
   host.uninstalling = true;
   log('[check] Removing only recorded installation changes. Existing Compose, database, VPN peers, and imported assets are preserved.');
+  /** Persist completed resource cleanup so later retries do not repeat it. */
   const forget = (name) => { delete host.state.resources[name]; host.save(); };
   const peer = host.state.resources.peer;
   if (peer) {
@@ -173,6 +180,7 @@ export async function uninstall(options = {}) {
   log('Uninstall complete. Remove the deployment environment credentials from GitHub if they are no longer needed.');
 }
 
+/** Require a local root session and interactive confirmation before undoing host setup. */
 async function main() {
   if (process.argv[2] === '--help' && process.argv.length === 3) {
     console.log('sudo node deploy/scripts/uninstall-self-hosted.mjs\nUndo recorded server setup changes, confirming each change.');

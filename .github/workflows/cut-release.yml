@@ -7,6 +7,8 @@ on:
     secrets:
       EXPO_TOKEN:
         required: false
+      # Forward environment secret names to publish-release -> deploy-self-hosted.
+      # GitHub requires forwarding; values resolve only in self-hosted-testing.
       DEPLOY_WG_ENDPOINT:
         required: true
       DEPLOY_WG_PRIVATE_KEY:

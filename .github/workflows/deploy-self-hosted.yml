@@ -2,6 +2,7 @@ name: Deploy self-hosted server
 
 on:
   workflow_call:
+    # Callers must forward these names even though values come from this job's environment.
     secrets:
       DEPLOY_WG_ENDPOINT:
         required: true

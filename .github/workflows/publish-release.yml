@@ -5,6 +5,7 @@ on:
     secrets:
       EXPO_TOKEN:
         required: false
+      # Forward environment secret names to deploy-self-hosted; only its job resolves their values.
       DEPLOY_WG_ENDPOINT:
         required: true
       DEPLOY_WG_PRIVATE_KEY:
@@ -523,10 +524,8 @@ jobs:
       publish_latest: true
 
   deploy_self_hosted:
-    name: Deploy server when OTA is unavailable
-    needs: [tag_release, build_release_image]
-    # The OTA workflow owns deployment when a compatible native baseline is available.
-    if: needs.tag_release.outputs.native_release_ready != 'true'
+    name: Deploy server and require application health
+    needs: build_release_image
     permissions:
       contents: read
     uses: ./.github/workflows/deploy-self-hosted.yml
@@ -540,16 +539,12 @@ jobs:
 
   publish_ota:
     name: Publish released Expo OTA update
-    needs: [tag_release, publish_release_tag, build_release_image]
+    needs: [tag_release, deploy_self_hosted]
     if: needs.tag_release.outputs.native_release_ready == 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/expo-ota-update.yml
     secrets:
-      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
-      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
-      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-      DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       source_ref: ${{ inputs.release_commit }}

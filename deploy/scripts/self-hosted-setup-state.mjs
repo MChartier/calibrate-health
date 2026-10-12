@@ -1,3 +1,8 @@
+/**
+ * @file Shared host mutation tracking for deployment setup and uninstall.
+ * Confirm changes, preserve original assets, and save recovery progress in a
+ * root-only record; injected host operations support tests without system changes.
+ */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -11,6 +16,7 @@ export const FIREWALL_SERVICE = 'calibrate-ci-firewall.service';
 export const SSH_FILE = '/etc/ssh/sshd_config.d/00-calibrate-deploy.conf';
 export const FIREWALL_FILE = '/etc/calibrate/ci-firewall.nft';
 
+/** Run a bounded host command with a fixed environment, translating expected absence to null. */
 export function command(binary, args, { input, absent = false, missingCodes = [1] } = {}) {
   try {
     return execFileSync(binary, args, {
@@ -23,11 +29,15 @@ export function command(binary, args, { input, absent = false, missingCodes = [1
   }
 }
 
+/** Hash installed bytes so uninstall can identify edits made after setup. */
 export const fingerprint = (value) => createHash('sha256').update(value).digest('hex');
 
+/** Coordinate confirmed mutations and their original state across setup, reruns, and uninstall. */
 export class HostChanges {
+  /** Bind host adapters and load an existing record only from root-owned regular files. */
   constructor({ root = '/', ownerUid = 0, run = command, log = console.log, confirm = async () => false } = {}) {
     Object.assign(this, { root, ownerUid, log, confirm });
+    /** Announce subprocess operations without logging private stdin or captured output. */
     this.run = (binary, args, options) => {
       log(`[run] ${binary} ${args.join(' ')}`);
       return run(binary, args, options);
@@ -41,12 +51,18 @@ export class HostChanges {
     }
   }
 
+  /** Map a host path into the injected root used by isolated tests. */
   target(name) { return path.join(this.root, name); }
+  /** Check whether an asset exists under the selected host root. */
   exists(name) { return fs.existsSync(this.target(name)); }
+  /** Read a host text asset without emitting its possibly private contents. */
   read(name) { return fs.readFileSync(this.target(name), 'utf8'); }
+  /** Explain why an already-correct asset requires no confirmation or write. */
   skip(description) { this.log(`[unchanged] ${description}`); }
+  /** Compare POSIX permissions, allowing Windows fixtures that cannot represent those modes. */
   modeMatches(actual, expected) { return process.platform === 'win32' || actual === expected; }
 
+  /** Reject symlinks, unexpected file types, and assets outside the trusted owner identity. */
   assertOwned(name, directory = false) {
     const info = fs.lstatSync(this.target(name));
     if (info.uid !== this.ownerUid || info.isSymbolicLink() || !(directory ? info.isDirectory() : info.isFile())) {
@@ -55,12 +71,14 @@ export class HostChanges {
     return info;
   }
 
+  /** Capture original file bytes and permissions for restoration, or null for a new asset. */
   snapshot(name) {
     if (!this.exists(name)) return null;
     const info = this.assertOwned(name);
     return { data: fs.readFileSync(this.target(name)).toString('base64'), mode: info.mode & 0o777 };
   }
 
+  /** Validate a staged temporary file before atomically replacing the destination. */
   atomicWrite(name, content, mode, validate) {
     if (this.exists(name)) this.assertOwned(name);
     const destination = this.target(name);
@@ -75,11 +93,13 @@ export class HostChanges {
     }
   }
 
+  /** Persist recovery state privately, skipping writes when the record has not changed. */
   save() {
     const content = `${JSON.stringify(this.state, null, 2)}\n`;
     if (!this.exists(STATE_FILE) || this.read(STATE_FILE) !== content) this.atomicWrite(STATE_FILE, content, 0o600);
   }
 
+  /** Announce and confirm one mutation; a declined prompt stops before invoking its action. */
   async change(description, action) {
     this.log(`[change] ${description}`);
     if (await this.confirm(description) !== true) {
@@ -92,6 +112,7 @@ export class HostChanges {
     return result;
   }
 
+  /** Create the recovery record once, or resume setup unless uninstall is still in progress. */
   async initialize() {
     if (this.state) {
       if (this.state.phase === 'uninstalling') throw new Error('Finish the interrupted uninstall before running setup again.');
@@ -112,12 +133,14 @@ export class HostChanges {
     });
   }
 
+  /** Save a resource's first observed state before mutation without overwriting it on retries. */
   remember(name, before) {
     if (!Object.hasOwn(this.state.resources, name)) this.state.resources[name] = before;
     this.save();
     return this.state.resources[name];
   }
 
+  /** Create or adjust a directory only as needed, recording its original existence and permissions. */
   async directory(name, mode = 0o700, preserveExisting = false) {
     const info = this.exists(name) ? this.assertOwned(name, true) : null;
     if (info && (preserveExisting || this.modeMatches(info.mode & 0o777, mode))) {
@@ -133,6 +156,7 @@ export class HostChanges {
     });
   }
 
+  /** Reconcile file bytes and permissions, recording originals and pending reloads before writing. */
   async file(name, content, mode = 0o600, pending = [], validate) {
     const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content);
     const before = this.snapshot(name);
@@ -150,12 +174,14 @@ export class HostChanges {
     return true;
   }
 
+  /** Preserve an existing key's contents while correcting private-file permissions if necessary. */
   async privateFile(name) {
     const info = this.assertOwned(name);
     if (this.modeMatches(info.mode & 0o777, 0o600)) { this.skip(`Private key ${name}`); return; }
     await this.file(name, fs.readFileSync(this.target(name)), 0o600);
   }
 
+  /** Reuse an existing SSH identity or confirm generation of a tracked Ed25519 key pair. */
   async sshKey(name) {
     if (this.exists(name)) { await this.privateFile(name); return; }
     if (this.exists(`${name}.pub`)) throw new Error(`Public key exists without its private key: ${name}.pub`);
@@ -171,6 +197,7 @@ export class HostChanges {
     });
   }
 
+  /** Reuse an existing WireGuard identity or confirm generation of one tracked private key. */
   async wireGuardKey(name) {
     if (this.exists(name)) { await this.privateFile(name); return; }
     await this.change(`Generate the WireGuard private key ${name}.`, () => {
@@ -185,11 +212,14 @@ export class HostChanges {
     });
   }
 
+  /** Read whether the dedicated firewall service is active and enabled for later restoration. */
   serviceStatus() {
+    /** Treat systemd's inactive, disabled, and missing-unit statuses as absent state. */
     const query = (operation) => this.run('systemctl', [operation, FIREWALL_SERVICE], { absent: true, missingCodes: [1, 3, 4] });
     return { active: query('is-active') === 'active', enabled: query('is-enabled') === 'enabled' };
   }
 
+  /** Confirm and perform a pending service reload, clearing the flag only after success. */
   async reload(flag, description, binary, args) {
     if (!this.state.pending[flag]) { this.skip(description); return; }
     await this.change(description, () => {
@@ -200,6 +230,7 @@ export class HostChanges {
   }
 }
 
+/** Provide default-no interactive confirmation and always close the terminal prompt session. */
 export async function withConfirmation(action) {
   if (!process.stdin.isTTY) throw new Error('An interactive terminal is required to confirm each change.');
   const { createInterface } = await import('node:readline/promises');

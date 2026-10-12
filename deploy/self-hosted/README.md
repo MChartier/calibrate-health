@@ -8,14 +8,16 @@ check, and returns success or failure. Keep the existing Compose files and `.env
 APP_IMAGE=ghcr.io/mchartier/calibratehealth:latest
 ```
 
-Both **Cut release** / **Publish prepared release** and the manual **Publish Expo OTA Update** action require a
-successful deployment before any internal OTA publication. Production publication inherits that requirement and
-still requires the existing `production` approval. Failed connections, pulls, startup, or health checks block OTA.
+The end-to-end **Cut release** / **Publish prepared release** flow publishes the image, deploys the server, and
+requires application health before invoking OTA publication. Failed connections, pulls, startup, or health checks
+block that release's OTA. Production publication still requires the existing `production` approval.
 When the native baseline is unavailable, the release still deploys the server after publishing the image and skips
 OTA. **Build Release Image** remains image-only.
 
-The shared OTA workflow owns its deployment gate, so manual OTA publication cannot skip it. There is no optional
-`SELF_HOSTED_DEPLOY_ENABLED` switch; configure the host and environment before running releases with this workflow.
+**Deploy self-hosted server** independently tests or retries the server upgrade. **Publish Expo OTA Update** handles
+only client publication, with no server deployment or deployment secrets. For a manual OTA, ensure the target server
+is compatible separately. There is no optional `SELF_HOSTED_DEPLOY_ENABLED` switch in the end-to-end release flow;
+configure the host and environment before running it.
 The image publisher retains its existing release verification before updating `latest`. Deployment follows whatever
 `latest` resolves to when pulled; it does not select or verify an exact release digest or version.
 
@@ -120,8 +122,9 @@ secret. The other three secrets and four variables keep their names. `SELF_HOSTE
 The existing repository `EXPO_TOKEN`, Expo `preview` settings, and GitHub `production` approval remain required for OTA.
 
 The job pins the host key collected by the installer; it never learns it with an unverified `ssh-keyscan` during
-deployment. Reusable workflow callers explicitly forward the four secret names; their
-values resolve in the deployment job's protected environment. See GitHub's
+deployment. Only the end-to-end release callers forward the four secret names through the handler, release worker,
+and deployment workflow; GitHub requires each reusable call to pass them even though their values resolve in the
+deployment job's protected environment. The OTA-only workflow has no deployment parameters. See GitHub's
 [environment secrets in reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows#using-inputs-and-secrets-in-a-reusable-workflow).
 The job also checks current protected-master workflow authority before using deployment credentials.
 
@@ -148,7 +151,7 @@ Run one setup or uninstall process at a time.
 Installations made with an earlier script that did not record ownership are treated as pre-existing assets. Their
 assets are not silently claimed or deleted. Without an installation record, uninstall reports that there is nothing
 tracked to remove. Remove the deployment environment credentials in GitHub separately when retiring the integration;
-these host scripts do not authenticate to GitHub. Release/OTA jobs remain gated on a working deployment target.
+these host scripts do not authenticate to GitHub. End-to-end releases still require a working deployment target.
 
 ## Upgrade, verify, and retry
 
@@ -172,13 +175,14 @@ the application's configured readiness check, not proxy/DNS/TLS availability or 
 For rollout, run **Deploy self-hosted server** from `master` with no inputs after merge. This checks the entire
 WireGuard/SSH/upgrade/health path and performs a real upgrade to `latest`, which may briefly restart `app`. The host
 command above is also available for local troubleshooting. Once the Actions deployment succeeds, use **Cut release**
-or the existing manual OTA workflow. Internal publication waits for deployment success; production follows internal
-publication and its existing approval. No deployment credentials are exposed to Expo export/publisher steps.
+for the full image/deploy/OTA sequence. In that flow, internal publication waits for deployment success; production
+follows internal publication and its existing approval. Manual **Publish Expo OTA Update** publishes only the client
+and requires no deployment credentials or host setup.
 
 If a pull, startup, health check, or connection fails, inspect the stack locally with your normal `docker compose ps`
 and `docker compose logs --tail 100 app` commands. After fixing the cause, rerun failed Actions jobs or dispatch
-**Deploy self-hosted server** again. A standalone deployment does not resume an older OTA run; rerun that failed OTA
-run as well. Every deployment invocation pulls the current `latest` again. There is no automatic rollback because
+**Deploy self-hosted server** again. A standalone deployment does not resume a blocked end-to-end release; rerun the
+failed release jobs to continue to OTA. Every deployment invocation pulls the current `latest` again. There is no automatic rollback because
 startup may already have applied migrations; use the existing [recovery procedure](../README.md#clean-instance-restore-drill)
 if needed. Avoid overlapping manual upgrades with an Actions deployment; GitHub keeps CI peer sessions serialized.
 

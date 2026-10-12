@@ -1,3 +1,7 @@
+/**
+ * @file Exercise Compose upgrade health checks and runner tunnel cleanup with
+ * temporary stack files and mocked commands; no server or network is contacted.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -6,6 +10,7 @@ import test from 'node:test';
 import { connectAndDeploy, deploymentInputs } from '../scripts/connect-and-deploy.mjs';
 import { deploy } from '../scripts/self-hosted-deploy.mjs';
 
+/** Build an isolated stack and Docker adapter with selectable pull, startup, and health failures. */
 function fixture(t, options = {}) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-deploy-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -19,6 +24,7 @@ function fixture(t, options = {}) {
   };
   const calls = [];
   const logs = [];
+  /** Record and validate stack commands while simulating container lifecycle results. */
   const runDocker = (args, cwd) => {
     assert.equal(cwd, directory);
     calls.push(args);
@@ -120,6 +126,7 @@ for (const failureStage of [null, 'wg', 'ssh']) {
   test(`runner pins SSH host key, limits routing, and cleans secrets/tunnel: ${failureStage || 'success'}`, () => {
     const calls = [];
     let keyPath;
+    /** Check tunnel and SSH arguments while injecting failures to exercise credential cleanup. */
     const run = (binary, args, options) => {
       calls.push([binary, args, options]);
       if (args[0] === 'wg') {

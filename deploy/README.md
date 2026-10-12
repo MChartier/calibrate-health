@@ -146,8 +146,8 @@ exist.
 
 For automatic redeployment after image publication, see [deployment over WireGuard](self-hosted/README.md).
 The configured CI target keeps its existing Compose image (`latest`), pulls and upgrades only `app`, and requires a
-successful application health check before internal or production OTA publication. The upgrade script does not enforce
-a backup prerequisite or write image overrides.
+successful application health check before OTA publication in the end-to-end release flow. Manual **Publish Expo OTA
+Update** remains a client-only action. The upgrade script does not enforce a backup prerequisite or write image overrides.
 
 ## Encrypted automated backups
 

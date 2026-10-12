@@ -1,3 +1,8 @@
+/**
+ * @file Configure restricted SSH and a CI WireGuard peer on an existing Debian
+ * Compose host. Confirm and record mutations, reuse installed assets on reruns,
+ * and print the protected GitHub environment values after successful setup.
+ */
 import fs from 'node:fs';
 import { isIPv4 } from 'node:net';
 import path from 'node:path';
@@ -16,6 +21,7 @@ const MARKER = '# Managed by calibrate deployment setup';
 const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const KEY_PATTERN = /^[A-Za-z0-9+/]{43}=$/;
 
+/** Validate stack and network settings before inspecting or changing the host. */
 export function validateSetup(config) {
   validateConfig(config.deployment);
   if (!/^[a-zA-Z0-9_-]{1,15}$/.test(config.interface || '')) throw new Error('Invalid WireGuard interface name.');
@@ -27,10 +33,12 @@ export function validateSetup(config) {
   });
 }
 
+/** Convert a validated IPv4 address to an unsigned number for subnet comparisons. */
 function ipv4Number(value) {
   return value.split('.').reduce((number, octet) => number * 256 + Number(octet), 0);
 }
 
+/** Reject a CI address covered by another WireGuard peer's IPv4 routes. */
 export function assertUnusedAddress(address, allowedIps) {
   for (const cidr of allowedIps.split(/[\s,]+/).filter(Boolean)) {
     const [ip, prefix = '32'] = cidr.split('/');
@@ -44,6 +52,7 @@ export function assertUnusedAddress(address, allowedIps) {
   }
 }
 
+/** Reuse the matching CI peer or append it once, rejecting conflicting keys and address ranges. */
 export function updateWireGuard(source, publicKey, address) {
   if (!KEY_PATTERN.test(publicKey) || !isIPv4(address)) throw new Error('Invalid CI peer identity.');
   const start = source.indexOf(BEGIN_PEER);
@@ -75,6 +84,7 @@ export function updateWireGuard(source, publicKey, address) {
   return `${source.trimEnd()}\n\n${BEGIN_PEER}\n[Peer]\nPublicKey = ${publicKey}\nAllowedIPs = ${address}/32\n${END_PEER}\n`;
 }
 
+/** Remove only the recorded peer, including configurations rewritten by wg-quick SaveConfig. */
 export function removeWireGuardPeer(source, publicKey) {
   const sections = [...source.matchAll(/^[ \t]*\[Peer\][ \t]*\r?$/gmi)];
   const matches = sections.map((match, index) => ({ start: match.index,
@@ -95,8 +105,8 @@ export function removeWireGuardPeer(source, publicKey) {
   return source.slice(0, start).replace(/\n\n$/, '\n') + source.slice(end);
 }
 
+/** Restrict the CI peer to host SSH without flushing Docker or existing host firewall rules. */
 export function firewallRules(config) {
-  // This dedicated table adds restrictions without flushing Docker or the existing host firewall.
   return `${MARKER}
 add table inet calibrate_ci
 flush table inet calibrate_ci
@@ -114,6 +124,7 @@ table inet calibrate_ci {
 `;
 }
 
+/** Build a per-account SSH policy that forces the deployment command and disables interactive access. */
 function sshConfiguration() {
   return `${MARKER}
 Match User ${ACCOUNT}
@@ -131,6 +142,7 @@ Match all
 `;
 }
 
+/** Fail if effective sshd settings override any required restriction for the deployment account. */
 export function verifySshConfiguration(output) {
   const values = Object.fromEntries(output.split('\n').map((line) => {
     const separator = line.indexOf(' ');
@@ -147,6 +159,7 @@ export function verifySshConfiguration(output) {
   if (!values.port?.split(/\s+/).includes('22')) throw new Error('This deployment workflow requires SSH on port 22.');
 }
 
+/** Print saved CI credentials and the master-only environment policy for the administrator to copy. */
 function printGithubValues(values, log = console.log) {
   log(`Copy into the ${values.environment} GitHub environment. This output contains private CI keys.`);
   log(`Deployment branches and tags: Selected branches and tags; allow only branch ${values.branch}, with no tags.`);
@@ -157,6 +170,7 @@ function printGithubValues(values, log = console.log) {
   }
 }
 
+/** Reconcile host assets with per-change confirmation and recovery records; never upgrade the application. */
 export async function install(config, options = {}) {
   const host = new HostChanges(options);
   const { run, log } = host;
@@ -377,10 +391,12 @@ WantedBy=multi-user.target
   printGithubValues(githubValues, log);
 }
 
+/** Reuse saved settings or ask once for the existing stack, local VPN interface, and CI peer address. */
 async function promptConfiguration() {
   if (fs.existsSync(CONFIG)) return JSON.parse(fs.readFileSync(CONFIG, 'utf8'));
   if (!process.stdin.isTTY) throw new Error('First-time setup needs an interactive terminal.');
   const prompts = createInterface({ input: process.stdin, output: process.stdout });
+  /** Read one configuration value, keeping the suggested value when the administrator presses Enter. */
   const ask = async (label, fallback = '') => (await prompts.question(`${label}${fallback ? ` [${fallback}]` : ''}: `)).trim() || fallback;
   try {
     const existing = fs.existsSync('/etc/calibrate/deploy.json')
@@ -403,6 +419,7 @@ async function promptConfiguration() {
   }
 }
 
+/** Enforce Debian/root prerequisites and dispatch interactive setup or read-only credential output. */
 async function main() {
   const mode = process.argv[2] || 'install';
   if (mode === '--help') {

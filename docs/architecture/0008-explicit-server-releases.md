@@ -40,10 +40,11 @@ A reserved but missing native tag records an OTA skip without failing the server
 publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
 protected production approval; it is never triggered by an ordinary `master` push or a standalone deployment action.
 
-The shared OTA workflow first updates the owner's configured self-host over WireGuard/SSH using its existing Compose
-`latest` image and waits for application health. Failed deployment blocks both OTA channels, including manual OTA
-publication. When OTA is skipped for an unavailable native baseline, the release publisher still deploys the server
-after image publication. See
+The end-to-end release publisher updates the owner's configured self-host over WireGuard/SSH using its existing
+Compose `latest` image and waits for application health before invoking OTA publication. Failed deployment blocks
+both OTA channels in that release. Manual OTA publication remains a client-only operation with no server deployment
+or deployment credentials. When OTA is skipped for an unavailable native baseline, the release publisher still deploys
+the server after image publication. See
 [automatic self-host deployment](../../deploy/self-hosted/README.md).
 
 Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
@@ -51,7 +52,7 @@ Expo's automatic check and download lifecycle remains unchanged. Client configur
 compatibility recheck also request it with Fetch `cache: 'no-store'`. Once a bundle runs, the phone compares its bundled
 expected server contract version with that response. Different majors block in either direction. Within a major, a
 client minor may trail the server minor but may not lead it; patch drift remains compatible. This runtime check does
-not claim to prevent the update from downloading or starting. Successful deployment and health gate both channels,
+not claim to prevent the update from downloading or starting. Successful deployment and health gate release-driven OTA,
 and protected production approval additionally gates public promotion. Deployment checks only the configured target
 and does not assert an exact server/OTA version match. Independent installations retain the runtime guard and are
 not polled to gate OTA.

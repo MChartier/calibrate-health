@@ -1,3 +1,7 @@
+/**
+ * @file Exercise confirmed, idempotent setup and uninstall against a temporary
+ * host filesystem and simulated services, accounts, firewall, and VPN commands.
+ */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -36,6 +40,7 @@ PublicKey = ${otherKey}
 AllowedIPs = 10.8.0.2/32, 192.168.2.0/24
 `;
 
+/** Model an existing Debian stack and mutable host resources without requiring root or real services. */
 function fixture(t, options = {}) {
   // Windows maps POSIX read-only modes to an attribute that prevents atomic replacement/deletion.
   // Keep fixture files writable there; the installer itself only runs on Linux.
@@ -48,7 +53,9 @@ function fixture(t, options = {}) {
   }
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-setup-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  /** Resolve a host asset inside this test's disposable filesystem. */
   const target = (name) => path.join(root, name);
+  /** Seed a fixture file and its parent directories. */
   const put = (name, content = '') => {
     fs.mkdirSync(path.dirname(target(name)), { recursive: true });
     fs.writeFileSync(target(name), content);
@@ -71,7 +78,9 @@ function fixture(t, options = {}) {
   const confirmations = [];
   const state = { account: false, group: false, shell: '/bin/sh', peer: null, route: false,
     active: false, enabled: false, table: null };
+  /** Render the current simulated deployment account for getent responses. */
   const passwd = () => `calibrate-deploy:x:1003:1003::/var/lib/calibrate-deploy-user:${state.shell}`;
+  /** Record host commands and apply their effects only to the fixture's simulated state. */
   const run = (binary, args, settings = {}) => {
     calls.push({ binary, args, ...settings });
     if (binary === '/usr/bin/node') return options.nodeVersion || 'v22.14.0';
@@ -131,6 +140,7 @@ function fixture(t, options = {}) {
     if (binary === 'sshd' && args[0] === '-T') return options.badSsh ? sshEffective.replace('disableforwarding yes', 'disableforwarding no') : sshEffective;
     return '';
   };
+  /** Supply isolated host adapters and capture each confirmation for setup or uninstall assertions. */
   const settings = (confirm = () => true) => ({ root, ownerUid: process.getuid?.() ?? 0, run,
     log: (line) => logs.push(line), confirm: async (description) => {
       confirmations.push(description);
@@ -143,6 +153,7 @@ function fixture(t, options = {}) {
 test('installer configures the fixed SSH command and restricted peer without changing or restarting Compose', async (t) => {
   const f = fixture(t);
   await f.run();
+  /** Read installed fixture assets for configuration and credential-output assertions. */
   const read = (name) => fs.readFileSync(f.target(name), 'utf8');
   assert.equal(read('/srv/calibrate/compose.yml'), 'existing compose bytes');
   assert.equal(read('/srv/calibrate/.env'), 'SESSION_SECRET=preserve-existing-secret');

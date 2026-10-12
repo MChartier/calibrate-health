@@ -45,4 +45,5 @@ so the runtime guard remains necessary.
 - Within a major, a server minor can advance before clients, but a client minor cannot advance ahead of the server.
 - A major mismatch blocks in either direction until the server and client converge.
 - This short-term runtime guard does not prevent an incompatible bundle from being downloaded.
-- The configured deployment gate and production approval complement the runtime guard.
+- End-to-end releases gate OTA on configured server health. OTA-only publication has no deployment step;
+  production approval and the runtime guard remain in place for both entrypoints.
