@@ -13,9 +13,7 @@ on:
         required: true
       DEPLOY_WG_PRIVATE_KEY:
         required: true
-      DEPLOY_SSH_PRIVATE_KEY:
-        required: true
-      DEPLOY_SSH_KNOWN_HOSTS:
+      DEPLOY_TOKEN:
         required: true
     inputs:
       bump:
@@ -1141,8 +1139,7 @@ jobs:
     secrets:
       DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
       DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
-      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-      DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}

@@ -8,9 +8,7 @@ on:
         required: true
       DEPLOY_WG_PRIVATE_KEY:
         required: true
-      DEPLOY_SSH_PRIVATE_KEY:
-        required: true
-      DEPLOY_SSH_KNOWN_HOSTS:
+      DEPLOY_TOKEN:
         required: true
     inputs:
       release_commit:
@@ -25,7 +23,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: self-hosted-testing
     # Serialize the shared WireGuard peer as well as the target stack. Never cancel migrations.
     concurrency:
@@ -73,16 +71,15 @@ jobs:
             --workflow-sha "${WORKFLOW_SHA}" \
             "${RELEASE_ARGS[@]}"
 
-      - name: Upgrade Compose app over WireGuard and SSH and wait for health
+      - name: Call homelab deployment webhook over WireGuard and require health
         env:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_SSH_USER: ${{ vars.DEPLOY_SSH_USER }}
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
           DEPLOY_WG_ADDRESS: ${{ vars.DEPLOY_WG_ADDRESS }}
           DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
           DEPLOY_WG_PUBLIC_KEY: ${{ vars.DEPLOY_WG_PUBLIC_KEY }}
           DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
-          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: node deploy/scripts/connect-and-deploy.mjs
 
       - name: Remove tunnel after cancellation or failure

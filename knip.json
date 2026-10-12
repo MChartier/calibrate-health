@@ -7,7 +7,7 @@
   },
   "workspaces": {
     ".": {
-      "entry": [".codex/local-environment.setup.mjs", "scripts/reset-test-user-onboarding.mjs", "deploy/scripts/self-hosted-deploy.mjs"],
+      "entry": [".codex/local-environment.setup.mjs", "scripts/reset-test-user-onboarding.mjs"],
       "project": [
         ".codex/**/*.mjs",
         "deploy/**/*.{js,mjs,ts}",

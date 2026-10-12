@@ -32,8 +32,8 @@ Expo's automatic and manual update behavior remains unchanged. The client does n
 based on the selected server, so this decision requires no native Expo configuration change or replacement signed
 build.
 
-Both OTA channels require a successful Compose upgrade and application health check on the configured release
-owner's server over WireGuard/SSH. Production additionally requires its existing approval. The upgrade follows
+In end-to-end releases, both OTA channels require the shared homelab webhook over WireGuard to confirm a successful
+Compose upgrade and application health check. Production additionally requires its existing approval. The upgrade follows
 `latest` and checks health without asserting an exact server/OTA version match. Other self-hosts are not polled,
 so the runtime guard remains necessary.
 

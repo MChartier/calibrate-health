@@ -325,7 +325,7 @@ starting. End-to-end releases require successful deployment and health on the co
 channel; all OTA publication retains protected production approval for public promotion. Deployment follows `latest` without asserting an
 exact server/OTA version match. Independently managed self-hosts still rely on the runtime guard and are not polled.
 
-For end-to-end releases, complete the [WireGuard/SSH host and environment setup](../deploy/self-hosted/README.md),
+For end-to-end releases, complete the [WireGuard/webhook environment configuration](../deploy/self-hosted/README.md),
 including a successful **Deploy self-hosted server** run from `master`. OTA-only publication needs just the following
 Expo configuration:
 

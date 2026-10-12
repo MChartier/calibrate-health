@@ -1,7 +1,0 @@
-{
-  "projectName": "calibrate",
-  "projectDirectory": "/srv/calibrate/deploy",
-  "composeFiles": ["docker-compose.yml", "docker-compose.postgres.yml", "docker-compose.backup.yml"],
-  "envFile": ".env",
-  "waitTimeoutSeconds": 300
-}

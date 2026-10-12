@@ -787,6 +787,9 @@ test('end-to-end releases gate OTA on server health while OTA-only publishing st
   assert.doesNotMatch(workflow, /SELF_HOSTED_DEPLOY_ENABLED|image_ref:|release_tag:|\n    if:/);
   assert.match(workflow, /GITHUB_REF.*!=.*refs\/heads\/master/);
   assert.match(workflow, /DEPLOY_WG_ENDPOINT: \$\{\{ secrets\.DEPLOY_WG_ENDPOINT \}\}/);
+  assert.match(workflow, /DEPLOY_TOKEN: \$\{\{ secrets\.DEPLOY_TOKEN \}\}/);
+  assert.match(workflow, /DEPLOY_URL: \$\{\{ vars\.DEPLOY_URL \}\}/);
+  assert.match(workflow, /run: node deploy\/scripts\/connect-and-deploy\.mjs/);
   assert.match(workflow, /runs-on: ubuntu-latest/);
   assert.match(workflow, /environment: self-hosted-testing/);
   assert.match(workflow, /group: self-hosted-testing-deploy\n\s+cancel-in-progress: false/);
@@ -799,12 +802,12 @@ test('end-to-end releases gate OTA on server health while OTA-only publishing st
   assertReviewedReleaseActionPins('deploy-self-hosted.yml');
   assert.match(workflow, /if: always\(\)/);
   assert.doesNotMatch(workflow, /pull_request:|workflow_run:|packages: write|contents: write/);
-  assert.doesNotMatch(workflow, /runs-on:.*self-hosted|continue-on-error|ssh-keyscan/);
+  assert.doesNotMatch(workflow, /runs-on:.*self-hosted|continue-on-error|DEPLOY_SSH_|ssh-keyscan/);
   for (const match of workflow.matchAll(/uses: ([^\n]+)/g)) assert.match(match[1], /@[a-f0-9]{40}(?: |$)/);
 });
 
 test('deployment environment secrets are forwarded through every reusable release caller', () => {
-  const secretNames = ['DEPLOY_WG_ENDPOINT', 'DEPLOY_WG_PRIVATE_KEY', 'DEPLOY_SSH_PRIVATE_KEY', 'DEPLOY_SSH_KNOWN_HOSTS'];
+  const secretNames = ['DEPLOY_WG_ENDPOINT', 'DEPLOY_WG_PRIVATE_KEY', 'DEPLOY_TOKEN'];
   const callees = new Set(['cut-release.yml', 'publish-release.yml', 'deploy-self-hosted.yml']);
   for (const name of callees) {
     const declarations = readWorkflow(name).split('    inputs:')[0];
@@ -812,6 +815,7 @@ test('deployment environment secrets are forwarded through every reusable releas
   }
   for (const file of readdirSync(workflowsDirectory).filter((name) => name.endsWith('.yml'))) {
     const source = readWorkflow(file);
+    assert.doesNotMatch(source, /DEPLOY_SSH_/, file + ' must not retain retired deployment credentials');
     const jobs = source.slice(source.indexOf('\njobs:\n'));
     for (const [, job] of jobs.matchAll(/^  ([a-z0-9_-]+):$/gm)) {
       const block = workflowJobBlock(source, job);

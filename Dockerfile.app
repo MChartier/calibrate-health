@@ -73,4 +73,8 @@ RUN chmod +x /app/backend/scripts/start-prod.sh \
       /usr/local/bin/yarnpkg \
       /opt/yarn-*
 
+# Supply DB-backed readiness to existing homelab Compose stacks that do not define a healthcheck.
+HEALTHCHECK --interval=15s --timeout=5s --retries=5 --start-period=45s \
+    CMD ["node", "-e", "fetch('http://127.0.0.1:'+process.env.PORT+'/api/v1/readyz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+
 CMD ["./scripts/start-prod.sh"]

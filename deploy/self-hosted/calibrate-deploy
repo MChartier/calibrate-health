@@ -1,8 +1,0 @@
-#!/bin/sh
-# Restricted SSH entrypoint: run the installed deployment helper with a fixed,
-# minimal environment and no caller-selected arguments or standard input.
-set -eu
-
-[ "$#" -eq 0 ] || exit 1
-exec /usr/bin/env -i PATH=/usr/bin:/bin DOCKER_CONFIG=/etc/calibrate/registry \
-  /usr/bin/node /usr/local/lib/calibrate-deploy.mjs </dev/null

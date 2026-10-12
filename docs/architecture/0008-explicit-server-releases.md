@@ -40,7 +40,7 @@ A reserved but missing native tag records an OTA skip without failing the server
 publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
 protected production approval; it is never triggered by an ordinary `master` push or a standalone deployment action.
 
-The end-to-end release publisher updates the owner's configured self-host over WireGuard/SSH using its existing
+The end-to-end release publisher calls the shared homelab webhook over WireGuard to update the self-host's existing
 Compose `latest` image and waits for application health before invoking OTA publication. Failed deployment blocks
 both OTA channels in that release. Manual OTA publication remains a client-only operation with no server deployment
 or deployment credentials. When OTA is skipped for an unavailable native baseline, the release publisher still deploys

@@ -198,7 +198,7 @@ approval controls workflow sequencing rather than providing a channel-scoped cre
 incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
 release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
 manual OTA workflow with an exact source that descends from the installed native baseline. The end-to-end release
-publisher deploys the configured self-host over WireGuard/SSH and requires its application health check before calling
+publisher calls the shared homelab deployment webhook over WireGuard and requires confirmed health before calling
 the OTA workflow. Manual OTA publication handles only the client and has no deployment inputs or credentials;
 ensure server compatibility separately when using it.
 
