@@ -1,2 +1,2 @@
 Layer 5 Git lease qualification: layer5-20261012
-Candidate A; synthetic text only.
+Candidate C; synthetic text only.
