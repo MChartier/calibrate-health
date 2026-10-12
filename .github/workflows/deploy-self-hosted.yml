@@ -2,38 +2,28 @@ name: Deploy self-hosted server
 
 on:
   workflow_call:
+    # Callers must forward these names even though values come from this job's environment.
+    secrets:
+      DEPLOY_WG_ENDPOINT:
+        required: true
+      DEPLOY_WG_PRIVATE_KEY:
+        required: true
+      DEPLOY_TOKEN:
+        required: true
     inputs:
-      image_ref:
-        description: Exact GHCR image reference ending in @sha256:<digest>
-        required: true
-        type: string
-      release_tag:
-        description: Expected server release vMAJOR.MINOR.PATCH
-        required: true
-        type: string
       release_commit:
         description: Canonical release commit for the protected Cut release authority check
         required: false
         type: string
   workflow_dispatch:
-    inputs:
-      image_ref:
-        description: Published digest from the failed deployment (no rebuild needed)
-        required: true
-        type: string
-      release_tag:
-        description: Expected server release vMAJOR.MINOR.PATCH
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 jobs:
   deploy:
-    if: vars.SELF_HOSTED_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: self-hosted-testing
     # Serialize the shared WireGuard peer as well as the target stack. Never cancel migrations.
     concurrency:
@@ -81,19 +71,15 @@ jobs:
             --workflow-sha "${WORKFLOW_SHA}" \
             "${RELEASE_ARGS[@]}"
 
-      - name: Deploy published digest over WireGuard and SSH
+      - name: Call homelab deployment webhook over WireGuard and require health
         env:
-          DEPLOY_IMAGE_REF: ${{ inputs.image_ref }}
-          DEPLOY_RELEASE_TAG: ${{ inputs.release_tag }}
-          DEPLOY_IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/calibratehealth
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
-          DEPLOY_SSH_USER: ${{ vars.DEPLOY_SSH_USER }}
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
           DEPLOY_WG_ADDRESS: ${{ vars.DEPLOY_WG_ADDRESS }}
-          DEPLOY_WG_ENDPOINT: ${{ vars.DEPLOY_WG_ENDPOINT }}
+          DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
           DEPLOY_WG_PUBLIC_KEY: ${{ vars.DEPLOY_WG_PUBLIC_KEY }}
           DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
-          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
         run: node deploy/scripts/connect-and-deploy.mjs
 
       - name: Remove tunnel after cancellation or failure

@@ -7,6 +7,14 @@ on:
     secrets:
       EXPO_TOKEN:
         required: false
+      # Forward environment secret names to publish-release -> deploy-self-hosted.
+      # GitHub requires forwarding; values resolve only in self-hosted-testing.
+      DEPLOY_WG_ENDPOINT:
+        required: true
+      DEPLOY_WG_PRIVATE_KEY:
+        required: true
+      DEPLOY_TOKEN:
+        required: true
     inputs:
       bump:
         description: Semantic server/web version component to bump
@@ -1129,6 +1137,9 @@ jobs:
       packages: write
     uses: ./.github/workflows/publish-release.yml
     secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_commit: ${{ needs.prepare.outputs.release_sha }}

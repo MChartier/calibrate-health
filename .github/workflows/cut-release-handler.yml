@@ -120,6 +120,9 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/cut-release.yml
     secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       bump: ${{ needs.verify_request.outputs.bump }}

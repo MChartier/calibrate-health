@@ -5,6 +5,13 @@ on:
     secrets:
       EXPO_TOKEN:
         required: false
+      # Forward environment secret names to deploy-self-hosted; only its job resolves their values.
+      DEPLOY_WG_ENDPOINT:
+        required: true
+      DEPLOY_WG_PRIVATE_KEY:
+        required: true
+      DEPLOY_TOKEN:
+        required: true
     inputs:
       release_commit:
         description: Exact validated release commit that is now an ancestor of master
@@ -515,20 +522,21 @@ jobs:
       publish_latest: true
 
   deploy_self_hosted:
-    name: Deploy opted-in self-host
-    needs: [tag_release, build_release_image]
-    if: vars.SELF_HOSTED_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/master'
+    name: Deploy server and require application health
+    needs: build_release_image
     permissions:
       contents: read
     uses: ./.github/workflows/deploy-self-hosted.yml
+    secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
     with:
-      image_ref: ${{ needs.build_release_image.outputs.image_ref }}
-      release_tag: ${{ needs.tag_release.outputs.release_tag }}
       release_commit: ${{ inputs.release_commit }}
 
   publish_ota:
     name: Publish released Expo OTA update
-    needs: [tag_release, publish_release_tag, build_release_image]
+    needs: [tag_release, deploy_self_hosted]
     if: needs.tag_release.outputs.native_release_ready == 'true'
     permissions:
       contents: read

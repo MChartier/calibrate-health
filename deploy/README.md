@@ -145,8 +145,10 @@ exist.
   backup into a clean database and running the matching prior image.
 
 For automatic redeployment after image publication, see [deployment over WireGuard](self-hosted/README.md).
-It is opt-in and targets the existing stack with a published digest, backup freshness checks, and readiness/version
-verification. Expo publication remains independent of the deployment result.
+The configured CI target keeps its existing Compose image (`latest`), pulls and upgrades only `app`, and requires a
+successful application health check before OTA publication in the end-to-end release flow. Manual **Publish Expo OTA
+Update** remains a client-only action. Actions call the shared homelab deployment webhook; host configuration and
+Compose execution are owned by darkmachines. This repository needs only the GitHub environment configuration.
 
 ## Encrypted automated backups
 

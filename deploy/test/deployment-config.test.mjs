@@ -1,11 +1,16 @@
+/** @file Verify self-hosting templates, image readiness, and backup/startup contracts without a live stack. */
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 const deployDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repositoryRoot = path.resolve(deployDirectory, '..');
+/** Read a repository-owned deployment template for contract assertions. */
 const readDeploy = (file) => fs.readFileSync(path.join(deployDirectory, file), 'utf8');
 
 test('Caddy and Traefik share DB-backed app readiness semantics', () => {
@@ -19,6 +24,30 @@ test('Caddy and Traefik share DB-backed app readiness semantics', () => {
   assert.match(traefikCompose, /loadbalancer\.healthcheck\.path=\/api\/v1\/readyz/);
   assert.match(caddyfile, /\{\$APP_HOST\}/);
   assert.doesNotMatch(caddyfile, /calibratehealth\.app/);
+});
+
+test('the image healthcheck succeeds only when application readiness succeeds', async (t) => {
+  const dockerfile = fs.readFileSync(path.join(repositoryRoot, 'Dockerfile.app'), 'utf8');
+  const healthcheck = dockerfile.match(/HEALTHCHECK[^\r\n]*\\\r?\n\s+CMD (\[[^\r\n]+\])/);
+  assert.ok(healthcheck, 'existing Compose stacks must inherit an image healthcheck');
+  const [binary, ...args] = JSON.parse(healthcheck[1]);
+  assert.equal(binary, 'node');
+  let status = 200;
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    requests.push(request.url);
+    response.writeHead(status);
+    response.end();
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const options = { env: { ...process.env, PORT: String(server.address().port) }, timeout: 5000, windowsHide: true };
+  await promisify(execFile)(process.execPath, args, options);
+  status = 503;
+  await assert.rejects(promisify(execFile)(process.execPath, args, options), (error) => error.code === 1);
+  assert.deepEqual(requests, ['/api/v1/readyz', '/api/v1/readyz']);
+  await new Promise((resolve) => server.close(resolve));
+  await assert.rejects(promisify(execFile)(process.execPath, args, options), (error) => error.code === 1);
 });
 
 test('production image and Compose serve the Expo web artifact', () => {

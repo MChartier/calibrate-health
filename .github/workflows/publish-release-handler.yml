@@ -115,6 +115,9 @@ jobs:
       packages: write
     uses: ./.github/workflows/publish-release.yml
     secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       release_branch: ${{ needs.verify_request.outputs.release_branch }}

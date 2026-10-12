@@ -1,217 +1,110 @@
-# Automatic deployment over WireGuard
+# Automatic deployment through the homelab webhook
 
-An optional GitHub-hosted job deploys the verified published GHCR digest to one existing Linux AMD64 Compose stack.
-It joins your existing WireGuard network, invokes a restricted SSH command, and exits. No registry polling,
-public application endpoint, webhook receiver, or persistent GitHub runner is needed.
+GitHub-hosted Actions use an existing WireGuard peer and call the shared `deployer` service in
+[darkmachines](https://github.com/MChartier/darkmachines/tree/master/deployer). This repository configures only the
+runner's temporary tunnel and request. The homelab owns the service, Compose configuration, tokens, WireGuard peers,
+routing, and firewall. No host installer, uninstaller, deployment SSH account, or sudo rule is needed here.
 
-`Publish prepared release` starts deployment after `build_release_image`, alongside Expo OTA publication.
-Deployment failure is visible in Actions but does not prevent the sibling OTA job from running or require its
-production approval. An offline server must be retried explicitly; there is no background reconciliation.
-Deployment also runs when an unavailable native baseline causes OTA to be skipped. The image publisher exposes
-its immutable digest only after verifying the release receipt and registry aliases; recovered publication uses that
-attested identity even if the new credential-free rebuild differs. Existing release requests, publication approvals,
-attestations, and recovery handlers remain unchanged.
-`Build Release Image` remains an image-only recovery action.
+The end-to-end **Cut release** / **Publish prepared release** flow publishes the GHCR image (including `latest`),
+calls the webhook, and requires completed deployment and affirmative health before internal OTA. Production OTA
+retains its later `production` approval. Releases without an available native baseline still deploy and skip OTA.
+**Deploy self-hosted server** independently tests or retries deployment. **Publish Expo OTA Update** stays client-only;
+ensure server compatibility separately when using it. **Build Release Image** stays image-only.
 
-This choice follows GitHub's [WireGuard networking guidance](https://docs.github.com/en/actions/how-tos/manage-runners/github-hosted-runners/connect-to-a-private-network/connect-with-wireguard).
-The repository is public, so a Docker-capable persistent runner on the application host would expose it to the
-[self-hosted runner risks](https://docs.github.com/en/actions/reference/security/secure-use#hardening-for-self-hosted-runners).
-The original [Watchtower project](https://github.com/containrrr/watchtower) is archived. The deployment job consumes
-the verified registry digest, so another publication moving `latest` cannot change the requested artifact.
+## Webhook contract
 
-## Install on the server
+The runner makes one authenticated request with no body, query parameters, or deployment overrides:
 
-The target needs Docker Engine, Compose v2 with `up --wait` and multiple `--env-file` support, OpenSSH, `sudo`,
-`flock` (util-linux), and Node 22+ at `/usr/bin/node`. This is a Linux server workflow; the Node tests also run on
-Windows. The stack must already be running a healthy published GHCR image with exactly one `app` container.
-Initial provisioning, proxy/database upgrades, and changes to Compose or application configuration remain manual.
-
-From a reviewed checkout on the server, install the scripts:
-
-```sh
-sudo install -d -o root -g root -m 0700 /etc/calibrate /etc/calibrate/registry /var/lib/calibrate-deploy
-sudo install -o root -g root -m 0644 deploy/scripts/self-hosted-deploy.mjs /usr/local/lib/calibrate-deploy.mjs
-sudo install -o root -g root -m 0755 deploy/self-hosted/calibrate-deploy /usr/local/sbin/calibrate-deploy
-sudo install -o root -g root -m 0600 deploy/self-hosted/deploy.example.json /etc/calibrate/deploy.json
-sudoedit /etc/calibrate/deploy.json
+```http
+POST /deploy/calibratehealth
+Authorization: Bearer <Calibrate-specific deployment token>
 ```
 
-Set `projectName` to the **existing** name shown by `docker compose ls`, `projectDirectory` to the existing stack
-directory, and `composeFiles` to the exact files you currently use. For Traefik, select `docker-compose.traefik.yml`;
-for an external database, omit `docker-compose.postgres.yml`. File paths are relative to `projectDirectory`.
-Keep `stateDirectory` at `/var/lib/calibrate-deploy`, which is also where the wrapper locks deployments.
+The homelab maps `calibratehealth` to its locally configured Compose project and `app` service, pulls the configured
+`latest` image, upgrades only that service, and waits for Docker health. The runner requires HTTP **200** and:
 
-Set `backupMarker` to the backup service's `.last-success` file. Its contents must be the UTC ISO timestamp of the
-last successful backup. An external backup system can maintain an equivalent marker after completing a backup.
-The example accepts a backup up to 48 hours old; adjust `backupMaxAgeSeconds` for your recovery point requirements.
-No deployment proceeds with a missing, future, malformed, or stale marker. This checks backup freshness, not
-restorability: retain the [backup and restore drills](../README.md#clean-instance-restore-drill). Deploying can lose
-changes since that backup if recovery subsequently requires restoring it.
-
-`waitTimeoutSeconds` defaults to 300 in the example (maximum 480). Allow time for startup migrations. Keep the
-wrapper, script, config, selected Compose files, application `.env`, state directory, and their parent directories
-owned by root and unwritable by the SSH account. The SSH account must not belong to the Docker group or have
-other sudo privileges. The wrapper clears the inherited environment and uses fixed paths; the remote request
-cannot supply Compose files, registry credentials, database settings, or shell commands.
-
-Public GHCR images need no login. If the package is private, provision a read-only package credential locally:
-
-```sh
-sudo docker --config /etc/calibrate/registry login ghcr.io
+```json
+{"service":"calibratehealth","status":"succeeded","healthy":true}
 ```
 
-Use a credential with only the package access necessary to pull this image. It stays on the server. Application
-secrets also stay in the existing `.env`; they are never copied into GitHub or printed in deployment output.
+The Calibrate image includes the existing DB-backed `/api/v1/readyz` Docker healthcheck, so the homelab does not need
+to add a Compose override. Publish an image containing this change before the first webhook deployment.
 
-## Restrict SSH access
+An accepted/pending response, redirect, malformed JSON, unhealthy result, timeout, or disconnect fails the job.
+The runner never automatically retries a POST. A timed-out request may still be deploying on the host; check service
+logs before rerunning. Compose and application secrets stay on the homelab. The client does not select a digest,
+assert an exact server/OTA version match, run Docker remotely, or add backups, locks, receipts, rollback, or pruning.
 
-Create a dedicated SSH account and a separate Ed25519 key for this job. For example on Debian/Ubuntu:
+## GitHub environment configuration
 
-```sh
-sudo useradd --create-home --shell /bin/sh calibrate-deploy
-sudo install -d -o root -g root -m 0755 /etc/ssh/authorized_keys
-sudoedit /etc/ssh/authorized_keys/calibrate-deploy
-```
+Provide an existing WireGuard peer for this repository with its own private key and IPv4 address. Peer provisioning
+is managed separately on the homelab. The peer must reach the deployment service's private HTTPS address, and the
+service must authorize Calibrate's token. Keep the endpoint private using the homelab's existing network policy.
 
-Place this **single line** in that root-owned authorized-keys file, replacing the example public key:
+Create **`self-hosted-testing`**. Under deployment branches and tags, choose **Selected branches and tags**, allow
+only branch **`master`**, and add no tag rules. Keep `master` protected. Leave reviewers and wait timers off for
+automatic deployment; retain the separate `production` OTA approval.
 
-```text
-restrict,command="sudo -n /usr/local/sbin/calibrate-deploy" ssh-ed25519 REPLACE_WITH_CI_PUBLIC_KEY calibrate-ci
-```
-
-Add a matching SSH server configuration in `/etc/ssh/sshd_config.d/calibrate-deploy.conf`:
-
-```text
-Match User calibrate-deploy
-    AuthorizedKeysFile /etc/ssh/authorized_keys/calibrate-deploy
-    AuthenticationMethods publickey
-    PasswordAuthentication no
-    KbdInteractiveAuthentication no
-    PermitTTY no
-    AllowTcpForwarding no
-    AllowAgentForwarding no
-    X11Forwarding no
-Match all
-```
-
-Validate with `sudo sshd -t` and reload the SSH service using your distribution's service name. Ensure the account
-can authenticate with its key under your distribution's account policy. Preserve your existing administrative SSH
-session while testing this new account.
-
-Use `sudo visudo -f /etc/sudoers.d/calibrate-deploy` to add:
-
-```sudoers
-calibrate-deploy ALL=(root) NOPASSWD: /usr/local/sbin/calibrate-deploy ""
-```
-
-The empty argument string permits only the wrapper with **no arguments**. SSH input is a bounded JSON request
-containing `imageRef` and `releaseTag`; the host accepts only `ghcr.io/<configured-owner>/calibratehealth@sha256:...`
-and a canonical `vMAJOR.MINOR.PATCH` version. `flock` serializes local and remote invocations and releases its lock
-when the process exits. A digest from the configured image still runs application code with the app's privileges;
-the publication credentials and release workflow remain trusted.
-
-## Configure the WireGuard peer and GitHub environment
-
-Create a dedicated CI peer in the existing WireGuard server, with its own keys and a unique IPv4 address. On that
-server, assign only the CI peer's `/32` as its allowed source address. Restrict traffic from that peer with the
-server/gateway firewall to **TCP port 22 on the deployment host only**, including forwarded traffic if the VPN
-gateway and Docker host differ. Client `AllowedIPs` alone is not a server-side firewall.
-
-The VPN endpoint must already be reachable from the internet on its UDP port (a fixed address or dynamic DNS is
-fine). The job supports one IPv4 deployment target and routes only that target through the tunnel; DNS and GHCR
-traffic retain their normal routes. The internal application domain does not need to resolve on the runner.
-
-Create the GitHub environment **`self-hosted-testing`** and restrict its deployment branches to **`master`**.
-For automatic execution after the manual release action, leave required reviewers and wait timers off for this
-testing environment. This does not change Expo's production approval rules. Protect workflow changes on `master`
-and never add the deployment secrets to a PR job.
-
-Deployment tooling is pinned to the running workflow's exact commit. Immediately before credentials are exposed,
-the shared release-authority verifier requires current protected `master` or its exact canonical Cut release
-child/merge. A stale rerun fails closed: start a fresh manual deployment from `master` with the recorded image
-digest and release tag. Manual recovery is an operator-authorized digest selection; use the verified publisher
-output, not an unverified tag lookup. It does not rebuild or re-attest an arbitrary supplied image.
-
-Set these environment variables:
-
-| Variable | Value |
-| --- | --- |
-| `DEPLOY_HOST` | Docker host's reachable IPv4 address, such as `192.168.1.10` |
-| `DEPLOY_SSH_USER` | `calibrate-deploy` |
-| `DEPLOY_WG_ADDRESS` | CI peer's IPv4 address, such as `10.8.0.20` (no CIDR suffix) |
-| `DEPLOY_WG_ENDPOINT` | Existing public VPN hostname/IPv4 and UDP port, such as `vpn.example.com:51820` |
-| `DEPLOY_WG_PUBLIC_KEY` | Existing VPN server's WireGuard public key |
-
-Set these environment secrets:
+Set these **environment secrets**, not repository secrets:
 
 | Secret | Value |
 | --- | --- |
-| `DEPLOY_WG_PRIVATE_KEY` | Dedicated CI peer's WireGuard private key |
-| `DEPLOY_SSH_PRIVATE_KEY` | Dedicated CI SSH private key, without a passphrase |
-| `DEPLOY_SSH_KNOWN_HOSTS` | Verified known-hosts line for `DEPLOY_HOST`, such as `192.168.1.10 ssh-ed25519 AAAA...` |
+| `DEPLOY_WG_ENDPOINT` | Reachable VPN hostname/IPv4 and UDP port, e.g. `vpn.example.com:51820` |
+| `DEPLOY_WG_PRIVATE_KEY` | Existing Calibrate runner peer's WireGuard private key |
+| `DEPLOY_TOKEN` | Calibrate-specific token from darkmachines (43-128 base64url characters) |
 
-Obtain the SSH host public key through a trusted administrative session and associate it with `DEPLOY_HOST`.
-The job requires strict host-key checking; it never trusts an unverified `ssh-keyscan` result at deployment time.
+Set these **environment variables**:
 
-Finally set the **repository variable** `SELF_HOSTED_DEPLOY_ENABLED=true`. This gate must be a repository variable,
-because it is evaluated before the environment is loaded. Until enabled, all automatic and manual deployment
-jobs are skipped and release publishing works as before. Do not reuse this CI peer for other concurrent workflows.
+| Variable | Value |
+| --- | --- |
+| `DEPLOY_HOST` | Private IPv4 serving the deployment HTTPS endpoint through WireGuard |
+| `DEPLOY_URL` | Full endpoint: `https://deployer.darkmachines.net/deploy/calibratehealth` |
+| `DEPLOY_WG_ADDRESS` | Existing runner peer's IPv4 address, without CIDR suffix |
+| `DEPLOY_WG_PUBLIC_KEY` | WireGuard server's public key |
 
-## Deploy and recover
+`DEPLOY_HOST` is the webhook destination, which may differ from the VPN gateway. The runner routes only this `/32`
+through WireGuard and resolves the URL hostname to that address for this request, preserving HTTPS certificate
+verification. No private DNS or SSH host-key setup is needed. The request bypasses HTTP proxies, does not follow
+redirects, and passes its token to curl through stdin. Response bodies are not printed to Actions logs.
 
-Start with **Deploy self-hosted server** from `master`, supplying the currently running release tag and its GHCR
-digest. On the first successful invocation, the host adopts the running image and version, creates deployment state,
-and verifies it without restarting. Use this to validate routing, SSH, and configuration before cutting a new release.
-Copy the `Verified release image` from the image publisher's Actions summary. This is the authoritative registry
-manifest digest, not the credential-free build's local image/config ID.
+To replace the SSH configuration, add `DEPLOY_URL` and `DEPLOY_TOKEN`, remove `DEPLOY_SSH_USER`,
+`DEPLOY_SSH_PRIVATE_KEY`, and `DEPLOY_SSH_KNOWN_HOSTS`, and check that `DEPLOY_HOST` points to the HTTPS service.
+WireGuard configuration names are unchanged. `SELF_HOSTED_DEPLOY_ENABLED` is unused. Keep repository `EXPO_TOKEN`,
+Expo environment settings, and the existing `production` approval for OTA.
 
-Subsequent **Cut release** and **Publish prepared release** runs automatically deploy their published digest.
-The host checks the current stack against its saved state, checks backup freshness, pulls the digest, saves a pending
-deployment, and writes `/var/lib/calibrate-deploy/image.env`. It then recreates only `app` using Compose
-`up --no-deps --no-build --pull never --wait`. It checks the actual container image ID, Docker health status,
-DB-backed `/api/v1/readyz`, and `/api/v1/client-config.server_version` inside that container. These checks attest the
-app, not the proxy, DNS, or browser path. Expect brief downtime for the single replica while migrations and startup run.
+The end-to-end reusable callers forward the three deployment secret names to the deployment job, where values
+resolve in the protected environment. Only the webhook step receives them. OTA-only jobs receive no deployment
+parameters. The job verifies current protected-master workflow authority before using credentials.
 
-The saved image override must also be used for later administrative Compose operations. For example, with the
-example Caddy/in-stack configuration:
+## Rollout and recovery
 
-```sh
-sudo docker compose --project-name calibrate --project-directory /srv/calibrate/deploy \
-  --env-file /srv/calibrate/deploy/.env --env-file /var/lib/calibrate-deploy/image.env \
-  -f /srv/calibrate/deploy/docker-compose.yml \
-  -f /srv/calibrate/deploy/docker-compose.postgres.yml \
-  -f /srv/calibrate/deploy/docker-compose.backup.yml ps
-```
+1. Finish the [deployer rollout in darkmachines](https://github.com/MChartier/darkmachines/blob/master/deployer/ROLLOUT.md)
+   and provide the existing peer credentials and Calibrate token. Use `deployer.darkmachines.net` in `DEPLOY_URL`;
+   the runner derives both TLS hostname verification and private address resolution from this URL.
+2. Configure the master-only environment above.
+3. After merge, run **Cut release** to publish the first image containing the built-in healthcheck and execute the
+   image/deploy/OTA sequence. Confirm the deployment job succeeds before approving production OTA.
+4. Once `latest` includes that healthcheck, **Deploy self-hosted server** from `master` with no inputs independently
+   tests or retries the webhook. It performs a real upgrade and may briefly restart `app`. Use **Publish prepared
+   release** for recovery of a prepared end-to-end release.
 
-Replace `ps` with `logs --tail 100 app` to diagnose locally. Avoid exporting `APP_IMAGE` in an administrative shell:
-shell variables take precedence over environment files. The deployment wrapper clears that possibility.
+The client allows 15 seconds to connect and 780 seconds for the complete POST. The service and reverse proxy must
+allow synchronous completion within that window. The darkmachines service bounds pull/start/health commands to
+660 seconds total with a 690-second socket deadline; its Traefik backend allows 720 seconds for response headers.
+The Actions job allows 20 minutes for setup, deployment, and cleanup. Runs use concurrency group
+`self-hosted-testing-deploy` with `cancel-in-progress: false`.
 
-On success, `state.json` records current and previous release identities and clears pending state. Repeating that
-exact release is a health check with no pull or restart. Older versions and changing the digest of an already
-deployed version are rejected; publish a new version for a rebuilt artifact. GitHub concurrency does not guarantee
-release ordering, so the host also enforces numeric version ordering.
-
-If the server is offline or pulling fails, rerun only the failed deployment job, or use **Deploy self-hosted server**
-with the recorded `image_ref` and `release_tag`. There is no need to rebuild the image or republish OTA. A failure
-after pending state is saved allows only that exact release/digest to retry. Later releases stop until the incomplete
-deployment is resolved. A lost SSH connection can leave the remote outcome uncertain; the same retry rule applies.
-The Actions run reports failure without uploading raw application/Compose logs, which can contain secrets.
-
-There is **no automatic rollback**: startup may have applied forward-only migrations even when readiness failed.
-Use the [documented database recovery procedure](../README.md#clean-instance-restore-drill) if retrying the exact
-release cannot recover the app. For an intentional local recovery or manual upgrade, first disable the repository
-gate and ensure no deployment is running. Reconcile the database, image, `image.env`, and `state.json` together under
-the same `/var/lib/calibrate-deploy/deploy.lock`. Archive those two state files after recovery if you need the next
-invocation to adopt the healthy restored stack again. Never clear pending state merely to bypass a failed migration.
-Re-enable automatic deployment only after verifying the recovered stack and its backup.
-
-The host never checks out code, rebuilds the image, prunes images, starts other services, or automatically updates
-these installed scripts. Install reviewed script/config updates explicitly using the installation commands above.
+On failure, inspect homelab deployer logs and application health before rerunning. If a pull/start command is interrupted,
+the deployer may return HTTP 409 with `deployment_requires_reconciliation` on subsequent attempts. Follow its rollout
+guide to reconcile Docker state before restarting the controller and retrying; rerunning Actions alone cannot clear it.
+A standalone deployment does not resume a blocked release; rerun that release's failed jobs to continue to OTA.
+The runner removes its temporary tunnel and key on success or failure, with a separate workflow cleanup step for
+cancellation. Server peers and firewall rules are managed outside this repository.
 
 ## Validation
 
-`npm run test:deploy` tests the actual deployment and runner functions with temporary host state and simulated
-Docker/network commands, including failures, retries, stale releases, backup checks, secret preservation, and cleanup.
-`node --test scripts/release-workflow-contract.test.mjs` verifies digest propagation, opt-in gating, the hosted-runner
-boundary, and OTA independence. The existing Release Configuration PR job runs both suites. A real deployment
-requires the one-time host/environment setup above; tests do not contact or modify your server.
+`npm run test:deploy` checks authentication arguments, private routing, HTTP/result validation, bounded requests,
+no automatic retries, and cleanup using mocked commands. Compose tests still cover the repo's self-hosting templates.
+`npm run test:release` checks image/deploy/OTA ordering, production approval, secret forwarding, and client-only OTA.
+The homelab service owns the Docker deployment tests. These checks do not contact the private server; complete the
+live workflow rollout above.
