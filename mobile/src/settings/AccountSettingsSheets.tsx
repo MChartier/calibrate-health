@@ -12,7 +12,7 @@ import {
 import { TextField } from '../components/TextField';
 import { TimeZonePickerField } from '../components/TimeZonePickerField';
 import { spacing, useAppTheme } from '../theme';
-import { getTodayDate } from '../utils/dates';
+import { useCurrentLocalDate } from '../hooks/useCurrentLocalDate';
 import { formatCalories } from '../utils/format';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { getMinimumDateOfBirth } from '../caloriePlanning/dateBounds';
@@ -67,14 +67,15 @@ export function ProfileEditorContent({
     onSave
 }: ProfileEditorContentProps) {
     const { colors } = useAppTheme();
+    const today = useCurrentLocalDate(timezone);
 
     return (
         <>
             <TimeZonePickerField value={timezone} onChange={onTimezoneChange} />
             <ProfileIdentityFields
                 dateOfBirth={dateOfBirth}
-                minimumDate={getMinimumDateOfBirth(getTodayDate(timezone))}
-                maximumDate={getTodayDate(timezone)}
+                minimumDate={getMinimumDateOfBirth(today)}
+                maximumDate={today}
                 onDateOfBirthChange={onDateOfBirthChange}
                 sex={sex}
                 onSexChange={onSexChange}

@@ -21,7 +21,8 @@ import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { useAuth } from '../auth/AuthContext';
 import { getErrorPresentation, getSafeActionErrorMessage } from '../errors/presentation';
 import { usePendingCalibrationEvidenceMutation } from '../offline/usePendingCalibrationEvidenceMutation';
-import { addDaysToDateOnly, formatDateOnlyForDisplay, getTodayDate } from '../utils/dates';
+import { addDaysToDateOnly, formatDateOnlyForDisplay } from '../utils/dates';
+import { useCurrentLocalDate } from '../hooks/useCurrentLocalDate';
 import { spacing, typeScale, type AppTheme, useAppTheme } from '../theme';
 
 const COMPACT_LAYOUT_BREAKPOINT = 640; // Stacks the decision and target rows before text begins to compete.
@@ -302,6 +303,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
     const [applyError, setApplyError] = useState<Error | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
     const [cancelError, setCancelError] = useState<Error | null>(null);
+    const currentLocalDate = useCurrentLocalDate(timezone);
     const evaluation = status?.evaluation;
     const assessment = evaluation?.assessment;
     const recommendation = evaluation?.recommendation;
@@ -398,7 +400,7 @@ export const PlanCheckCardView: React.FC<PlanCheckCardViewProps> = ({
             formatDateOnlyForDisplay(assessmentWindow.endDate)
         : 'Updated through ' + formatDateOnlyForDisplay(evaluation.asOfDate);
     const effectiveLocalDate = status?.recommendation?.effectiveLocalDate ?? null;
-    const tomorrow = addDaysToDateOnly(todayDate ?? getTodayDate(timezone), 1);
+    const tomorrow = addDaysToDateOnly(todayDate ?? currentLocalDate, 1);
     let effectiveDateLabel = 'on the next local day';
     if (effectiveLocalDate === tomorrow) effectiveDateLabel = 'tomorrow';
     else if (effectiveLocalDate) effectiveDateLabel = 'on ' + formatDateOnlyForDisplay(effectiveLocalDate);

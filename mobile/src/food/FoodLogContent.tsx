@@ -34,6 +34,7 @@ import { useAddFoodRequest } from '../context/AddFoodRequestContext';
 import { useSharedLogDateNavigation } from '../context/LogDateContext';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
 import { usePrefetchPreviousFoodLog } from '../hooks/usePrefetchPreviousFoodLog';
+import { useLogDateRouteParameter } from '../hooks/useLogDateRouteParameter';
 import { getSafeActionErrorMessage } from '../errors/presentation';
 import { getFoodLogEditableAmount } from '../food/foodLogAmount';
 import { useFoodDeleteRecovery } from '../food/useFoodDeleteRecovery';
@@ -108,9 +109,7 @@ export default function FoodLogContent({ embedded = false }: { embedded?: boolea
     const editAmountConfig = editEntry ? getFoodLogEditableAmount(editEntry) : null;
     const editAmountStep = editAmountConfig ? getFoodQuantityStep(editAmountConfig.unitLabel) : 1;
 
-    useEffect(() => {
-        if (!embedded && typeof routeParams.date === 'string') dateNavigation.setDate(routeParams.date);
-    }, [dateNavigation.setDate, routeParams.date, embedded]);
+    useLogDateRouteParameter(embedded ? undefined : routeParams.date, dateNavigation.setDate);
 
     useBarcodeSearchHandoff({
         params: routeParams,
