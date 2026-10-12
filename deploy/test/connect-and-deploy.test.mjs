@@ -13,7 +13,7 @@ const runnerEnvironment = {
   DEPLOY_HOST: '10.8.0.1', DEPLOY_WG_ADDRESS: '10.8.0.20',
   DEPLOY_WG_ENDPOINT: 'vpn.example.test:51820',
   DEPLOY_WG_PUBLIC_KEY: `${'a'.repeat(43)}=`, DEPLOY_WG_PRIVATE_KEY: `${'b'.repeat(43)}=`,
-  DEPLOY_URL: 'https://deploy.example.test/deploy/calibratehealth', DEPLOY_TOKEN: 'c'.repeat(43),
+  DEPLOY_URL: 'https://deployer.darkmachines.net/deploy/calibratehealth', DEPLOY_TOKEN: 'c'.repeat(43),
 };
 const success = JSON.stringify({ service: 'calibratehealth', status: 'succeeded', healthy: true });
 
@@ -73,7 +73,7 @@ test('runner sends one bodyless authenticated HTTPS POST over the private route 
   assert.equal(args[0], '--disable');
   assert.equal(args[args.indexOf('--request') + 1], 'POST');
   assert.equal(args[args.indexOf('--url') + 1], f.env.DEPLOY_URL);
-  assert.equal(args[args.indexOf('--resolve') + 1], 'deploy.example.test:443:10.8.0.1');
+  assert.equal(args[args.indexOf('--resolve') + 1], 'deployer.darkmachines.net:443:10.8.0.1');
   assert.equal(args[args.indexOf('--proto') + 1], '=https');
   assert.equal(args[args.indexOf('--noproxy') + 1], '*');
   assert.equal(args[args.indexOf('--retry') + 1], '0');
@@ -97,6 +97,7 @@ test('runner sends one bodyless authenticated HTTPS POST over the private route 
 for (const [name, response] of [
   ['unauthorized', `${success}\n401`], ['unsupported service', `${success}\n404`],
   ['already deploying', `${success}\n409`], ['deployment failure', `${success}\n502`],
+  ['reconciliation required', `${JSON.stringify({ service: 'calibratehealth', error: 'deployment_requires_reconciliation' })}\n409`],
   ['server timeout', `${success}\n504`], ['redirect', `${success}\n302`],
   ['accepted but pending', `${success}\n202`], ['empty result', '\n200'],
   ['invalid JSON', 'not JSON\n200'], ['truncated response', success], ['null result', 'null\n200'],

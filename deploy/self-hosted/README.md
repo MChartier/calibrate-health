@@ -1,7 +1,7 @@
 # Automatic deployment through the homelab webhook
 
-GitHub-hosted Actions use an existing WireGuard peer and call the shared deployment service in
-[darkmachines](https://github.com/MChartier/darkmachines/tree/master/deployment). This repository configures only the
+GitHub-hosted Actions use an existing WireGuard peer and call the shared `deployer` service in
+[darkmachines](https://github.com/MChartier/darkmachines/tree/master/deployer). This repository configures only the
 runner's temporary tunnel and request. The homelab owns the service, Compose configuration, tokens, WireGuard peers,
 routing, and firewall. No host installer, uninstaller, deployment SSH account, or sudo rule is needed here.
 
@@ -58,7 +58,7 @@ Set these **environment variables**:
 | Variable | Value |
 | --- | --- |
 | `DEPLOY_HOST` | Private IPv4 serving the deployment HTTPS endpoint through WireGuard |
-| `DEPLOY_URL` | Full endpoint, e.g. `https://deploy.darkmachines.net/deploy/calibratehealth` |
+| `DEPLOY_URL` | Full endpoint: `https://deployer.darkmachines.net/deploy/calibratehealth` |
 | `DEPLOY_WG_ADDRESS` | Existing runner peer's IPv4 address, without CIDR suffix |
 | `DEPLOY_WG_PUBLIC_KEY` | WireGuard server's public key |
 
@@ -78,7 +78,9 @@ parameters. The job verifies current protected-master workflow authority before 
 
 ## Rollout and recovery
 
-1. Finish the service rollout in darkmachines and provide the existing peer credentials and Calibrate token.
+1. Finish the [deployer rollout in darkmachines](https://github.com/MChartier/darkmachines/blob/master/deployer/ROLLOUT.md)
+   and provide the existing peer credentials and Calibrate token. Use `deployer.darkmachines.net` in `DEPLOY_URL`;
+   the runner derives both TLS hostname verification and private address resolution from this URL.
 2. Configure the master-only environment above.
 3. After merge, run **Cut release** to publish the first image containing the built-in healthcheck and execute the
    image/deploy/OTA sequence. Confirm the deployment job succeeds before approving production OTA.
@@ -92,10 +94,12 @@ allow synchronous completion within that window. The darkmachines service bounds
 The Actions job allows 20 minutes for setup, deployment, and cleanup. Runs use concurrency group
 `self-hosted-testing-deploy` with `cancel-in-progress: false`.
 
-On failure, inspect homelab deployment logs and application health before rerunning. A standalone deployment does
-not resume a blocked release; rerun that release's failed jobs to continue to OTA. The runner removes its temporary
-tunnel and key on success or failure, with a separate workflow cleanup step for cancellation. Server peers and
-firewall rules are managed outside this repository.
+On failure, inspect homelab deployer logs and application health before rerunning. If a pull/start command is interrupted,
+the deployer may return HTTP 409 with `deployment_requires_reconciliation` on subsequent attempts. Follow its rollout
+guide to reconcile Docker state before restarting the controller and retrying; rerunning Actions alone cannot clear it.
+A standalone deployment does not resume a blocked release; rerun that release's failed jobs to continue to OTA.
+The runner removes its temporary tunnel and key on success or failure, with a separate workflow cleanup step for
+cancellation. Server peers and firewall rules are managed outside this repository.
 
 ## Validation
 
