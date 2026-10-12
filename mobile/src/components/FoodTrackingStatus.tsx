@@ -14,7 +14,8 @@ import { foodDayRangeQueryRoot } from '../food/calendar';
 import { FoodLogDockActions } from '../food/FoodLogDockActions';
 import { getFoodDayStatusLabel } from '../food/dayPresentation';
 import { calibrationStatusQueryKey } from '../calibration/queryKeys';
-import { addDaysToDateOnly, getTodayDate } from '../utils/dates';
+import { addDaysToDateOnly } from '../utils/dates';
+import { useCurrentLocalDate } from '../hooks/useCurrentLocalDate';
 import { type AppTheme, useAppTheme } from '../theme';
 import { AppButton } from './AppButton';
 import { AppSection } from './AppSection';
@@ -437,7 +438,7 @@ export const ResumeTrackingPrompt: React.FC = () => {
     const queryClient = useQueryClient();
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const today = getTodayDate(user?.timezone);
+    const today = useCurrentLocalDate(user?.timezone);
     const pauseQuery = useFoodTrackingPause();
     const [dismissedThisForeground, setDismissedThisForeground] = useState(false);
     const [showExtend, setShowExtend] = useState(false);

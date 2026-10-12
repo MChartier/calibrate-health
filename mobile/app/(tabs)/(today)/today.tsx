@@ -27,7 +27,7 @@ import { getFoodDayCaloriePresentation, shouldShowCalorieComparison } from '../.
 import { getCaloriePlanPresentation } from '../../../src/caloriePlanning/presentation';
 import { getActiveTabRoute } from '../../../src/navigation/contextualFab';
 import { canonicalPathForRoute } from '../../../src/navigation/routeRegistry';
-import { getTodayDate } from '../../../src/utils/dates';
+import { useLogDateRouteParameter } from '../../../src/hooks/useLogDateRouteParameter';
 import { getMetricDate } from '../../../src/utils/metrics';
 import { usePendingWeightMutation } from '../../../src/offline/usePendingWeightMutation';
 import { hasTodayDashboardFailure, resolveTodayDashboardState } from '../../../src/today/dashboardState';
@@ -74,11 +74,7 @@ export default function TodayScreen() {
         await Promise.all(failedDashboardQueries.map((query) => query.refetch()));
     }, [failedDashboardQueries]);
 
-    useEffect(() => {
-        if (typeof routeParams.date === 'string' && routeParams.date !== selectedDate) {
-            setLogDate(routeParams.date);
-        }
-    }, [routeParams.date, selectedDate, setLogDate]);
+    useLogDateRouteParameter(routeParams.date, setLogDate);
 
     useEffect(() => {
         if (!addFoodRequest || getActiveTabRoute(pathname) !== 'today') return;
@@ -131,7 +127,7 @@ export default function TodayScreen() {
         });
     }
     const selectedDateMetric = (metricsQuery.data ?? []).find((metric) => getMetricDate(metric) === selectedDate) ?? null;
-    const isToday = selectedDate === getTodayDate(user?.timezone);
+    const isToday = dateNavigation.isToday;
     const dayStatus = foodDayQuery.data;
     const comparison = getFoodDayCaloriePresentation({ day: dayStatus, isToday, currentTarget, hasFoodEntries: entries.length > 0 });
     const target = comparison.target;

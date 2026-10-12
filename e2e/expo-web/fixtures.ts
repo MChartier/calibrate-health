@@ -399,8 +399,10 @@ function resolveResourceFixtureBody(body: ApiResourceFixture['content'], url: UR
   return typeof body === 'function' ? body(url) : body;
 }
 
-async function freezeBrowserInputs(page: Page): Promise<void> {
-  await page.addInitScript(({ frozenNow, clockStepMs }) => {
+async function freezeBrowserInputs(page: Page, manualClock = false): Promise<void> {
+  // Lifecycle tests need to advance timers as well as Date, before the app first mounts.
+  if (manualClock) await page.clock.install({ time: new Date(FROZEN_NOW) });
+  await page.addInitScript(({ frozenNow, clockStepMs, manualClock }) => {
     const NativeDate = Date;
     const frozenEpoch = NativeDate.parse(frozenNow);
     let clockReadCount = 0;
@@ -418,11 +420,13 @@ async function freezeBrowserInputs(page: Page): Promise<void> {
         return Reflect.construct(target, argumentsList.length > 0 ? argumentsList : [deterministicNow()]);
       },
     });
-    Object.defineProperty(DeterministicDate, 'now', {
-      configurable: true,
-      value: deterministicNow,
-    });
-    globalThis.Date = DeterministicDate;
+    if (!manualClock) {
+      Object.defineProperty(DeterministicDate, 'now', {
+        configurable: true,
+        value: deterministicNow,
+      });
+      globalThis.Date = DeterministicDate;
+    }
 
     const generatedIdStorageKey = '__calibrateE2eGeneratedId';
     const storedGeneratedId = Number.parseInt(
@@ -438,7 +442,7 @@ async function freezeBrowserInputs(page: Page): Promise<void> {
         return `00000000-0000-4000-8000-${generatedId.toString(16).padStart(12, '0')}`;
       },
     });
-  }, { frozenNow: FROZEN_NOW, clockStepMs: DETERMINISTIC_CLOCK_STEP_MS });
+  }, { frozenNow: FROZEN_NOW, clockStepMs: DETERMINISTIC_CLOCK_STEP_MS, manualClock });
 }
 
 function formatFailureContext(page: Page, testInfo: TestInfo, diagnostics: FixtureDiagnostics): string {
@@ -852,8 +856,9 @@ function attachFixtureDiagnostics(page: Page, diagnostics: FixtureDiagnostics): 
     }
   });
 }
-export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
-  diagnostics: [async ({ page }, use, testInfo) => {
+export const test = base.extend<{ ux: UxHarness; diagnostics: void; manualClock: boolean }>({
+  manualClock: [false, { option: true }],
+  diagnostics: [async ({ page, manualClock }, use, testInfo) => {
     const diagnostics: FixtureDiagnostics = {
       browserErrors: [],
       unexpectedApiRequests: [],
@@ -863,7 +868,7 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
       resourceErrors: new Map(),
     };
     attachFixtureDiagnostics(page, diagnostics);
-    await freezeBrowserInputs(page);
+    await freezeBrowserInputs(page, manualClock);
 
 
     await use();
@@ -890,7 +895,7 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
     expect.soft(diagnostics.browserErrors, `Browser errors; ${failureContext}`).toEqual([]);
     expect.soft(diagnostics.unexpectedApiRequests, `Unhandled API requests; ${failureContext}`).toEqual([]);
   }, { auto: true }],
-  ux: async ({ page, context }, use) => {
+  ux: async ({ page, context, manualClock }, use) => {
     let installed: { state: UxFixtureState; options: AuthenticatedApiOptions } | null = null;
     await use({
       install: async (state, options = {}) => {
@@ -903,7 +908,7 @@ export const test = base.extend<{ ux: UxHarness; diagnostics: void }>({
         const diagnostics = diagnosticsByPage.get(page);
         if (!diagnostics) throw new Error('Primary page diagnostics must be installed before adding a page.');
         attachFixtureDiagnostics(additionalPage, diagnostics);
-        await freezeBrowserInputs(additionalPage);
+        await freezeBrowserInputs(additionalPage, manualClock);
         return installState(additionalPage, context, installed.state, installed.options);
       },
     });

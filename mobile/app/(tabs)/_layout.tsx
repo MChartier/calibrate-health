@@ -30,6 +30,7 @@ import {
     type AddFoodRequestInput
 } from '../../src/context/AddFoodRequestContext';
 import { useLogDateNavigation } from '../../src/hooks/useLogDateNavigation';
+import { useLocalDayRefresh } from '../../src/hooks/useLocalDayRefresh';
 import { useOfflineOutbox } from '../../src/offline/provider';
 import { OUTBOX_MUTATION_STATES } from '../../src/offline/queuedMutation';
 import { resolveContextualFab } from '../../src/navigation/contextualFab';
@@ -178,6 +179,7 @@ export default function TabsLayout() {
     const usesWebNavigationRail = Platform.OS === 'web' && usesNavigationRail;
     const [webNavigationRailWidth, setWebNavigationRailWidth] = React.useState(WEB_NAVIGATION_RAIL_WIDTH);
     const logDateNavigation = useLogDateNavigation();
+    useLocalDayRefresh(logDateNavigation.today);
     const selectedFoodDayQuery = useFoodDayStatus(logDateNavigation.selectedDate, Boolean(user && hasFullAccess));
     const addFoodRequestSequence = React.useRef(0);
     const [addFoodRequest, setAddFoodRequest] = React.useState<AddFoodRequest | null>(null);

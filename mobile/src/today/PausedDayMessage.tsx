@@ -5,7 +5,7 @@ import { AppText } from '../components/AppText';
 import { FixedPageColumn } from '../components/FixedPage';
 import { type AppTheme, useAppTheme } from '../theme';
 import { useAuth } from '../auth/AuthContext';
-import { getTodayDate } from '../utils/dates';
+import { useCurrentLocalDate } from '../hooks/useCurrentLocalDate';
 import { useFoodTrackingPause } from '../food/useFoodTrackingPause';
 import { getActivePausePlan, getPauseExpectationCopy } from '../food/plannedPause';
 import { useOnlineStatus } from '../components/AsyncStateBoundary';
@@ -20,7 +20,7 @@ export function PausedDayMessage({ isToday }: { isToday: boolean }) {
     const { user } = useAuth();
     const pauseQuery = useFoodTrackingPause(isToday);
     const isOnline = useOnlineStatus();
-    const today = getTodayDate(user?.timezone);
+    const today = useCurrentLocalDate(user?.timezone);
     const expectation = isToday ? getPauseExpectationCopy(getActivePausePlan(pauseQuery.data?.pause, today), today) : null;
     let metadataNotice: string | null = null;
     if (isToday) {

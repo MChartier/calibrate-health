@@ -15,7 +15,7 @@ import { AsyncStateBoundary, useAsyncResourceState } from '../components/AsyncSt
 import { isNeverEmpty } from '../asyncState/resolveAsyncState';
 import { getMinimumDateOfBirth } from '../caloriePlanning/dateBounds';
 import { getCaloriePlanPresentation, getPlanOptionUnavailableCopy } from '../caloriePlanning/presentation';
-import { getTodayDate } from '../utils/dates';
+import { useCurrentLocalDate } from '../hooks/useCurrentLocalDate';
 import { formatTimeZoneLabel, isValidIanaTimeZone } from '../utils/timezones';
 import { SEX_OPTIONS } from '../utils/profileOptions';
 import { GOAL_MODE_OPTIONS, DAILY_GOAL_CHANGE_OPTIONS } from '../utils/goals';
@@ -37,7 +37,7 @@ export function AboutYouStep({ controller, controls }: StepProps) {
     const { fontScale } = useWindowDimensions();
     const [timezoneOpen, setTimezoneOpen] = useState(false);
     const restoreHeightUnitFocus = useRef(false);
-    const today = getTodayDate(isValidIanaTimeZone(form.timezone) ? form.timezone : 'UTC');
+    const today = useCurrentLocalDate(isValidIanaTimeZone(form.timezone) ? form.timezone : 'UTC');
     const weightLabel = `Current weight (${form.weightUnit.toLowerCase()})`;
     const weightToggle = <MeasurementUnitToggle measurement="Weight" unit={form.weightUnit.toLowerCase()}
         nextUnit={form.weightUnit === WEIGHT_UNITS.KG ? 'lb' : 'kg'} onPress={() => {

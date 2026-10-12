@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
-import { addDaysToDateOnly, clampDateOnly, formatDateOnlyForDisplay, getLocalDateForTimestamp, getTodayDate } from '../utils/dates';
+import { addDaysToDateOnly, clampDateOnly, formatDateOnlyForDisplay, getLocalDateForTimestamp } from '../utils/dates';
+import { useCurrentLocalDate } from './useCurrentLocalDate';
 
 export type LogDateNavigation = {
     selectedDate: string;
@@ -19,12 +20,12 @@ export type LogDateNavigation = {
 };
 
 /**
- * Native counterpart to the PWA local-day navigation model.
+ * Shared log-day bounds. Clock updates preserve the selected day and any open drafts.
  */
 export function useLogDateNavigation(initialDate?: string | null): LogDateNavigation {
     const { api, user } = useAuth();
     const timezone = user?.timezone || 'UTC';
-    const today = useMemo(() => getTodayDate(timezone), [timezone]);
+    const today = useCurrentLocalDate(timezone);
     const trackingHistoryQuery = useQuery({
         queryKey: ['mobile-tracking-history'],
         queryFn: () => api.getTrackingHistory(),
