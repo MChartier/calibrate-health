@@ -147,8 +147,8 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate
 
-      - name: Validate upgrade-smoke helpers
-        run: node --test scripts/postgres-populated-upgrade-smoke.test.mjs
+      - name: Validate database-smoke helpers
+        run: npm run test:db:upgrade:unit
 
       - name: Upgrade populated schema from 0020 through current
         run: node scripts/postgres-populated-upgrade-smoke.mjs

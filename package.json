@@ -92,7 +92,7 @@
     "test:wear:emulator": "node scripts/wear-emulator-smoke.mjs",
     "test:wear:emulator:unit": "node --test scripts/wear-emulator-smoke.test.mjs",
     "test:db:upgrade": "node scripts/postgres-populated-upgrade-smoke.mjs",
-    "test:db:upgrade:unit": "node --test scripts/postgres-populated-upgrade-smoke.test.mjs",
+    "test:db:upgrade:unit": "node --test scripts/postgres-populated-upgrade-smoke.test.mjs scripts/postgres-goal-pace-fixtures.test.mjs",
     "test:db:rollback": "node scripts/postgres-rollback-smoke.mjs",
     "test:db:rollback:unit": "node --test scripts/postgres-rollback-smoke.test.mjs",
     "test:weight-trend:postgres": "node scripts/postgres-weight-trend-concurrency-smoke.mjs",

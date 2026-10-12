@@ -1,10 +1,12 @@
 #!/usr/bin/env node
+/** Exercise goal continuity and concurrent writes in a disposable PostgreSQL schema. */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { databaseUrlForSchema, migrateDeploy } from './postgres-populated-upgrade-smoke.mjs';
+import { goalPaceFixtureDates } from './postgres-goal-pace-fixtures.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backend = path.join(root, 'backend');
 const backendRequire = createRequire(path.join(backend, 'package.json'));
@@ -33,10 +35,12 @@ try {
             date_of_birth: new Date('1990-01-01Z'), sex: 'MALE', height_mm: 1800, activity_level: 'MODERATE', weight_unit: 'KG', height_unit: 'CM' } });
     const goal = await db.goal.create({ data: { user_id: user.id, start_weight_grams: 90000, target_weight_grams: 75000,
             daily_deficit: 500, created_at: new Date('2025-01-01Z'), target_date: new Date('2027-02-01Z') } });
-    const today = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z');
+    const dates = goalPaceFixtureDates(new Date());
+    const { today } = dates;
     await db.bodyMetric.create({ data: { user_id: user.id, date: today, weight_grams: 85000 } });
     const day = await db.foodLogDay.create({ data: { user_id: user.id, local_date: today, status: 'COMPLETE', origin: 'USER',
             comparison_target_kcal: 2000, comparison_maintenance_kcal: 2500, comparison_captured_at: new Date() } });
+    /** Invoke real route handlers with the synthetic authentication and receipt context. */
     async function call(method, routePath, body = {}, operation = crypto.randomUUID(), targetRouter = router, goalId = goal.id) {
         const res = { statusCode: 200, status(n) { this.statusCode = n; return this; }, set() { return this; }, json(data) { this.body = data; return this; } };
         const handler = targetRouter.stack.find(layer => layer.route?.path === routePath && layer.route.methods[method]).route.stack[0].handle;
@@ -228,7 +232,7 @@ try {
         releaseCreation();
         planningLock.lockCaloriePlanningInputs = originalLock;
     }
-    // Force overlap at the shared guard, exercising real PostgreSQL row locks.
+    /** Force overlap at the shared guard, exercising real PostgreSQL row locks. */
     async function orderedWriters(first, second) {
         let releaseFirst, firstLocked, secondEntered;
         const release = new Promise(resolve => { releaseFirst = resolve; });
@@ -256,9 +260,8 @@ try {
         }
     }
 
-    // Backdating a scenario must not let another goal become active. Keep the
-    // intended identity and explicitly order the synthetic history before it.
     const currentGoal = await db.goal.findFirstOrThrow({ where: { user_id: user.id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+    /** Move scenario history together so backdating preserves the active goal identity. */
     async function setActiveGoalFixture(createdAt, startWeight = 90000) {
         await db.goal.updateMany({ where: { user_id: user.id, id: { not: currentGoal.id } },
             data: { created_at: new Date(createdAt.getTime() - 86400000) } });
@@ -268,8 +271,8 @@ try {
     }
     const NativeDate = Date;
     globalThis.Date = class extends NativeDate {
-        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
-        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+        constructor(...args) { super(...(args.length ? args : [dates.timezoneNow])); }
+        static now() { return NativeDate.parse(dates.timezoneNow); }
     };
     try {
         for (const oldZone of ['America/Los_Angeles', 'UTC']) {
@@ -277,15 +280,15 @@ try {
                 const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
                 user.timezone = oldZone; // Authentication snapshot deliberately predates the profile commit.
-                await setActiveGoalFixture(new Date('2026-10-08T19:00:00Z'));
-                const payload = { weight: 84, ...(explicitDate ? { date: '2026-10-08' } : {}) };
+                await setActiveGoalFixture(new Date(dates.metricGoalCreatedAt));
+                const payload = { weight: 84, ...(explicitDate ? { date: dates.timezonePreviousDay } : {}) };
                 const operationId = crypto.randomUUID();
                 const [profile, metric] = await orderedWriters(
                     () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
                     () => call('post', '/', payload, operationId, metricsRouter));
                 assert.equal(profile.statusCode, 200);
                 assert.equal(metric.statusCode, 200);
-                assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? '2026-10-08' : '2026-10-09');
+                assert.equal(metric.body.date.slice(0, 10), explicitDate || nextZone === 'America/Los_Angeles' ? dates.timezonePreviousDay : dates.timezoneUtcDay);
                 assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams,
                     nextZone === 'America/Los_Angeles' ? 84000 : 90000);
                 assert.deepEqual((await call('post', '/', payload, operationId, metricsRouter)).body, metric.body);
@@ -328,19 +331,24 @@ try {
         assert.equal(wearGoalEvents.length, watchFirst ? 1 : 0);
         if (watchFirst) assert.equal(wearGoalEvents[0].payload.start_weight_grams, 86000);
     }
-    const historicalDate = new Date(today.getTime() - 3 * 86400000);
-    const historicalKey = historicalDate.toISOString().slice(0, 10);
+    const historicalKey = dates.historicalDay;
+    const historicalDate = new Date(historicalKey + 'T00:00:00Z');
+    assert.equal(await db.bodyMetric.findUnique({ where: { user_id_date: { user_id: user.id, date: historicalDate } } }),
+        null, 'historical create must not reuse a date populated by another scenario');
     const historicalMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
         local_date: historicalKey, weight_grams: 89000, expected_revision: null
     } }, { timezone: 'UTC' });
-    assert.equal((await watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
-        operationId: crypto.randomUUID(), mutation: historicalMutation })).status, 200);
+    assert.equal(historicalMutation.ok, true);
+    const historicalResult = await watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
+        operationId: crypto.randomUUID(), mutation: historicalMutation });
+    assert.equal(historicalResult.status, 200, JSON.stringify(historicalResult.body));
     assert.equal((await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } })).start_weight_grams, 87000);
     console.log('[goal-pace-smoke] PASS: web/Wear metric writes in both lock orders avoid deadlock, correct same-day baseline with one goal sync event, retain historical baseline, stale-revision conflict and receipt replay.');
 
     const importRouter = backendRequire('./src/routes/imports').default;
     const importHandler = importRouter.stack.find(layer => layer.route?.path === '/loseit/execute').route.stack.at(-1).handle;
     const AdmZip = backendRequire('adm-zip');
+    /** Exercise the import route with one synthetic weight row and an explicit conflict mode. */
     async function importWeight(date, weight, mode) {
         const zip = new AdmZip();
         const [year, month, day] = date.split('-');
@@ -372,17 +380,17 @@ try {
     assert.deepEqual(await db.foodLogDay.findUnique({ where: { id: day.id } }), day);
     console.log('[goal-pace-smoke] PASS: import create/overwrite corrects only the same-day baseline and sync; KEEP, historical edits and repeated identical imports preserve baseline/history without duplicate goal events.');
     globalThis.Date = class extends NativeDate {
-        constructor(...args) { super(...(args.length ? args : ['2026-10-09T06:59:00Z'])); }
-        static now() { return NativeDate.parse('2026-10-09T06:59:00Z'); }
+        constructor(...args) { super(...(args.length ? args : [dates.timezoneNow])); }
+        static now() { return NativeDate.parse(dates.timezoneNow); }
     };
     try {
         for (const oldZone of ['America/Los_Angeles', 'UTC']) {
-            for (const importDate of ['2026-10-08', '2026-10-09']) {
+            for (const importDate of [dates.timezonePreviousDay, dates.timezoneUtcDay]) {
                 const nextZone = oldZone === 'UTC' ? 'America/Los_Angeles' : 'UTC';
-                const acceptedDay = nextZone === 'UTC' ? '2026-10-09' : '2026-10-08';
+                const acceptedDay = nextZone === 'UTC' ? dates.timezoneUtcDay : dates.timezonePreviousDay;
                 await db.user.update({ where: { id: user.id }, data: { timezone: oldZone } });
                 user.timezone = oldZone;
-                await setActiveGoalFixture(new Date('2026-10-09T01:00:00Z'));
+                await setActiveGoalFixture(new Date(dates.importGoalCreatedAt));
                 const [profile, imported] = await orderedWriters(
                     () => call('patch', '/profile', { timezone: nextZone }, crypto.randomUUID(), userRouter),
                     () => importWeight(importDate, 82, 'OVERWRITE'));
@@ -398,12 +406,12 @@ try {
         console.log('[goal-pace-smoke] PASS: import timezone overlap repartitions rows, counts and future warnings using the locked account day in both directions; only that day corrects the baseline.');
         await db.user.update({ where: { id: user.id }, data: { timezone: 'UTC' } });
         user.timezone = 'UTC';
-        const futureDate = new Date('2026-10-09T00:00:00Z');
+        const futureDate = new Date(dates.timezoneUtcDay + 'T00:00:00Z');
         await db.bodyMetric.deleteMany({ where: { user_id: user.id, date: futureDate } });
         const beforeFutureGoal = await db.goal.findUniqueOrThrow({ where: { id: currentGoal.id } });
         const futureOperation = crypto.randomUUID();
         const futureMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
-            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+            local_date: dates.timezoneUtcDay, weight_grams: 81000, expected_revision: null
         } }, { timezone: 'UTC' });
         assert.equal(futureMutation.ok, true);
         const saveFuture = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
@@ -423,7 +431,7 @@ try {
         user.timezone = 'America/Los_Angeles';
         const newlyValidOperation = crypto.randomUUID();
         const newlyValidMutation = watch.parseWatchMutation({ type: 'metric.upsert', payload: {
-            local_date: '2026-10-09', weight_grams: 81000, expected_revision: null
+            local_date: dates.timezoneUtcDay, weight_grams: 81000, expected_revision: null
         } }, { timezone: 'America/Los_Angeles' });
         assert.equal(newlyValidMutation.ok, true, 'syntax parsing must defer the account-day decision');
         const saveNewlyValid = () => watch.executeWatchMutation({ userId: user.id, mobileAuthSessionId: session.id,
