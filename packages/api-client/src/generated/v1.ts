@@ -1996,7 +1996,7 @@ export interface components {
             /** @constant */
             platform?: "web";
             /** @enum {unknown} */
-            version?: "0.39.1" | "0.39.0";
+            version?: "0.39.2" | "0.39.1";
         } | {
             /** @constant */
             platform?: "android_phone";
