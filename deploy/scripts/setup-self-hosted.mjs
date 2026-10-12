@@ -10,7 +10,7 @@ import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { deploymentInputs } from './connect-and-deploy.mjs';
 import { validateConfig } from './self-hosted-deploy.mjs';
-import { ACCOUNT, ACCOUNT_HOME, command, FIREWALL_FILE, FIREWALL_SERVICE, fingerprint,
+import { ACCOUNT, ACCOUNT_HOME, command,
   HostChanges, SSH_FILE, withConfirmation } from './self-hosted-setup-state.mjs';
 
 const CONFIG = '/etc/calibrate/setup.json';
@@ -105,25 +105,6 @@ export function removeWireGuardPeer(source, publicKey) {
   return source.slice(0, start).replace(/\n\n$/, '\n') + source.slice(end);
 }
 
-/** Restrict the CI peer to host SSH without flushing Docker or existing host firewall rules. */
-export function firewallRules(config) {
-  return `${MARKER}
-add table inet calibrate_ci
-flush table inet calibrate_ci
-table inet calibrate_ci {
-  chain input {
-    type filter hook input priority -10; policy accept;
-    iifname "${config.interface}" ip saddr ${config.peerAddress} ip daddr ${config.host} tcp dport 22 accept
-    iifname "${config.interface}" ip saddr ${config.peerAddress} drop
-  }
-  chain forward {
-    type filter hook forward priority -10; policy accept;
-    iifname "${config.interface}" ip saddr ${config.peerAddress} drop
-  }
-}
-`;
-}
-
 /** Build a per-account SSH policy that forces the deployment command and disables interactive access. */
 function sshConfiguration() {
   return `${MARKER}
@@ -183,7 +164,7 @@ export async function install(config, options = {}) {
     throw new Error('Reuse the installed interface and CI addresses. Network/key migration is a separate administrator operation.');
   }
   for (const binary of ['/usr/bin/node', '/usr/bin/ssh-keygen', '/usr/bin/wg', '/usr/bin/wg-quick',
-    '/usr/bin/sudo', '/usr/sbin/sshd', '/usr/sbin/visudo', '/usr/sbin/nft', '/usr/sbin/useradd', '/usr/sbin/usermod', '/usr/sbin/runuser']) {
+    '/usr/bin/sudo', '/usr/sbin/sshd', '/usr/sbin/visudo', '/usr/sbin/useradd', '/usr/sbin/usermod', '/usr/sbin/runuser']) {
     if (!host.exists(binary)) throw new Error(`Install the prerequisite ${binary} before setup.`);
   }
   const nodeMajor = Number(run('/usr/bin/node', ['--version']).replace(/^v/, '').split('.')[0]);
@@ -212,12 +193,6 @@ export async function install(config, options = {}) {
     || compose.services.app.healthcheck.disable || compose.services.app.healthcheck.test[0] === 'NONE') {
     throw new Error('The existing Compose app must use latest and an enabled application healthcheck.');
   }
-  const firewall = firewallRules(config);
-  const currentFirewall = run('nft', ['list', 'table', 'inet', 'calibrate_ci'], { absent: true });
-  if (currentFirewall !== null && !host.exists(FIREWALL_FILE)) {
-    throw new Error('The calibrate_ci firewall table already exists without an installer configuration.');
-  }
-  run('nft', ['--check', '-f', '-'], { input: firewall });
   const oldSsh = host.exists(SSH_FILE) ? host.snapshot(SSH_FILE) : null;
   if (oldSsh !== null && !host.read(SSH_FILE).startsWith(MARKER)) throw new Error(`Refusing to replace unmanaged ${SSH_FILE}.`);
   const authorizedKeys = `/etc/ssh/authorized_keys/${ACCOUNT}`;
@@ -317,43 +292,6 @@ export async function install(config, options = {}) {
     throw error;
   }
   await host.reload('sshReload', 'Reload SSH with the validated deployment account restrictions.', 'systemctl', ['reload', 'ssh']);
-
-  await host.file(FIREWALL_FILE, firewall, 0o600, ['firewallApply']);
-  await host.file(`/etc/systemd/system/${FIREWALL_SERVICE}`, `${MARKER}
-[Unit]
-Description=Restrict the Calibrate CI WireGuard peer
-After=nftables.service
-Before=${wgService}
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-ExecStart=/usr/sbin/nft -f ${FIREWALL_FILE}
-ExecReload=/usr/sbin/nft -f ${FIREWALL_FILE}
-[Install]
-WantedBy=multi-user.target
-`, 0o644, ['daemonReload', 'firewallApply']);
-  const dropIn = `/etc/systemd/system/${wgService}.d`;
-  await host.directory(dropIn, 0o755, true);
-  await host.file(`${dropIn}/calibrate-ci.conf`, `${MARKER}\n[Unit]\nRequires=${FIREWALL_SERVICE}\nAfter=${FIREWALL_SERVICE}\n`, 0o644, ['daemonReload']);
-  await host.reload('daemonReload', 'Reload systemd unit definitions.', 'systemctl', ['daemon-reload']);
-  const serviceBefore = host.serviceStatus();
-  if (!serviceBefore.enabled) {
-    await host.change(`Enable ${FIREWALL_SERVICE} at boot.`, () => {
-      host.remember('firewallService', serviceBefore);
-      run('systemctl', ['enable', FIREWALL_SERVICE]);
-    });
-  } else host.skip('Firewall service boot enablement');
-  if (!serviceBefore.active || host.state.pending.firewallApply
-    || !currentFirewall || host.state.resources.firewall?.after !== fingerprint(currentFirewall)) {
-    await host.change(`Apply the CI-only inet calibrate_ci firewall table through ${FIREWALL_SERVICE}.`, () => {
-      host.remember('firewallService', serviceBefore);
-      host.remember('firewall', { before: currentFirewall, after: null });
-      run('systemctl', ['restart', FIREWALL_SERVICE]);
-      host.state.resources.firewall.after = fingerprint(run('nft', ['list', 'table', 'inet', 'calibrate_ci']));
-      delete host.state.pending.firewallApply;
-      host.save();
-    });
-  } else host.skip('Running CI firewall rules');
 
   const peer = { interface: config.interface, publicKey: wgPublicKey, address: config.peerAddress,
     configCreated: originalWg !== updatedWg, configMode: fs.statSync(host.target(wgFile)).mode & 0o777,

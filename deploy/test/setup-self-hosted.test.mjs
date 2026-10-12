@@ -1,13 +1,14 @@
 /**
  * @file Exercise confirmed, idempotent setup and uninstall against a temporary
- * host filesystem and simulated services, accounts, firewall, and VPN commands.
+ * host filesystem and simulated SSH, account, and VPN commands. Existing firewall
+ * configuration and VPN service definitions must remain untouched.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { assertUnusedAddress, firewallRules, install, updateWireGuard, validateSetup,
+import { assertUnusedAddress, install, updateWireGuard, validateSetup,
   verifySshConfiguration } from '../scripts/setup-self-hosted.mjs';
 import { uninstall } from '../scripts/uninstall-self-hosted.mjs';
 import { STATE_FILE, STATE_DIRECTORY } from '../scripts/self-hosted-setup-state.mjs';
@@ -61,9 +62,8 @@ function fixture(t, options = {}) {
     fs.writeFileSync(target(name), content);
   };
   for (const binary of ['node', 'ssh-keygen', 'wg', 'wg-quick', 'sudo']) put(`/usr/bin/${binary}`);
-  for (const binary of ['sshd', 'visudo', 'nft', 'useradd', 'usermod', 'runuser']) put(`/usr/sbin/${binary}`);
+  for (const binary of ['sshd', 'visudo', 'useradd', 'usermod', 'runuser']) put(`/usr/sbin/${binary}`);
   fs.mkdirSync(target('/etc/sudoers.d'), { recursive: true });
-  fs.mkdirSync(target('/etc/systemd/system'), { recursive: true });
   fs.mkdirSync(target('/var/lib'), { recursive: true });
   fs.mkdirSync(target('/usr/local'), { recursive: true });
   put('/etc/wireguard/wg0.conf', wgOriginal);
@@ -76,8 +76,7 @@ function fixture(t, options = {}) {
   const calls = [];
   const logs = [];
   const confirmations = [];
-  const state = { account: false, group: false, shell: '/bin/sh', peer: null, route: false,
-    active: false, enabled: false, table: null };
+  const state = { account: false, group: false, shell: '/bin/sh', peer: null, route: false };
   /** Render the current simulated deployment account for getent responses. */
   const passwd = () => `calibrate-deploy:x:1003:1003::/var/lib/calibrate-deploy-user:${state.shell}`;
   /** Record host commands and apply their effects only to the fixture's simulated state. */
@@ -85,19 +84,15 @@ function fixture(t, options = {}) {
     calls.push({ binary, args, ...settings });
     if (binary === '/usr/bin/node') return options.nodeVersion || 'v22.14.0';
     if (binary === 'systemctl') {
-      if (args.at(-1).startsWith('wg-quick@')) {
+      if (args.join(' ') === 'is-active --quiet wg-quick@wg0.service') {
         if (options.notWgQuick) throw new Error('Inactive wg-quick service');
         return 'active';
       }
-      if (args[0] === 'is-active') return state.active ? 'active' : null;
-      if (args[0] === 'is-enabled') return state.enabled ? 'enabled' : null;
-      if (args[0] === 'enable') state.enabled = true;
-      if (args[0] === 'disable') state.enabled = false;
-      if (args[0] === 'stop') state.active = false;
-      if (args[0] === 'restart') {
-        state.active = true;
-        state.table = fs.readFileSync(target('/etc/calibrate/ci-firewall.nft'), 'utf8').trim();
-      }
+      if (args.join(' ') === 'reload ssh') return '';
+      throw new Error(`Unexpected service operation: systemctl ${args.join(' ')}`);
+    }
+    if (['nft', 'iptables', 'ip6tables', 'ufw', 'firewall-cmd'].includes(path.basename(binary))) {
+      throw new Error(`Setup and uninstall must not manage the firewall: ${binary}`);
     }
     if (binary === 'ip' && args.includes('address')) return JSON.stringify([{ addr_info: [{ local: '10.8.0.1' }] }]);
     if (binary === 'ip' && args[1] === 'route') return JSON.stringify(state.route ? [{ dev: 'wg0', dst: '10.8.0.20/32' }] : []);
@@ -106,10 +101,6 @@ function fixture(t, options = {}) {
       image: options.image || 'ghcr.io/mchartier/calibratehealth:latest',
       healthcheck: options.noHealth ? undefined : { test: ['CMD', 'health'] },
     } } });
-    if (binary === 'nft' && args[0] === 'list') return state.table;
-    if (binary === 'nft' && options.badFirewall) throw new Error('Invalid firewall');
-    if (binary === 'nft' && args[0] === 'delete') state.table = null;
-    if (binary === 'nft' && args[0] === '-f') state.table = settings.input.replace(/^delete table inet calibrate_ci\n/, '').trim();
     if (binary === 'id') {
       if (!state.account) return null;
       return args[0] === '-u' ? '1003' : 'calibrate-deploy';
@@ -162,13 +153,13 @@ test('installer configures the fixed SSH command and restricted peer without cha
   assert.equal(read('/etc/sudoers.d/calibrate-deploy'), 'calibrate-deploy ALL=(root) NOPASSWD: /usr/local/sbin/calibrate-deploy ""\n');
   assert.match(read('/etc/ssh/sshd_config.d/00-calibrate-deploy.conf'), /ForceCommand \/usr\/bin\/sudo -n \/usr\/local\/sbin\/calibrate-deploy/);
   assert.ok(f.calls.some(({ binary, args }) => binary === 'visudo' && args[0] === '-cf'));
-  const firewallIndex = f.calls.findIndex(({ binary, args }) => binary === 'systemctl' && args[0] === 'restart');
   const peerIndex = f.calls.findIndex(({ binary, args }) => binary === 'wg' && args[0] === 'set');
-  assert.ok(firewallIndex >= 0 && peerIndex > firewallIndex);
+  assert.ok(peerIndex >= 0);
   assert.deepEqual(f.calls[peerIndex].args, ['set', 'wg0', 'peer', publicKey, 'allowed-ips', '10.8.0.20/32']);
   assert.ok(!f.calls.some(({ args }) => args.includes('syncconf') || args.includes('setconf')));
   assert.ok(read('/etc/wireguard/wg0.conf').startsWith(wgOriginal.trimEnd()));
-  assert.match(read('/etc/systemd/system/wg-quick@wg0.service.d/calibrate-ci.conf'), /Requires=calibrate-ci-firewall.service/);
+  assert.equal(fs.existsSync(f.target('/etc/systemd')), false);
+  assert.equal(fs.existsSync(f.target('/etc/calibrate/ci-firewall.nft')), false);
   assert.deepEqual(f.calls.find(({ binary, args }) => binary === 'ip' && args[0] === 'route').args,
     ['route', 'add', '10.8.0.20/32', 'dev', 'wg0']);
   const github = JSON.parse(read('/etc/calibrate/github-environment.json'));
@@ -193,6 +184,34 @@ test('installer configures the fixed SSH command and restricted peer without cha
       ['/etc/ssh/authorized_keys/calibrate-deploy', 0o644], ['/usr/local/sbin/calibrate-deploy', 0o755],
     ]) assert.equal(fs.statSync(f.target(file)).mode & 0o777, mode, file);
   }
+});
+
+test('setup, reruns, and uninstall leave existing firewall and WireGuard service configuration untouched', async (t) => {
+  const f = fixture(t);
+  const existing = {
+    '/etc/nftables.conf': 'table inet homelab { chain input { type filter hook input priority 0; policy drop; } }\n',
+    '/etc/systemd/system/nftables.service.d/homelab.conf': '[Service]\nRestart=on-failure\n',
+    '/etc/systemd/system/wg-quick@wg0.service.d/homelab.conf': '[Unit]\nAfter=network-online.target\n',
+  };
+  for (const [name, contents] of Object.entries(existing)) f.put(name, contents);
+  const timestamps = Object.fromEntries(Object.keys(existing).map((name) => [name, fs.statSync(f.target(name)).mtimeMs]));
+  for (const operation of [f.run, f.run, f.uninstall]) {
+    await operation();
+    for (const [name, contents] of Object.entries(existing)) {
+      assert.equal(fs.readFileSync(f.target(name), 'utf8'), contents, name);
+      assert.equal(fs.statSync(f.target(name)).mtimeMs, timestamps[name], name);
+    }
+    assert.match(fs.readFileSync(f.target('/etc/wireguard/wg0.conf'), 'utf8'), /PostUp = existing-firewall-command/);
+    for (const name of ['/etc/calibrate/ci-firewall.nft', '/etc/systemd/system/calibrate-ci-firewall.service',
+      '/etc/systemd/system/wg-quick@wg0.service.d/calibrate-ci.conf']) {
+      assert.equal(fs.existsSync(f.target(name)), false, name);
+    }
+    if (fs.existsSync(f.target(STATE_FILE))) {
+      const record = fs.readFileSync(f.target(STATE_FILE), 'utf8');
+      assert.doesNotMatch(record, /firewall|nftables|systemd/);
+    }
+  }
+  assert.equal(fs.readFileSync(f.target('/etc/wireguard/wg0.conf'), 'utf8'), wgOriginal);
 });
 
 test('rerunning setup preserves keys and produces one identical managed peer', async (t) => {
@@ -245,7 +264,7 @@ test('failed WireGuard application retains recorded changes that uninstall can c
   assert.equal(fs.existsSync(f.target(STATE_FILE)), false);
 });
 
-for (const options of [{ noHealth: true }, { image: 'app:v1.0.0' }, { badFirewall: true },
+for (const options of [{ noHealth: true }, { image: 'app:v1.0.0' },
   { notWgQuick: true }, { nodeVersion: 'v20.19.0' }]) {
   test('unsupported prerequisites fail before host changes: ' + JSON.stringify(options), async (t) => {
     const f = fixture(t, options);
@@ -285,17 +304,12 @@ test('setup recognizes its existing peer after wg-quick SaveConfig removes comme
   assert.throws(() => updateWireGuard(saved.replace('10.8.0.20/32', '10.8.0.0/24'), publicKey, '10.8.0.20'), /unexpected AllowedIPs/);
 });
 
-test('input validation prevents configuration injection and the firewall confines only the CI source', async (t) => {
+test('input validation prevents configuration injection and verifies the forced SSH command', async (t) => {
   const f = fixture(t);
   for (const override of [{ interface: 'wg0"; drop' }, { peerAddress: '10.0.0.1\nanything' }, { host: '0.0.0.0/0' },
     { endpoint: 'vpn.example.test:123\nanything' }, { peerAddress: f.config.host }]) {
     assert.throws(() => validateSetup({ ...f.config, ...override }));
   }
-  const firewall = firewallRules(f.config);
-  assert.match(firewall, /ip saddr 10\.8\.0\.20 ip daddr 10\.8\.0\.1 tcp dport 22 accept/);
-  assert.match(firewall, /chain forward[\s\S]*iifname "wg0" ip saddr 10\.8\.0\.20 drop/);
-  assert.equal((firewall.match(/ip saddr 10\.8\.0\.20 drop/g) || []).length, 2);
-  assert.doesNotMatch(firewall, /flush ruleset|policy drop|0\.0\.0\.0\/0/);
   assert.doesNotThrow(() => verifySshConfiguration(sshEffective));
   assert.throws(() => verifySshConfiguration(sshEffective.replace('forcecommand /usr/bin/sudo -n /usr/local/sbin/calibrate-deploy', 'forcecommand none')), /override forcecommand/);
 });
@@ -330,10 +344,8 @@ test('uninstall removes created assets and subsequent uninstall does nothing', a
   for (const name of [STATE_DIRECTORY, '/etc/calibrate', '/usr/local/sbin/calibrate-deploy',
     '/usr/local/lib/calibrate-deploy.mjs', '/etc/sudoers.d/calibrate-deploy',
     '/etc/ssh/authorized_keys/calibrate-deploy', '/etc/ssh/sshd_config.d/00-calibrate-deploy.conf',
-    '/etc/systemd/system/calibrate-ci-firewall.service', '/etc/systemd/system/wg-quick@wg0.service.d',
     '/var/lib/calibrate-deploy-user']) assert.equal(fs.existsSync(f.target(name)), false, name);
-  assert.deepEqual(f.state, { account: false, group: false, shell: '/bin/sh', peer: null, route: false,
-    active: false, enabled: false, table: null });
+  assert.deepEqual(f.state, { account: false, group: false, shell: '/bin/sh', peer: null, route: false });
   assert.equal(fs.readFileSync(f.target('/etc/wireguard/wg0.conf'), 'utf8'), wgOriginal);
   assert.equal(fs.readFileSync(f.target('/srv/calibrate/compose.yml'), 'utf8'), 'existing compose bytes');
   assert.equal(fs.readFileSync(f.target('/srv/calibrate/.env'), 'utf8'), 'SESSION_SECRET=preserve-existing-secret');
@@ -351,10 +363,6 @@ test('uninstall preserves imported assets and restores files and settings that e
   f.state.shell = '/bin/bash';
   f.state.peer = '10.8.0.20/32';
   f.state.route = true;
-  f.state.active = true;
-  f.state.enabled = true;
-  f.state.table = 'table inet calibrate_ci { # pre-existing policy }';
-  f.put('/etc/calibrate/ci-firewall.nft', '# previous firewall file\n');
   f.put('/etc/calibrate/ci-ssh-key', 'PRIVATE_SSH_TEST_KEY\n');
   f.put('/etc/calibrate/ci-ssh-key.pub', `${sshKey} original-comment\n`);
   f.put('/etc/calibrate/ci-wireguard.key', `${privateKey}\n`);
@@ -367,7 +375,6 @@ test('uninstall preserves imported assets and restores files and settings that e
   await f.uninstall();
   assert.deepEqual(f.state, originalState);
   assert.equal(fs.readFileSync(f.target('/usr/local/sbin/calibrate-deploy'), 'utf8'), 'original helper\n');
-  assert.equal(fs.readFileSync(f.target('/etc/calibrate/ci-firewall.nft'), 'utf8'), '# previous firewall file\n');
   assert.equal(fs.readFileSync(f.target('/etc/calibrate/ci-ssh-key'), 'utf8'), 'PRIVATE_SSH_TEST_KEY\n');
   assert.equal(fs.readFileSync(f.target('/etc/calibrate/ci-ssh-key.pub'), 'utf8'), `${sshKey} original-comment\n`);
   assert.equal(fs.readFileSync(f.target('/etc/wireguard/wg0.conf'), 'utf8'), existingWg);

@@ -7,13 +7,13 @@ import { isIPv4 } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { removeWireGuardPeer } from './setup-self-hosted.mjs';
-import { ACCOUNT, ACCOUNT_HOME, FIREWALL_SERVICE, fingerprint, HostChanges, SSH_FILE,
+import { ACCOUNT, ACCOUNT_HOME, fingerprint, HostChanges, SSH_FILE,
   STATE_DIRECTORY, STATE_FILE, withConfirmation } from './self-hosted-setup-state.mjs';
 
 /** Limit uninstall to known installer resources and validated network identities. */
 function validateRecord(state) {
   for (const name of Object.keys(state.resources)) {
-    if (!['peer', 'route', 'firewallService', 'firewall', 'account'].includes(name)) throw new Error(`Unexpected recorded resource: ${name}`);
+    if (!['peer', 'route', 'account'].includes(name)) throw new Error(`Unexpected recorded resource: ${name}`);
   }
   const network = [state.resources.peer, state.resources.route].filter(Boolean);
   for (const entry of network) {
@@ -23,19 +23,18 @@ function validateRecord(state) {
   const files = new Set([
     '/etc/calibrate/setup.json', '/etc/calibrate/deploy.json', '/etc/calibrate/github-environment.json',
     '/etc/calibrate/ci-ssh-key', '/etc/calibrate/ci-ssh-key.pub', '/etc/calibrate/ci-wireguard.key',
-    '/etc/calibrate/ci-firewall.nft', '/usr/local/lib/calibrate-deploy.mjs', '/usr/local/sbin/calibrate-deploy',
+    '/usr/local/lib/calibrate-deploy.mjs', '/usr/local/sbin/calibrate-deploy',
     `/etc/ssh/authorized_keys/${ACCOUNT}`, `/etc/sudoers.d/${ACCOUNT}`, SSH_FILE,
-    `/etc/systemd/system/${FIREWALL_SERVICE}`,
   ]);
   const directories = new Set(['/etc/calibrate', '/etc/calibrate/registry', '/etc/ssh/authorized_keys',
     '/etc/ssh/sshd_config.d', '/usr/local/lib', '/usr/local/sbin', ACCOUNT_HOME]);
   for (const name of Object.keys(state.files)) {
-    if (!files.has(name) && !/^\/etc\/systemd\/system\/wg-quick@[a-zA-Z0-9_-]{1,15}\.service\.d\/calibrate-ci\.conf$/.test(name)) {
+    if (!files.has(name)) {
       throw new Error(`Unexpected recorded file: ${name}`);
     }
   }
   for (const name of Object.keys(state.directories)) {
-    if (!directories.has(name) && !/^\/etc\/systemd\/system\/wg-quick@[a-zA-Z0-9_-]{1,15}\.service\.d$/.test(name)) {
+    if (!directories.has(name)) {
       throw new Error(`Unexpected recorded directory: ${name}`);
     }
   }
@@ -90,29 +89,6 @@ export async function uninstall(options = {}) {
     forget('route');
   }
 
-  const service = host.state.resources.firewallService;
-  if (service) {
-    const current = host.serviceStatus();
-    if (!service.active && current.active) {
-      await host.change(`Stop ${FIREWALL_SERVICE}, which setup started.`, () => run('systemctl', ['stop', FIREWALL_SERVICE]));
-    } else host.skip('Firewall service already stopped or active before setup');
-    if (!service.enabled && current.enabled) {
-      await host.change(`Disable ${FIREWALL_SERVICE}, which setup enabled.`, () => run('systemctl', ['disable', FIREWALL_SERVICE]));
-    } else host.skip('Firewall service already disabled or enabled before setup');
-    forget('firewallService');
-  }
-  const firewall = host.state.resources.firewall;
-  if (firewall) {
-    const current = run('nft', ['list', 'table', 'inet', 'calibrate_ci'], { absent: true });
-    if (current !== firewall.before) {
-      await host.change(`${firewall.before === null ? 'Remove the installed' : 'Restore the original'} inet calibrate_ci firewall table.`, () => {
-        if (firewall.before === null) run('nft', ['delete', 'table', 'inet', 'calibrate_ci']);
-        else run('nft', ['-f', '-'], { input: `${current === null ? '' : 'delete table inet calibrate_ci\n'}${firewall.before}\n` });
-      });
-    } else host.skip('CI firewall table already matches its original state');
-    forget('firewall');
-  }
-
   for (const [name, record] of Object.entries(host.state.files).reverse()) {
     const current = host.snapshot(name);
     const alreadyRestored = record.before === null ? current === null
@@ -122,7 +98,6 @@ export async function uninstall(options = {}) {
       const modified = current && record.after && fingerprint(Buffer.from(current.data, 'base64')) !== record.after;
       await host.change(`${record.before === null ? 'Remove created file' : 'Restore original file'} ${name}${modified ? ' (replacing edits made after setup)' : ''}.`, () => {
         if (name === SSH_FILE) host.state.pending.sshReload = true;
-        if (name.startsWith('/etc/systemd/system/')) host.state.pending.daemonReload = true;
         host.save();
         if (record.before === null) fs.unlinkSync(host.target(name));
         else host.atomicWrite(name, Buffer.from(record.before.data, 'base64'), record.before.mode);
@@ -133,7 +108,6 @@ export async function uninstall(options = {}) {
   }
   if (host.state.pending.sshReload) run('sshd', ['-t']);
   await host.reload('sshReload', 'Reload SSH after restoring its original configuration.', 'systemctl', ['reload', 'ssh']);
-  await host.reload('daemonReload', 'Reload systemd after removing or restoring deployment units.', 'systemctl', ['daemon-reload']);
 
   const account = host.state.resources.account;
   if (account) {

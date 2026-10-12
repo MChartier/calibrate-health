@@ -12,9 +12,7 @@ export const STATE_DIRECTORY = '/var/lib/calibrate-deployment-setup';
 export const STATE_FILE = `${STATE_DIRECTORY}/state.json`;
 export const ACCOUNT = 'calibrate-deploy';
 export const ACCOUNT_HOME = '/var/lib/calibrate-deploy-user';
-export const FIREWALL_SERVICE = 'calibrate-ci-firewall.service';
 export const SSH_FILE = '/etc/ssh/sshd_config.d/00-calibrate-deploy.conf';
-export const FIREWALL_FILE = '/etc/calibrate/ci-firewall.nft';
 
 /** Run a bounded host command with a fixed environment, translating expected absence to null. */
 export function command(binary, args, { input, absent = false, missingCodes = [1] } = {}) {
@@ -210,13 +208,6 @@ export class HostChanges {
       this.state.files[name].after = fingerprint(content);
       this.save();
     });
-  }
-
-  /** Read whether the dedicated firewall service is active and enabled for later restoration. */
-  serviceStatus() {
-    /** Treat systemd's inactive, disabled, and missing-unit statuses as absent state. */
-    const query = (operation) => this.run('systemctl', [operation, FIREWALL_SERVICE], { absent: true, missingCodes: [1, 3, 4] });
-    return { active: query('is-active') === 'active', enabled: query('is-enabled') === 'enabled' };
   }
 
   /** Confirm and perform a pending service reload, clearing the flag only after success. */

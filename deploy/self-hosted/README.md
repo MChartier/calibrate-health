@@ -34,8 +34,8 @@ sudo node deploy/scripts/setup-self-hosted.mjs
 
 The installer targets **Debian with WireGuard running directly on this host through `wg-quick@<interface>.service`**.
 It requires an existing reachable WireGuard UDP endpoint, Docker Engine, Compose v2 supporting `pull --policy always`
-and `up --wait`, and Node 22+ at `/usr/bin/node`. The Debian packages `openssh-server`, `sudo`, `wireguard-tools`, and
-`nftables` must be installed. Container-managed VPNs and separate gateways need their manager's peer configuration;
+and `up --wait`, and Node 22+ at `/usr/bin/node`. The Debian packages `openssh-server`, `sudo`, and `wireguard-tools`
+must be installed. Container-managed VPNs and separate gateways need their manager's peer configuration;
 the installer refuses an inactive local wg-quick service. It does not install or upgrade system packages.
 
 The prompts collect the existing Compose directory, project name, file list, and environment file, then the existing
@@ -55,16 +55,15 @@ The one command:
 - Installs root-owned authorized keys, an SSH forced command, and a sudo rule allowing only the fixed wrapper without
   arguments. Password login, forwarding, user SSH startup scripts, tunnels, and PTYs are disabled for this account.
 - Validates the effective SSH policy before reloading SSH and rejects Compose paths writable by the deployment account.
-- Adds the CI peer with one `/32` address, applies it without restarting the VPN, and installs persistent nftables
-  restrictions allowing this peer only TCP 22 to the server's tunnel address. Forwarded traffic is blocked.
+- Adds the CI peer with one `/32` address and its route, applying the peer without restarting the VPN.
 - Saves the GitHub values, including the SSH host key read locally, in root-only `/etc/calibrate/github-environment.json`.
 - Prints all four variables and four secrets after successful setup, with instructions for the master-only environment.
 
 Existing peers, Compose files, and `.env` are preserved. Setup does not deploy the application. Keep an administrative
-SSH session open during setup. Existing host firewall policies must also permit the CI peer to reach TCP 22; an
-accept rule in the installer's table cannot override another table's deny rule. The installer adds only the
-`inet calibrate_ci` table and its own systemd unit; if a firewall tool flushes the whole ruleset, rerun setup and
-approve restoring the missing CI rules before CI connects.
+SSH session open during setup. Setup and uninstall leave existing firewall rules, firewall services, and WireGuard
+service units/dependencies unchanged. They do not install a firewall service or restart WireGuard. Existing routing
+and firewall policy must permit the CI peer to reach TCP 22 on the server's tunnel address and determine its other
+network access. The restricted SSH account permits only the deployment command.
 
 Run the same installer again to update installed helpers or repair missing configuration. It reuses
 `/etc/calibrate/setup.json` and the root-only `ci-ssh-key` / `ci-wireguard.key` files in `/etc/calibrate`; it does not
@@ -136,9 +135,9 @@ From the same checkout, run:
 sudo node deploy/scripts/uninstall-self-hosted.mjs
 ```
 
-Uninstall reports and confirms each change with the same default-no prompt. It removes the CI peer/route, firewall
-table and service enablement, SSH/sudo configuration, helper files, keys, and account/group **when setup created them**.
-It restores prior file contents, account shell, and firewall settings where setup modified existing assets. It removes
+Uninstall reports and confirms each change with the same default-no prompt. It removes the CI peer/route,
+SSH/sudo configuration, helper files, keys, and account/group **when setup created them**.
+It restores prior file contents and account shell where setup modified existing assets. It removes
 only empty directories created by setup; externally added files such as registry credentials are retained and reported.
 The Compose stack, application/database, server host keys, and unrelated VPN peers are preserved. It does not deploy,
 stop, or roll back the application, and does not uninstall system packages.
@@ -192,7 +191,7 @@ or upgrade the proxy/database as part of this operation.
 ## Validation
 
 `npm run test:deploy` exercises unchanged reruns, per-change confirmation, interrupted setup/uninstall, restoration of
-pre-existing assets, key preservation, prerequisite failures, SSH validation, peer conflicts, firewall restrictions,
+pre-existing assets, key preservation, prerequisite failures, SSH validation, peer conflicts, firewall/service preservation,
 upgrades, affirmative health, and cleanup with mocked system/Docker/network commands.
 The release workflow contract tests cover both OTA entrypoints, production approval ordering, environment-secret
 forwarding, and server-only releases.

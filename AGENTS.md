@@ -368,6 +368,8 @@ UI code style:
   Setup and `sudo node deploy/scripts/uninstall-self-hosted.mjs` describe and confirm each host mutation with a
   default-no prompt. Unchanged assets are skipped. Keep the root-only installation record for resuming or undoing
   partial setup; uninstall removes created assets and restores pre-existing settings, without touching Compose/data.
+  Leave existing firewall rules/services and WireGuard service units/dependencies unchanged; manage only the dedicated
+  CI peer and its route without restarting WireGuard.
   Modified scripts require file-level and function-level documentation comments.
 - Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
   `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
