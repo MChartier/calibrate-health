@@ -128,8 +128,14 @@ test('installer configures the fixed SSH command and restricted peer without cha
   assert.equal(github.secrets.DEPLOY_SSH_KNOWN_HOSTS, '10.8.0.1 ssh-ed25519 AAAAHOSTKEY');
   assert.equal(github.secrets.DEPLOY_WG_ENDPOINT, f.config.endpoint);
   assert.ok(!JSON.stringify(github).includes('EXISTING_SERVER_SECRET'));
-  assert.ok(!f.logs.join('\n').includes(privateKey));
-  assert.ok(!f.logs.join('\n').includes('PRIVATE_SSH_TEST_KEY'));
+  const output = f.logs.join('\n');
+  assert.match(output, /self-hosted-testing GitHub environment/);
+  assert.match(output, /allow only branch master, with no tags/);
+  assert.ok(output.indexOf('Setup complete.') < output.indexOf('SECRET DEPLOY_WG_PRIVATE_KEY'));
+  for (const [kind, values] of Object.entries({ VARIABLE: github.variables, SECRET: github.secrets })) {
+    for (const [name, value] of Object.entries(values)) assert.ok(output.includes(`${kind} ${name}\n${value}`), name);
+  }
+  assert.ok(!output.includes('EXISTING_SERVER_SECRET'));
   if (process.platform !== 'win32') {
     for (const [file, mode] of [
       ['/etc/calibrate/ci-ssh-key', 0o600], ['/etc/calibrate/ci-wireguard.key', 0o600],
@@ -173,6 +179,7 @@ test('failed WireGuard application restores the original persisted configuration
   assert.throws(f.run, /Peer update failed/);
   assert.equal(fs.readFileSync(f.target('/etc/wireguard/wg0.conf'), 'utf8'), wgOriginal);
   assert.equal(fs.existsSync(f.target('/etc/calibrate/github-environment.json')), false);
+  assert.ok(!f.logs.join('\n').includes('SECRET DEPLOY_'));
 });
 
 for (const options of [{ noHealth: true }, { image: 'app:v1.0.0' }, { badFirewall: true },

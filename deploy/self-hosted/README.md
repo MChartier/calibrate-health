@@ -24,7 +24,7 @@ No persistent GitHub runner or publicly reachable application/SSH port is needed
 
 ## Set up the Debian host
 
-Use the consolidated installer from a reviewed checkout on the server:
+Run this single command from a reviewed checkout on the server to complete setup and print the GitHub values:
 
 ```sh
 sudo node deploy/scripts/setup-self-hosted.mjs
@@ -51,6 +51,7 @@ The one command:
 - Adds the CI peer with one `/32` address, applies it without restarting the VPN, and installs persistent nftables
   restrictions allowing this peer only TCP 22 to the server's tunnel address. Forwarded traffic is blocked.
 - Saves the GitHub values, including the SSH host key read locally, in root-only `/etc/calibrate/github-environment.json`.
+- Prints all four variables and four secrets after successful setup, with instructions for the master-only environment.
 
 Existing peers, Compose files, and `.env` are preserved. Setup does not deploy the application. Keep an administrative
 SSH session open during setup. Existing host firewall policies must also permit the CI peer to reach TCP 22; an
@@ -75,14 +76,9 @@ The new helper ignores the old image override, state, lock, and backup-marker fi
 
 ## Copy the GitHub configuration
 
-Display the saved values through your trusted administrative session:
-
-```sh
-sudo node deploy/scripts/setup-self-hosted.mjs github-values
-```
-
-This explicitly displays private CI keys. Copy each named value into GitHub; do not paste the output into an issue,
-PR, or shared log. The installer never needs a GitHub token, and normal setup output contains no private keys.
+The setup command prints the values automatically after it succeeds. Copy each named value into GitHub from your
+trusted administrative session. The output contains private CI keys; do not paste it into an issue, PR, or shared log.
+The installer never needs a GitHub token. The optional `github-values` mode only reprints the saved values later.
 
 Create the GitHub environment **`self-hosted-testing`**. Under deployment branches and tags, choose **Selected branches
 and tags**, allow the branch **`master`** only, and add no tag rules. Keep `master` protected. Leave reviewers and wait

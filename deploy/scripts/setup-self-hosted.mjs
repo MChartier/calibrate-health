@@ -141,6 +141,16 @@ export function verifySshConfiguration(output) {
   if (!values.port?.split(/\s+/).includes('22')) throw new Error('This deployment workflow requires SSH on port 22.');
 }
 
+function printGithubValues(values, log = console.log) {
+  log(`Copy into the ${values.environment} GitHub environment. This output contains private CI keys.`);
+  log(`Deployment branches and tags: Selected branches and tags; allow only branch ${values.branch}, with no tags.`);
+  for (const kind of ['variables', 'secrets']) {
+    for (const [key, value] of Object.entries(values[kind])) {
+      log(`\n${kind === 'secrets' ? 'SECRET' : 'VARIABLE'} ${key}\n${value}`);
+    }
+  }
+}
+
 export function install(config, { root = '/', ownerUid = 0, run = command, log = console.log } = {}) {
   validateSetup(config);
   const target = (name) => path.join(root, name);
@@ -335,16 +345,17 @@ WantedBy=multi-user.target
   run('ip', ['route', 'replace', `${config.peerAddress}/32`, 'dev', config.interface]);
   const hostKey = read('/etc/ssh/ssh_host_ed25519_key.pub').trim().split(/\s+/).slice(0, 2).join(' ');
   if (!/^ssh-ed25519 [A-Za-z0-9+/=]+$/.test(hostKey)) throw new Error('Expected an Ed25519 SSH host public key.');
-  write(EXPORT, `${JSON.stringify({
+  const githubValues = {
     environment: 'self-hosted-testing', branch: 'master',
     variables: { DEPLOY_HOST: config.host, DEPLOY_SSH_USER: ACCOUNT,
       DEPLOY_WG_ADDRESS: config.peerAddress, DEPLOY_WG_PUBLIC_KEY: serverPublicKey },
     secrets: { DEPLOY_WG_ENDPOINT: config.endpoint, DEPLOY_WG_PRIVATE_KEY: wgPrivateKey,
       DEPLOY_SSH_PRIVATE_KEY: read('/etc/calibrate/ci-ssh-key'), DEPLOY_SSH_KNOWN_HOSTS: `${config.host} ${hostKey}` },
-  }, null, 2)}\n`);
+  };
+  write(EXPORT, `${JSON.stringify(githubValues, null, 2)}\n`);
   log('Setup complete. Compose and its environment were not changed, and no upgrade was run.');
-  log('GitHub values: sudo node deploy/scripts/setup-self-hosted.mjs github-values');
   log('Upgrade and health check: sudo /usr/local/sbin/calibrate-deploy');
+  printGithubValues(githubValues, log);
 }
 
 async function promptConfiguration() {
@@ -376,18 +387,14 @@ async function promptConfiguration() {
 async function main() {
   const mode = process.argv[2] || 'install';
   if (mode === '--help') {
-    console.log('sudo node deploy/scripts/setup-self-hosted.mjs [install|github-values]\nInstall on Debian with an existing local wg-quick service, or print the saved GitHub secrets and variables.');
+    console.log('sudo node deploy/scripts/setup-self-hosted.mjs [install|github-values]\nInstall on Debian with an existing local wg-quick service, then print the GitHub secrets and variables.\ngithub-values only reprints the saved values.');
     return;
   }
   if (process.argv.length > 3 || !['install', 'github-values'].includes(mode)) throw new Error('Expected install or github-values.');
   if (process.platform !== 'linux' || process.getuid?.() !== 0) throw new Error('Run this setup with sudo on the Debian deployment host.');
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('Install Node 22+ at /usr/bin/node first.');
   if (mode === 'github-values') {
-    const values = JSON.parse(fs.readFileSync(EXPORT, 'utf8'));
-    console.log('Copy into the master-only self-hosted-testing environment. This output contains private CI keys.');
-    for (const kind of ['variables', 'secrets']) {
-      for (const [key, value] of Object.entries(values[kind])) console.log(`\n${kind === 'secrets' ? 'SECRET' : 'VARIABLE'} ${key}\n${value}`);
-    }
+    printGithubValues(JSON.parse(fs.readFileSync(EXPORT, 'utf8')));
     return;
   }
   if (!/^ID=debian$/m.test(fs.readFileSync('/etc/os-release', 'utf8'))) throw new Error('This installer targets Debian with wg-quick.');
