@@ -1,3 +1,4 @@
+/** Canonical release metadata, deterministic version transformations, and protected-source verification. */
 import { createHash } from 'node:crypto';
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -65,14 +66,17 @@ const HISTORICAL_PREPARED_RELEASE_MANIFEST = {
   }
 };
 
+/** Read canonical JSON; malformed input must stop release preparation. */
 const readJson = async (filePath) => JSON.parse(await readFile(filePath, 'utf8'));
 
+/** Preserve source indentation and newline style when updating version mirrors. */
 const formatJson = (value, originalSource) => {
   const newline = originalSource.includes('\r\n') ? '\r\n' : '\n';
   const formatted = `${JSON.stringify(value, null, 2)}\n`;
   return newline === '\r\n' ? formatted.replaceAll('\n', '\r\n') : formatted;
 };
 
+/** Reject missing or duplicated release fields instead of editing ambiguous source. */
 const replaceExactlyOnce = (source, current, replacement, label) => {
   const firstIndex = source.indexOf(current);
   if (firstIndex < 0) throw new Error(`${label} does not contain the expected current release value.`);
@@ -141,6 +145,7 @@ export function createServerReleaseReplacements(originals, nextVersion) {
   };
 }
 
+/** Replace one reviewed version field without accepting a changed source layout. */
 const replacePatternExactlyOnce = (source, pattern, replacement, label) => {
   const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`;
   const globalPattern = new RegExp(pattern.source, flags);
@@ -151,6 +156,7 @@ const replacePatternExactlyOnce = (source, pattern, replacement, label) => {
   return source.replace(globalPattern, replacement);
 };
 
+/** Distinguish an absent optional mirror from unreadable or invalid source. */
 const readOptionalFile = async (filePath) => {
   try {
     return await readFile(filePath, 'utf8');
@@ -160,8 +166,10 @@ const readOptionalFile = async (filePath) => {
   }
 };
 
+/** Resolve a manifest field without assuming every optional parent exists. */
 const getPath = (value, dottedPath) => dottedPath.split('.').reduce((current, key) => current?.[key], value);
 
+/** Parse numeric and prerelease identifiers without losing integer precision. */
 const parseSemver = (value) => {
   const match = value.match(SEMVER_PATTERN);
   if (!match) throw new Error(`Invalid semantic version: ${value}`);
@@ -171,12 +179,14 @@ const parseSemver = (value) => {
   };
 };
 
+/** Compare arbitrary-sized numeric version identifiers. */
 const compareNumericIdentifier = (left, right) => {
   if (left.length !== right.length) return left.length < right.length ? -1 : 1;
   if (left === right) return 0;
   return left < right ? -1 : 1;
 };
 
+/** Order semantic versions while ignoring build metadata. */
 export const compareSemver = (left, right) => {
   const leftVersion = parseSemver(left);
   const rightVersion = parseSemver(right);
@@ -227,12 +237,14 @@ const CLIENT_DIAGNOSTIC_PLATFORMS = ['web', 'android_phone', 'ios', 'wear_os'];
 const MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM = 16;
 
 // Only the exact pre-iOS recovery identity may use the historical native contract.
+/** Allow only the explicitly supported historical mirror layout. */
 function isExactHistoricalPreparedRelease(manifest, { validationMode, sourceCommit } = {}) {
   return validationMode === 'historical-prepared'
     && sourceCommit === HISTORICAL_PREPARED_RELEASE_COMMIT
     && isDeepStrictEqual(manifest, HISTORICAL_PREPARED_RELEASE_MANIFEST);
 }
 
+/** Select the diagnostic platform set valid for this historical manifest. */
 function clientDiagnosticPlatforms(manifest, validationOptions) {
   if (isExactHistoricalPreparedRelease(manifest, validationOptions)) {
     return CLIENT_DIAGNOSTIC_PLATFORMS.filter((platform) => platform !== 'ios');
@@ -349,6 +361,7 @@ export function getReleasePlan(manifest, latestTag = null) {
   };
 }
 
+/** Validate paired codes, compatibility fields, and canonical release identities. */
 export function validateManifest(manifest, { validationMode = 'current', sourceCommit = null } = {}) {
   if (!RELEASE_VALIDATION_MODES.has(validationMode)) {
     throw new Error(`Unknown release validation mode: ${validationMode}`);
@@ -448,10 +461,12 @@ export function validateManifest(manifest, { validationMode = 'current', sourceC
   return errors;
 }
 
+/** Accumulate mirror differences for one actionable configuration report. */
 const assertMatch = (errors, label, actual, expected) => {
   if (actual !== expected) errors.push(`${label} is ${JSON.stringify(actual)}; expected ${JSON.stringify(expected)}.`);
 };
 
+/** Read one required source field and report a missing pattern as a validation error. */
 const capture = (source, pattern, label, errors) => {
   const match = source.match(pattern);
   if (!match) {
@@ -461,6 +476,7 @@ const capture = (source, pattern, label, errors) => {
   return match[1];
 };
 
+/** Compare every tracked version mirror against the canonical release manifest. */
 export async function checkRepository(
   root = REPOSITORY_ROOT,
   { validationMode = 'current', sourceCommit = null } = {}
@@ -610,6 +626,7 @@ export async function checkRepository(
   return { manifest, errors };
 }
 
+/** Read optional Git metadata with an explicit fallback for unavailable values. */
 const gitValue = (root, args, fallback = null) => {
   try {
     return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -618,6 +635,7 @@ const gitValue = (root, args, fallback = null) => {
   }
 };
 
+/** Run exact Git inspection with replacement objects disabled. */
 const runGit = (root, args) => execFileSync('git', ['--no-replace-objects', ...args], {
   cwd: root,
   encoding: 'utf8',
@@ -625,6 +643,7 @@ const runGit = (root, args) => execFileSync('git', ['--no-replace-objects', ...a
   stdio: ['ignore', 'pipe', 'pipe']
 }).trim();
 
+/** Preserve exact file bytes for canonical candidate reconstruction. */
 const runGitRaw = (root, args) => execFileSync('git', ['--no-replace-objects', ...args], {
   cwd: root,
   encoding: 'utf8',
@@ -632,6 +651,7 @@ const runGitRaw = (root, args) => execFileSync('git', ['--no-replace-objects', .
   stdio: ['ignore', 'pipe', 'pipe']
 });
 
+/** Represent an unavailable Git ref explicitly without weakening later validation. */
 const tryGit = (root, args, git = runGit) => {
   try {
     return git(root, args);
@@ -640,6 +660,7 @@ const tryGit = (root, args, git = runGit) => {
   }
 };
 
+/** Require a full immutable commit identity at the release boundary. */
 const requireCommitId = (value, label) => {
   if (typeof value !== 'string' || !/^[0-9a-f]{40}$/.test(value)) {
     throw new Error(`${label} must be a full lowercase Git commit SHA.`);
@@ -647,6 +668,7 @@ const requireCommitId = (value, label) => {
   return value;
 };
 
+/** Parse a tracked manifest from the specified immutable revision. */
 const readGitJson = (root, revision, relativePath, git) => {
   let source;
   try {
@@ -661,6 +683,7 @@ const readGitJson = (root, revision, relativePath, git) => {
   }
 };
 
+/** Bind annotated server tags to their exact direct target and internal name. */
 const parseAnnotatedReleaseTag = (source, expectedTag) => {
   const headers = new Map();
   for (const line of source.split(/\r?\n/)) {
@@ -682,6 +705,7 @@ const parseAnnotatedReleaseTag = (source, expectedTag) => {
   return target;
 };
 
+/** Reconstruct the candidate from its parent and reject any unrelated source changes. */
 const validatePreparedReleaseCandidate = async ({
   root,
   releaseTag,
@@ -769,9 +793,18 @@ const validatePreparedReleaseCandidate = async ({
     changedPaths.push(match[1]);
   }
   changedPaths.sort();
-  if (!isDeepStrictEqual(changedPaths, PREPARED_RELEASE_MIRROR_PATHS)) {
+  const parentNative = readGitJson(root, parentCommit, 'shared/release.json', git).android.mobile.version_name;
+  const candidateNative = readGitJson(root, checkoutCommit, 'shared/release.json', git).android.mobile.version_name;
+  const nativeChanged = parentNative !== candidateNative;
+  const mirrorPaths = nativeChanged
+    ? [...new Set([...PREPARED_RELEASE_MIRROR_PATHS, ...Object.values(NATIVE_RELEASE_FILE_PATHS)])].sort()
+    : PREPARED_RELEASE_MIRROR_PATHS;
+  if (nativeChanged && candidateNative !== nextReleaseVersion(parentNative, 'patch')) {
+    throw new Error('An automatic native candidate must advance exactly one patch version.');
+  }
+  if (!isDeepStrictEqual(changedPaths, mirrorPaths)) {
     throw new Error(
-      `Prepared release diff must change exactly: ${PREPARED_RELEASE_MIRROR_PATHS.join(', ')}.`
+      `Prepared release diff must change exactly: ${mirrorPaths.join(', ')}.`
     );
   }
 
@@ -799,7 +832,8 @@ const validatePreparedReleaseCandidate = async ({
 
   const parentSources = {};
   const candidateSources = {};
-  for (const [key, relativePath] of Object.entries(SERVER_RELEASE_FILE_PATHS)) {
+  const candidateFiles = nativeChanged ? { ...SERVER_RELEASE_FILE_PATHS, ...NATIVE_RELEASE_FILE_PATHS } : SERVER_RELEASE_FILE_PATHS;
+  for (const [key, relativePath] of Object.entries(candidateFiles)) {
     try {
       parentSources[key] = gitRaw(root, ['show', `${parentCommit}:${relativePath}`]);
       candidateSources[key] = gitRaw(root, ['show', `${checkoutCommit}:${relativePath}`]);
@@ -809,11 +843,13 @@ const validatePreparedReleaseCandidate = async ({
   }
   let expectedSources;
   try {
-    expectedSources = createServerReleaseReplacements(parentSources, releaseVersion);
+    const codeFloor = repositoryCheck.manifest.android.mobile.version_code - 1;
+    const nativeSources = nativeChanged ? { ...parentSources, ...createNativeReleaseReplacements(parentSources, candidateNative, codeFloor) } : parentSources;
+    expectedSources = { ...nativeSources, ...createServerReleaseReplacements(nativeSources, releaseVersion) };
   } catch (error) {
     throw new Error('Unable to reconstruct the canonical prepared release from its parent.', { cause: error });
   }
-  for (const [key, relativePath] of Object.entries(SERVER_RELEASE_FILE_PATHS)) {
+  for (const [key, relativePath] of Object.entries(candidateFiles)) {
     if (candidateSources[key] !== expectedSources[key]) {
       throw new Error(
         `Prepared release mirror ${relativePath} does not match the canonical transformation from its parent.`
@@ -838,6 +874,7 @@ const validatePreparedReleaseCandidate = async ({
   };
 };
 
+/** Validate an exact canonical candidate before merge or publication. */
 export async function verifyPreparedReleaseCandidate({
   root = REPOSITORY_ROOT,
   releaseTag,
@@ -861,6 +898,7 @@ export async function verifyPreparedReleaseCandidate({
   });
 }
 
+/** Read and validate the complete parent set used to prove merge ancestry. */
 const readCommitParents = (root, commit, label, git) => {
   const parts = git(root, ['rev-list', '--parents', '-n', '1', commit]).trim().split(/\s+/);
   if (parts[0] !== commit || parts.some((part) => !/^[0-9a-f]{40}$/.test(part))) {
@@ -956,6 +994,7 @@ export async function verifyCurrentReleaseWorkflow({
   return { mode, workflowCommit: workflowSha, masterCommit, releaseCommit, releaseTag };
 }
 
+/** Require the origin-authoritative tag and canonical protected release source. */
 export async function verifyPreparedRelease({
   root = REPOSITORY_ROOT,
   releaseTag,
@@ -1038,6 +1077,7 @@ export async function verifyPreparedRelease({
   return { ...candidate, tagObject: remoteTagObject };
 }
 
+/** Read historical native tag objects from origin rather than local-only refs. */
 const readRemoteNativeReleaseTags = (root, { remote = 'origin', git = runGit } = {}) => {
   let source;
   try {
@@ -1055,15 +1095,18 @@ const readRemoteNativeReleaseTags = (root, { remote = 'origin', git = runGit } =
   return tags;
 };
 
+/** Choose the highest semantic historical native tag from verified refs. */
 const latestNativeReleaseTagFromRefs = (tags) => [...tags.keys()].sort((left, right) => (
   compareSemver(right.slice('native-v'.length), left.slice('native-v'.length))
 ))[0] ?? null;
 
+/** Find the highest stable server release tag for version preparation. */
 export function getLatestStableTag(root = REPOSITORY_ROOT) {
   const tags = gitValue(root, ['tag', '--list', '--sort=-v:refname'], '');
   return tags.split(/\r?\n/).find((tag) => /^v\d+\.\d+\.\d+$/.test(tag)) || null;
 }
 
+/** Resolve the highest origin native tag for historical tooling. */
 export function getLatestNativeReleaseTag(root = REPOSITORY_ROOT, options = {}) {
   return latestNativeReleaseTagFromRefs(readRemoteNativeReleaseTags(root, options));
 }
@@ -1206,12 +1249,14 @@ export function verifyPublishedNativeReleaseTag({
   };
 }
 
-export function getNextNativeVersionCodes(manifest) {
+/** Allocate globally unique odd/even codes above both checked-in and previously abandoned reservations. */
+export function getNextNativeVersionCodes(manifest, minimumCode = 0) {
   const currentCodes = [manifest?.android?.mobile?.version_code, manifest?.android?.wear?.version_code];
   if (currentCodes.some((code) => !Number.isSafeInteger(code) || code < 1)) {
     throw new Error('Native version codes must be positive safe integers before allocation.');
   }
-  const currentMaximum = Math.max(...currentCodes);
+  if (!Number.isSafeInteger(minimumCode) || minimumCode < 0) throw new Error('Native code floor must be a non-negative integer.');
+  const currentMaximum = Math.max(...currentCodes, minimumCode);
   let mobileVersionCode = currentMaximum + 1;
   if (mobileVersionCode % 2 === 0) mobileVersionCode += 1;
   const wearVersionCode = mobileVersionCode + 1;
@@ -1268,10 +1313,10 @@ export async function prepareServerRelease({ root = REPOSITORY_ROOT, bump, lates
 export async function prepareNativeRelease({
   root = REPOSITORY_ROOT,
   bump,
-  verifyNativeReleaseTag = verifyPublishedNativeReleaseTag
+  minimumCode = 0,
+  verifyNativeReleaseTag = null
 }) {
-  if (typeof verifyNativeReleaseTag !== 'function') throw new Error('Protected native preparation requires signed-tag verification.');
-  return prepareNativeVersion({ root, bump, verifyNativeReleaseTag });
+  return prepareNativeVersion({ root, bump, minimumCode, verifyNativeReleaseTag });
 }
 
 /** Reserve a local internal candidate without claiming a protected release attestation. */
@@ -1279,7 +1324,8 @@ export async function prepareLocalInternalNativeRelease({ root = REPOSITORY_ROOT
   return prepareNativeVersion({ root, bump });
 }
 
-async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
+/** Allocate one paired native version and roll back every mirror if validation fails. */
+async function prepareNativeVersion({ root, bump, minimumCode = 0, verifyNativeReleaseTag }) {
   if (!RELEASE_BUMPS.has(bump)) throw new Error('Release bump must be major, minor, or patch.');
 
   const beforeCheck = await checkRepository(root);
@@ -1311,7 +1357,7 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
 
   const nextVersion = nextReleaseVersion(currentVersion, bump);
   const nextNativeTag = `native-v${nextVersion}`;
-  const { mobileVersionCode, wearVersionCode } = getNextNativeVersionCodes(beforeCheck.manifest);
+  const { mobileVersionCode, wearVersionCode } = getNextNativeVersionCodes(beforeCheck.manifest, minimumCode);
   const optionalMobileGradlePath = path.join(root, 'mobile', 'android', 'app', 'build.gradle');
   const optionalMobileGradle = await readOptionalFile(optionalMobileGradlePath);
   const files = {
@@ -1331,7 +1377,49 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   const originals = Object.fromEntries(
     await Promise.all(Object.entries(files).map(async ([key, filePath]) => [key, await readFile(filePath, 'utf8')]))
   );
+  const replacements = createNativeReleaseReplacements(originals, nextVersion, minimumCode);
+  const writtenKeys = [];
+  try {
+    for (const [key, filePath] of Object.entries(files)) {
+      writtenKeys.push(key);
+      await writeFile(filePath, replacements[key]);
+    }
+    const afterCheck = await checkRepository(root);
+    if (afterCheck.errors.length > 0) {
+      throw new Error(`Prepared native release configuration is inconsistent:\n- ${afterCheck.errors.join('\n- ')}`);
+    }
+  } catch (error) {
+    await Promise.all(writtenKeys.map((key) => writeFile(files[key], originals[key])));
+    throw error;
+  }
+
+  return {
+    version_name: nextVersion,
+    mobile_version_code: mobileVersionCode,
+    wear_version_code: wearVersionCode,
+    native_release_tag: nextNativeTag
+  };
+}
+
+
+export const NATIVE_RELEASE_FILE_PATHS = Object.freeze({
+  "manifest": "shared/release.json",
+  "diagnostics": "shared/client-diagnostic-versions.json",
+  "rootLock": "package-lock.json",
+  "mobilePackage": "mobile/package.json",
+  "mobileApp": "mobile/app.json",
+  "pairingPackage": "mobile/modules/wear-pairing/package.json",
+  "pairingGradle": "mobile/modules/wear-pairing/android/build.gradle",
+  "wearGradle": "wear/app/build.gradle.kts",
+  "openApi": "docs/openapi/v1.yaml",
+  "generatedApi": "packages/api-client/src/generated/v1.ts"
+});
+
+/** Reconstruct paired native version mirrors from parent bytes without executing source code. */
+export function createNativeReleaseReplacements(originals, nextVersion, minimumCode = 0) {
   const manifest = JSON.parse(originals.manifest);
+  const { mobileVersionCode, wearVersionCode } = getNextNativeVersionCodes(manifest, minimumCode);
+  const nextNativeTag = 'native-v' + nextVersion;
   const diagnostics = JSON.parse(originals.diagnostics);
   const rootLock = JSON.parse(originals.rootLock);
   const mobilePackage = JSON.parse(originals.mobilePackage);
@@ -1340,6 +1428,7 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   const currentPhoneDiagnosticVersions = [...diagnostics.supported_versions.android_phone];
   const currentIosDiagnosticVersions = [...diagnostics.supported_versions.ios];
   const currentWearDiagnosticVersions = [...diagnostics.supported_versions.wear_os];
+  /** Retain the bounded diagnostic compatibility window when advancing a native version. */
   const advanceDiagnosticVersions = (versions) =>
     [nextVersion, ...versions.filter((version) => version !== nextVersion)]
       .slice(0, MAX_CLIENT_DIAGNOSTIC_VERSIONS_PER_PLATFORM);
@@ -1395,9 +1484,11 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
   const nextPhoneDiagnosticVersions = diagnostics.supported_versions.android_phone;
   const nextIosDiagnosticVersions = diagnostics.supported_versions.ios;
   const nextWearDiagnosticVersions = diagnostics.supported_versions.wear_os;
+  /** Render one platform diagnostic enum in the canonical OpenAPI layout. */
   const openApiLine = (platform, versions) =>
     `- properties: { platform: { const: ${platform} }, version: { enum: [${versions.join(', ')}] } }`;
   const generatedNewline = originals.generatedApi.includes('\r\n') ? '\r\n' : '\n';
+  /** Render the matching generated client diagnostic version union. */
   const generatedBlock = (platform, versions) => [
     `platform?: "${platform}";`,
     '            /** @enum {unknown} */',
@@ -1448,7 +1539,7 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
     generatedBlock('ios', nextIosDiagnosticVersions),
     'generated API ios versions'
   );
-  if (files.mobileGradle) {
+  if (originals.mobileGradle) {
     let mobileGradle = replacePatternExactlyOnce(
       originals.mobileGradle,
       /versionCode\s+\d+/g,
@@ -1464,29 +1555,10 @@ async function prepareNativeVersion({ root, bump, verifyNativeReleaseTag }) {
     replacements.mobileGradle = mobileGradle;
   }
 
-  const writtenKeys = [];
-  try {
-    for (const [key, filePath] of Object.entries(files)) {
-      writtenKeys.push(key);
-      await writeFile(filePath, replacements[key]);
-    }
-    const afterCheck = await checkRepository(root);
-    if (afterCheck.errors.length > 0) {
-      throw new Error(`Prepared native release configuration is inconsistent:\n- ${afterCheck.errors.join('\n- ')}`);
-    }
-  } catch (error) {
-    await Promise.all(writtenKeys.map((key) => writeFile(files[key], originals[key])));
-    throw error;
-  }
-
-  return {
-    version_name: nextVersion,
-    mobile_version_code: mobileVersionCode,
-    wear_version_code: wearVersionCode,
-    native_release_tag: nextNativeTag
-  };
+  return replacements;
 }
 
+/** Hash a release artifact and record its portable relative identity. */
 const artifactMetadata = async (root, artifact) => {
   const [label, rawPath] = artifact.includes('=') ? artifact.split(/=(.*)/s, 2) : [path.basename(artifact), artifact];
   const absolutePath = path.resolve(root, rawPath);
@@ -1500,6 +1572,7 @@ const artifactMetadata = async (root, artifact) => {
   };
 };
 
+/** Build deterministic source/version/artifact metadata for retained release evidence. */
 export async function createReleaseMetadata({ manifest, channel, artifacts = [], root = REPOSITORY_ROOT, sourceDateEpoch = process.env.SOURCE_DATE_EPOCH }) {
   if (!manifest.android.channels[channel]) throw new Error(`Unknown release channel: ${channel}`);
   const commit = gitValue(root, ['rev-parse', 'HEAD']);
@@ -1534,7 +1607,7 @@ const COMMAND_OPTIONS = new Map([
   ['metadata', new Set(['--artifact', '--channel'])],
   ['plan', new Set(['--latest-tag'])],
   ['prepare', new Set(['--bump'])],
-  ['prepare-native', new Set(['--bump'])],
+  ['prepare-native', new Set(['--bump', '--minimum-native-code'])],
   ['tag', new Set(['--latest-tag', '--repository-root', '--validation-mode'])],
   ['verify-prepared', new Set([
     '--expected-commit',
@@ -1557,6 +1630,7 @@ const COMMAND_OPTIONS = new Map([
 ]);
 const REPEATABLE_OPTIONS = new Set(['--artifact']);
 
+/** Reject unknown or incomplete release CLI options before performing work. */
 const parseArguments = (args) => {
   const command = args[0] ?? 'check';
   const allowedOptions = COMMAND_OPTIONS.get(command);
@@ -1567,6 +1641,7 @@ const parseArguments = (args) => {
     artifacts: [],
     latestTag: null,
     bump: null,
+    minimumNativeCode: 0,
     repositoryRoot: null,
     validationMode: 'current',
     releaseTag: null,
@@ -1593,6 +1668,7 @@ const parseArguments = (args) => {
     else if (option === '--artifact') result.artifacts.push(value);
     else if (option === '--latest-tag') result.latestTag = value;
     else if (option === '--bump') result.bump = value;
+    else if (option === '--minimum-native-code') result.minimumNativeCode = Number(value);
     else if (option === '--release-tag') result.releaseTag = value;
     else if (option === '--expected-commit') result.expectedCommit = value;
     else if (option === '--publish-latest') result.publishLatest = value;
@@ -1613,6 +1689,7 @@ const parseArguments = (args) => {
   return result;
 };
 
+/** Dispatch explicit release operations and report failures without hiding their cause. */
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.command === 'prepare') {
@@ -1626,7 +1703,7 @@ async function main() {
     if (options.latestTag !== null) {
       throw new Error('prepare-native reads the latest native tag from Git; do not pass --latest-tag.');
     }
-    console.log(`${JSON.stringify(await prepareNativeRelease({ bump: options.bump }), null, 2)}\n`);
+    console.log(`${JSON.stringify(await prepareNativeRelease({ bump: options.bump, minimumCode: options.minimumNativeCode }), null, 2)}\n`);
     return;
   }
   if (options.command === 'verify-prepared' || options.command === 'verify-prepared-candidate') {

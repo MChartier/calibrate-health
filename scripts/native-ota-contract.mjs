@@ -1,6 +1,8 @@
+/** Native input evidence and targeting defaults for local Android builds and OTA publication. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveExpoRuntime } from './expo-runtime.mjs';
 
 export const EXPO_PROJECT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const EXPO_UPDATE_CHANNEL_PATTERN = /^[a-z0-9][a-z0-9._-]*$/i;
@@ -41,10 +43,12 @@ const NATIVE_BUILD_TOOL_PACKAGES = new Set([
   'react-native'
 ]);
 
+/** Normalize source paths for portable native-input comparison. */
 function normalizedRelativePath(root, file) {
   return path.relative(root, file).split(path.sep).join('/');
 }
 
+/** Enumerate tracked native inputs deterministically. */
 function filesUnder(root, relativeDirectory) {
   const directory = path.join(root, relativeDirectory);
   if (!fs.existsSync(directory)) return [];
@@ -63,6 +67,7 @@ function filesUnder(root, relativeDirectory) {
   return files;
 }
 
+/** Resolve workspace and installed dependency identities in the lockfile. */
 function dependencyPackageKey(packages, currentKey, dependencyName) {
   let scope = currentKey;
   while (scope) {
@@ -76,6 +81,7 @@ function dependencyPackageKey(packages, currentKey, dependencyName) {
   return packages[rootKey] ? rootKey : null;
 }
 
+/** Recover a dependency name from its canonical lockfile key. */
 function packageNameFromLockEntry(key, entry) {
   if (entry.name) return entry.name;
   const marker = key.lastIndexOf('node_modules/');
@@ -84,6 +90,7 @@ function packageNameFromLockEntry(key, entry) {
   return segments[0]?.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
 }
 
+/** Select production dependency entries for local build evidence. */
 function productionPackageEntries(lock) {
   const packages = lock?.packages;
   if (!packages?.mobile) throw new Error('package-lock.json is missing the mobile workspace.');
@@ -109,6 +116,7 @@ function productionPackageEntries(lock) {
   return selected;
 }
 
+/** Identify Expo modules that contribute Android native code. */
 function expoModuleSupportsAndroid(packageDirectory) {
   const configPath = path.join(packageDirectory, 'expo-module.config.json');
   if (!fs.existsSync(configPath)) return false;
@@ -116,6 +124,7 @@ function expoModuleSupportsAndroid(packageDirectory) {
   return config.platforms?.includes('android') || config.android !== undefined;
 }
 
+/** Separate Android native dependencies from JavaScript-only packages. */
 function packageContributesAndroidNativeCode(packageDirectory, packageName) {
   if (NATIVE_BUILD_TOOL_PACKAGES.has(packageName)) return true;
   if (!fs.existsSync(packageDirectory)) return false;
@@ -192,6 +201,7 @@ export function createNativeRuntimeFingerprint(root, options = {}) {
   };
 }
 
+/** Resolve explicit Expo update targeting for local native builds. */
 export function resolveExpoUpdateBuildConfig(environment, fallbackProjectId = null) {
   const projectId = environment.EXPO_PUBLIC_EAS_PROJECT_ID?.trim() || fallbackProjectId || null;
   const channel = environment.EXPO_UPDATES_CHANNEL?.trim() || 'internal';
@@ -204,10 +214,10 @@ export function resolveExpoUpdateBuildConfig(environment, fallbackProjectId = nu
   return { projectId, channel };
 }
 
-export function writeNativeOtaBaseline({ root, environment, commit = null, createdAt = new Date().toISOString() }) {
+/** Save targeting defaults and the resolved runtime; this record does not restrict future OTA runtimes. */
+export function writeNativeOtaBaseline({ root, environment, commit = null, createdAt = new Date().toISOString(), resolveRuntime = resolveExpoRuntime }) {
   const { projectId, channel } = resolveExpoUpdateBuildConfig(environment);
   if (!projectId) return null;
-  const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'), 'utf8'));
   const fingerprint = createNativeRuntimeFingerprint(root);
   const baseline = {
     schema_version: 1,
@@ -216,7 +226,7 @@ export function writeNativeOtaBaseline({ root, environment, commit = null, creat
     platform: 'android',
     project_id: projectId,
     channel,
-    runtime_version: appConfig.expo.version,
+    runtime_version: resolveRuntime(root, { environment }),
     server_url: environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL,
     native_fingerprint_sha256: fingerprint.sha256,
     native_fingerprint_files: fingerprint.files
@@ -227,6 +237,7 @@ export function writeNativeOtaBaseline({ root, environment, commit = null, creat
   return { output, baseline };
 }
 
+/** Read retained local build evidence without treating it as protected CI authority. */
 export function readNativeOtaBaseline(root, baselinePath = null) {
   const file = baselinePath ? path.resolve(root, baselinePath) : path.join(root, OTA_BASELINE_RELATIVE_PATH);
   let baseline;

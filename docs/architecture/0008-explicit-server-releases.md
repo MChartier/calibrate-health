@@ -33,19 +33,13 @@ ancestry/tree afterward. Repository
 required-status-check rules are still recommended as a separate administrator-controlled boundary: client polling
 and the merge API do not form an atomic CI-and-base transaction. Publishing tags the validated candidate
 commit after proving it is an ancestor of `master`, then calls the reusable GHCR workflow directly. A separate
-manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Android phone and
-Wear store releases remain independent. After the GHCR image is published, the publisher invokes the reusable
-Expo OTA workflow for the exact release commit only when the canonical manifest's native-build tag has been published.
-A reserved but missing native tag records an OTA skip without failing the server/image release; recovery can rerun the
-publisher after the signed native baseline is uploaded and tagged. OTA publishes internal first and waits for
-protected production approval; it is never triggered by an ordinary `master` push or a standalone deployment action.
-
-The end-to-end release publisher calls the shared homelab webhook over WireGuard to update the self-host's existing
-Compose `latest` image and waits for application health before invoking OTA publication. Failed deployment blocks
-both OTA channels in that release. Manual OTA publication remains a client-only operation with no server deployment
-or deployment credentials. When OTA is skipped for an unavailable native baseline, the release publisher still deploys
-the server after image publication. See
-[automatic self-host deployment](../../deploy/self-hosted/README.md).
+manual/reusable publisher accepts the exact release commit and branch for post-merge recovery. Cut release now selects paired Android builds and each OTA channel in the same orchestration. Native fingerprint
+or Wear-input changes select native builds; exact AABs are submitted through EAS, phone first and Wear after phone
+submission completes. OTA can start after phone enqueue and matching runtime validation without waiting for Play.
+Selected server changes deploy latest through the existing WireGuard webhook and require successful health before
+client publication. An unchanged server requires no deployment or health check. Standalone OTA stays client-only.
+The originating run owns a durable GitHub Release record for partial recovery. See
+[the unified release runbook](../native-store-release.md) for selection, configuration, and recovery.
 
 Expo's automatic check and download lifecycle remains unchanged. Client configuration responds with
 `Cache-Control: no-store`; server selection, startup before restoring a saved session or synchronizing, and manual

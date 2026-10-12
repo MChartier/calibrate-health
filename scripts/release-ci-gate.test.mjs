@@ -1,9 +1,14 @@
+/** Validate exact-candidate CI identities and protected merge sequencing. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { REQUIRED_CI, assertCandidateInputs, assertIdentity, evaluateRuns, evaluateTrustedJobs, githubApi, inspectCi, inspectTrustedCi, waitForCi } from './release-ci-gate.mjs';
 
+/** Suppress progress output in deterministic CI gate tests. */
+const noReport = () => {};
+
 const identity = { repository: 'owner/repo', head: 'a'.repeat(40), base: 'b'.repeat(40), branch: 'release/v1.2.3', number: '12' };
+/** Model exact candidate identities and required CI runs without GitHub writes. */
 function fixture() {
   const repo = { id: 123, full_name: identity.repository };
   const pull = { state: 'open', merged: false, draft: false,
@@ -18,6 +23,7 @@ function fixture() {
     status: 'completed', conclusion: 'success', run_attempt: 1, html_url: `https://github.com/owner/repo/actions/runs/${index + 1}`,
     jobs: names.map(name => ({ name, status: 'completed', conclusion: 'success' })),
   }));
+  /** Return controlled GitHub observations for CI identity and pagination tests. */
   const api = async path => {
     if (path.includes('/pulls/')) return pull;
     if (path.endsWith('/git/ref/heads/master')) return master;
@@ -35,7 +41,7 @@ test('complete exact-candidate CI permits finalization, with canonical skips onl
   const f = fixture();
   f.runs[2].jobs.push({ name: 'iOS Build', status: 'completed', conclusion: 'skipped' });
   f.runs[4].jobs.push({ name: 'v0.14.0 Upgrade and Encrypted Rollback', status: 'completed', conclusion: 'skipped' });
-  assert.equal((await waitForCi(f.api, identity, { report() {} })).selected.length, 5);
+  assert.equal((await waitForCi(f.api, identity, { report: noReport })).selected.length, 5);
 });
 
 for (const conclusion of ['failure', 'cancelled', 'timed_out', 'neutral', 'skipped', 'action_required', null]) {
@@ -58,7 +64,7 @@ test('empty inventory, pending approval and missing workflows time out without a
     if (kind === 'empty') f.runs.length = 0;
     else if (kind === 'missing') f.runs.pop();
     else f.runs[0].status = kind;
-    await assert.rejects(waitForCi(f.api, identity, { timeoutMs: 0, report() {} }), /timed out/);
+    await assert.rejects(waitForCi(f.api, identity, { timeoutMs: 0, report: noReport }), /timed out/);
   }
 });
 
@@ -66,7 +72,7 @@ test('polling allows approval then success and is bounded when approval never ar
   const f = fixture();
   f.runs[0].status = 'waiting';
   let clock = 0;
-  const options = { now: () => clock, timeoutMs: 30_000, report() {}, sleep: async ms => { clock += ms; f.runs[0].status = 'completed'; } };
+  const options = { now: () => clock, timeoutMs: 30_000, report: noReport, sleep: async ms => { clock += ms; f.runs[0].status = 'completed'; } };
   assert.equal((await waitForCi(f.api, identity, options)).selected.length, 5);
   assert.equal(clock, 15_000);
   f.runs[0].status = 'waiting';
@@ -115,12 +121,13 @@ test('final one-shot inspection rejects refs moving during CI reads', async () =
     f => f.pull.head.sha = 'c'.repeat(40), f => f.pull.base.sha = 'c'.repeat(40)]) {
     const f = fixture();
     let changed = false;
+    /** Return controlled GitHub observations for CI identity and pagination tests. */
     const api = async (path, collection) => {
       const result = structuredClone(await f.api(path, collection));
       if (!changed && path.includes('/actions/runs?')) { mutate(f); changed = true; }
       return result;
     };
-    await assert.rejects(waitForCi(api, identity, { timeoutMs: 0, report() {} }), /changed/);
+    await assert.rejects(waitForCi(api, identity, { timeoutMs: 0, report: noReport }), /changed/);
   }
 });
 
@@ -167,11 +174,12 @@ test('workflow gates merge twice, retains blocked candidates and preserves expli
   assert.ok(workflow.indexOf('Verify exact candidate CI from this release run') < workflow.indexOf('Merge the exact release pull request through GitHub'));
   assert.ok(workflow.indexOf('release-ci-gate.mjs --once') < workflow.indexOf('MERGE_RESPONSE='));
   assert.match(workflow, /needs\.release-validation\.result != 'success'/);
-  assert.match(workflow, /publish:\n[\s\S]*needs: \[prepare, finalize\]/);
+  assert.match(workflow, /publish:\n[\s\S]*needs: \[select, reserve, prepare, finalize\]/);
   assert.match(workflow, /release_status:\n[\s\S]*if: \$\{\{ always\(\) \}\}/);
   assert.doesNotMatch(workflow, /pull_request_target|actions: write|checks: write/);
 });
 
+/** Bind candidate jobs to a single protected originating run and workflow revision. */
 function trustedFixture() {
   const f = fixture();
   const binding = { ...identity, runId: '456', runAttempt: '2' };
@@ -184,6 +192,7 @@ function trustedFixture() {
   const jobs = Object.entries(REQUIRED_CI).flatMap(([file, names]) => names.map(name => ({
     id: ++id, run_id: 456, head_sha: identity.base, status: 'completed', conclusion: 'success',
     name: `Cut release / Release candidate ${file.slice(0, -4)} / ${name} [${identity.head}]` })));
+  /** Return controlled GitHub observations for CI identity and pagination tests. */
   const api = async path => path.endsWith('/runs/456') ? run : path.includes('/jobs?filter=all') ? jobs : f.api(path);
   return { ...f, binding, run, jobs, api };
 }

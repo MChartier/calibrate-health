@@ -1,3 +1,4 @@
+/** Regression coverage for native ota update and its failure boundaries. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -15,6 +16,7 @@ import {
   validateEasUpdateEnvironment
 } from './native-ota-update.mjs';
 
+/** Build a clean source and mocked Expo target for OTA command tests. */
 function createOtaFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-ota-update-'));
   const files = {
@@ -152,6 +154,7 @@ test('OTA dry run validates and reuses the exact installed build contract', () =
   const root = createOtaFixture();
   try {
     writeNativeOtaBaseline({
+      resolveRuntime: () => "a".repeat(40),
       root,
       environment: {
         EXPO_PUBLIC_EAS_PROJECT_ID: '01234567-89ab-4def-8123-456789abcdef',
@@ -160,6 +163,7 @@ test('OTA dry run validates and reuses the exact installed build contract', () =
       }
     });
     const result = runNativeOtaUpdate({
+      resolveRuntime: () => "b".repeat(40),
       repositoryRoot: root,
       environment: {},
       platform: 'win32',
@@ -201,6 +205,7 @@ test('OTA dry run fails when the selected EAS environment would override the ins
   const root = createOtaFixture();
   try {
     writeNativeOtaBaseline({
+      resolveRuntime: () => "a".repeat(40),
       root,
       environment: {
         EXPO_PUBLIC_EAS_PROJECT_ID: '01234567-89ab-4def-8123-456789abcdef',
@@ -209,6 +214,7 @@ test('OTA dry run fails when the selected EAS environment would override the ins
       }
     });
     assert.throws(() => runNativeOtaUpdate({
+      resolveRuntime: () => "b".repeat(40),
       repositoryRoot: root,
       environment: {},
       platform: 'win32',

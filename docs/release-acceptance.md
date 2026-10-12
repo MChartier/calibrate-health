@@ -59,18 +59,13 @@ review aid and does not authorize or record an external launch.
 
 ## Cut server/web release
 
-After the desired changes land on `master`, **Cut release** creates and validates an exact version-only server/web
-candidate. It verifies the candidate identity, parent commit, synchronized release configuration, and exact set of
-generated version mirrors. It then builds the production image, starts it against Postgres, and verifies readiness and
-the served web application.
-
-Affected pull requests already own unit and integration tests, generated API and deploy contracts,
-database upgrade/rollback rehearsal, and production-image scanning. The release cut deliberately does not rerun them.
-Successful metadata and container smoke validation opens and atomically merges the version-only PR before the prepared
-release is tagged and its image is published. The same release commit is then published to the Expo internal channel
-after the configured server deployment and health check succeed, when its manifest's native-build tag exists. A reserved but unpublished
-native tag skips OTA without failing the server/image release. Production OTA publishing remains held behind the
-protected production environment approval.
+After changes land on master, Cut release selects server/web, paired native, and each OTA channel. Selected version
+changes share one exact candidate PR, protected merge, production-image smoke, and existing required CI. Client-only
+publication without version changes uses the protected source directly. No applicable changes produces an explicit no-op.
+Selected server deployment must report successful health before clients publish. Native builds must verify and the
+phone EAS submission must be established before OTA starts; subsequent phone/Wear submission runs independently.
+Production OTA keeps its protected approval. Partial recovery uses retained artifacts and recorded IDs. See
+[the unified release runbook](native-store-release.md).
 
 ## Performance and owner judgment
 

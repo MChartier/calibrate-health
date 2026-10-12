@@ -1,3 +1,4 @@
+/** Expose concise local native build, install, submit, and fingerprint OTA commands. */
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -29,10 +30,12 @@ const EXAMPLES = {
   setup: '[--check] [--skip-deps] [--accept-licenses]'
 };
 
+/** Map public native actions to their documented npm entrypoints. */
 function npmScript(action) {
   return action === 'ota' ? 'ota:publish' : 'native:' + action;
 }
 
+/** Describe release actions without inspecting credentials or local build state. */
 function help(action) {
   if (action) {
     const lines = [ACTIONS[action], '  npm run ' + npmScript(action) +
@@ -60,7 +63,7 @@ function help(action) {
     );
     if (action === 'ota') lines.push(
       'Options: --message TEXT, --dry-run, --non-interactive, --baseline FILE, --channel NAME, --environment NAME.',
-      'Run without --dry-run to publish. The channel must match the installed native baseline.'
+      'Run without --dry-run to publish. Updates target the source fingerprint runtime on the selected channel.'
     );
     if (action === 'install') lines.push(
       'Never rebuilds. By default upgrades in place; a signing-key change requires confirmation.',
@@ -84,6 +87,7 @@ function help(action) {
   ].join('\n');
 }
 
+/** Validate every option before reading settings or dispatching native workers. */
 export function parseNativeArguments(argv) {
   const [action, ...args] = argv;
   if (!action || action === '--help' || action === '-h') return { action: 'help' };
@@ -114,6 +118,7 @@ export function parseNativeArguments(argv) {
   return { action, args, config };
 }
 
+/** Keep signing, Expo, and Play credentials scoped to the chosen local action. */
 export async function runNative(argv = [], options = {}) {
   const { action, args, config, helpAction } = parseNativeArguments(argv);
   if (action === 'help') return help(helpAction);

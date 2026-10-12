@@ -1,3 +1,4 @@
+/** Regression coverage for app.config and its failure boundaries. */
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
@@ -7,6 +8,7 @@ const easConfig = require('./eas.json');
 const packageConfig = require('./package.json');
 const { createExpoConfig } = require('./app.config.js');
 
+/** Read a configured plugin’s options for native configuration assertions. */
 function pluginOptions(name) {
   const entry = appConfig.expo.plugins.find(
     (plugin) => Array.isArray(plugin) && plugin[0] === name
@@ -72,7 +74,7 @@ test('Expo config embeds a project-scoped update URL, runtime, and local-build c
     config: { name: 'calibrate', extra: { router: { origin: false } } }
   });
 
-  assert.deepEqual(result.runtimeVersion, { policy: 'appVersion' });
+  assert.deepEqual(result.runtimeVersion, { policy: 'fingerprint' });
   assert.equal(result.updates.url, 'https://u.expo.dev/01234567-89ab-4def-8123-456789abcdef');
   assert.equal(result.updates.requestHeaders['expo-channel-name'], 'internal');
   assert.equal(result.extra.eas.projectId, '01234567-89ab-4def-8123-456789abcdef');

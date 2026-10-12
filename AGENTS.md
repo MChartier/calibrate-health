@@ -297,14 +297,16 @@ UI code style:
   failed release jobs while master and candidate remain unchanged. Do not cut another version or use the prepared
   publisher before merge. If master advances, stop and explicitly reconcile the retained candidate before a fresh
   Cut release; do not rebase, overwrite or manually merge it.
-- Android phone and Wear versions remain independent of the server/web release selector. Their Play version codes are
-  globally unique: phone uses the odd lane and Wear uses the even lane. Use `node scripts/release-config.mjs prepare-native --bump patch` for a paired
-  store version only after its current manifest tag is verified as a signed annotated tag against the reviewed public
-  keys in `.github/native-release-tag-allowed-signers`, the exact tag name and target SHA, the exact published `origin`
-  tag, and `origin/master` ancestry; local-only, lightweight, unsigned, wrong-key, or wrong-target tags are not release
-  evidence. Merge it, then run **Native Android Store Release** with the exact full merge commit. It builds once,
-  uploads phone/Wear to Play internal tracks, and promotes those exact codes through closed testing before the
-  protected production operation.
+- **Cut release** selects server/web, paired native, and each OTA channel against their separately recorded successful sources.
+  The server bump applies only when server/web is selected. Native fingerprint or Wear-input changes automatically prepare
+  one native patch pair, reusing a valid higher reservation. Phone codes are odd, Wear codes even; abandoned reservations
+  remain consumed. Prepare selected versions together in the existing protected PR/CI/merge path. OTA-only cuts use the
+  exact protected source without an empty PR; unchanged cuts explicitly do nothing.
+- Build both native clients once and retain attested APK/AAB hashes and runtime provenance. Main release queues the exact
+  phone AAB through pinned EAS Submit to qa, verifies its ID, and permits OTA while submission continues independently.
+  Wait for phone success before submitting Wear to wear:qa. Serialize all CI Play writers, enforce Console acknowledgement
+  only for selected submissions, and report later submission failures without undoing OTA. Explicit Native Android Store
+  Release operations promote retained codes/hashes through closed testing and protected production without rebuilding.
 - Local Android package operations use `native:build`, `native:install`, and `native:submit`.
   Phone JavaScript/assets updates use `ota:publish`. Run these scripts through `npm run <script> -- <options>`.
   `native:configure` and `native:setup` are the only supporting root commands; `native:setup -- --check`
@@ -335,29 +337,21 @@ UI code style:
   Follow `docs/mobile-release.md` for local commands, `docs/android-internal-testing.md` for onboarding, and
   `docs/native-store-release.md` for protected releases; the server/web version stays unchanged. A later protected
   release requires a fresh higher pair and the existing GitHub attestation path.
-- Before protected-workflow Play upload, a separate source-free job with the workflow's only native Play OIDC/attestation-write scope
-  attests canonical repository/app/source/tag/version and phone/watch track/code/AAB-hash receipt bytes. The Play
-  publisher must independently reconstruct and verify that exact receipt before authentication. Recovery must derive
-  identical bytes solely from singleton Play observations, scrub Play authentication, then verify the original exact
-  workflow/source certificate under the fresh-master allow/revoke policy. A mutable Play name is not provenance;
-  missing/legacy/revoked evidence requires a fresh higher odd/even pair, never adoption or tag creation.
-- After the GHCR image is published, **Cut release** publishes the exact release commit to Expo only when the native
-  tag from `shared/release.json` is a verified signed release attestation. Expo uses the configured repository
-  `EXPO_TOKEN`, `preview` environment, and one reviewer-protected `production` approval after internal publication.
-  That approval gates production environment resolution, export, and publication. Keep the four credential stages
-  separate from source export. The token has project-wide update authority; the approval controls workflow sequencing
-  and is not a channel-scoped capability boundary. The pinned public key,
-  exact annotated-tag name, and exact peeled target verification must be
-  used consistently by prepared-release OTA readiness, Play promotion, and origin-authoritative native preparation;
-  a commit signature is insufficient. A reserved
-  but unpublished native tag skips OTA without failing the independent server/image release; rerun the prepared
-  release or use the manual OTA workflow after the signed native baseline is published. The end-to-end release publisher
-  requires successful deployment and application health before invoking OTA; production retains its later approval.
-  Keep manual/reusable OTA publication client-only, with no deployment jobs, inputs, or credentials.
+- Expo uses fingerprint runtimes consistently for managed native builds and source exports, including repository-specific
+  inputs outside Expo discovery. Verify the runtime embedded in the phone APK/AAB and bind OTA artifact provenance to the
+  resolved runtime. The isolated publisher must use that exact string, never recompute from its minimal workspace.
+  OTA has no signed-native-tag or Play acceptance prerequisite. Keep source exports separate from the four Expo credential
+  stages and preserve one reviewer-protected production approval after internal publication. The token is project-wide;
+  approval controls sequencing rather than a channel-scoped capability. Standalone OTA remains client-only.
+- Each orchestration owns one draft GitHub Release identified by its originating run. Record exact sources, component
+  decisions, reserved versions/codes, hashes, submission IDs, and stage outcomes. Allow only one unfinished release.
+  Recovery skips successful stages and reuses retained artifacts and IDs without rebuilding or reallocating. Ambiguous
+  external calls require reconciliation; abandonment preserves successes and never frees native codes. Native/OTA
+  artifacts retain independent GitHub attestations. Current-master allow/revoke policy governs historical native signers.
 - The configured self-host follows `latest` through its existing Compose files. Actions use an existing WireGuard
   peer and POST to the shared homelab deployment service maintained in darkmachines. Require completed HTTP 200 with
-  `service: calibratehealth`, `status: succeeded`, and `healthy: true` before end-to-end OTA publication. Releases
-  without an available native baseline still deploy the server after image publication. Manual OTA stays client-only.
+  `service: calibratehealth`, `status: succeeded`, and `healthy: true` before client publication when a server change was selected. Unselected server components require neither deployment
+  nor health. A missing native baseline selects a new build instead of skipping OTA. Manual OTA stays client-only.
   The homelab owns Compose commands, deployment tokens, WireGuard peer provisioning, and firewall configuration;
   do not add host installers, SSH accounts/commands, or remote Docker management here. Keep the runner client free of
   backup prerequisites, digest overrides, deployment receipts, automatic retries, or a polling protocol. A timed-out
@@ -367,28 +361,24 @@ UI code style:
   test-server deployment workflow and end-to-end release publisher. Restrict runner routing to the webhook's private
   address, verify HTTPS, serialize deployments without cancellation, and remove the runner's temporary tunnel/key.
   Modified scripts require file-level and function-level documentation comments.
-- Keep `native-release-attestation` and its tag-signing private key isolated from Play credentials and from the
-  `native-release-tags` GitHub App push credential. Verifier code stays pinned to the reviewed workflow SHA, while
-  every run and rerun obtains and logs the allowed-signers trust set from the exact current protected `master` commit
-  so revocation cannot be undone by rerunning an old workflow. The reviewed allowed-signers file is the trust root; its
-  comment-only placeholder intentionally fails closed until onboarding. Tag rulesets are defense-in-depth, not the sole
-  attestation boundary, because the read-only Rulesets API hides bypass actors. Rotate with overlapping old/new public
-  keys, then switch the workflow secret, verify a new-key tag, and remove the old key only after dependent baselines
-  retire; suspected compromise requires an immediate pause, private-key removal, public-key revocation, tag/Play audit,
-  and a higher native version rather than moving an existing tag.
+- New native releases need no signed-tag private key, native tag GitHub App, or native-tag environments. Remove unused
+  native-release-attestation/native-release-tags environments after migration. Keep Android signing protection, an
+  EAS-assigned app credential and explicit testing-track profiles; prefer testing-only account permissions. Keep separate
+  production promotion credentials. The owner approved the existing assigned credential for the initial rollout. Preserve historical server
+  image verification and prepared-release recovery when editing shared legacy helpers.
 - Expo's automatic check and download lifecycle remains native-owned. Client code compares only the running bundle's
   expected server contract version with client configuration at startup and server selection. Major versions must
   match; within a major, the server minor must be at least the client minor, while patch drift remains compatible. Do
   not add candidate-manifest inspection or a download/restart veto.
 - Startup, server-selection, and manual-recheck compatibility requests must use `cache: 'no-store'`; response headers
   alone cannot invalidate a response cached before the server began sending the no-store policy.
-- Successful deployment and application health gate both OTA channels in end-to-end releases; protected production approval additionally
+- For selected server changes, successful deployment and application health gate both OTA channels; protected production approval additionally
   gates public-channel promotion. The deployment job checks only its configured target, and does not assert an exact
   server/OTA version match. Independent self-hosts still require the runtime guard and are not polled to gate OTA.
-- Use **Publish prepared release** with the recorded release commit and branch to recover post-merge tag/image
-  failures and OTA failures whose prepared manifest already records a compatible protected native tag. Historical releases
-  with an incompatible recorded native baseline require **Publish Expo OTA Update** from an exact compatible source
-  that descends from the installed build. **Build Release Image** remains an image-only recovery tool.
+- Use **Publish prepared release** with the durable release ID to resume or explicitly abandon an integrated release.
+  Before merge, retry failed original candidate jobs while refs remain unchanged. Historical server recovery still accepts
+  the recorded release commit and branch. **Publish Expo OTA Update** takes an exact protected source without native_build_ref.
+  **Build Release Image** remains image-only. Follow docs/native-store-release.md for configuration and rollout.
 
 ## Git And PR Workflow
 

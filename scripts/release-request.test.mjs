@@ -1,3 +1,4 @@
+/** Regression coverage for release request and its failure boundaries. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -16,6 +17,7 @@ const context = Object.freeze({
   headSha: 'a'.repeat(40)
 });
 
+/** Build an exact source-bound workflow request fixture. */
 function request(overrides = {}) {
   return {
     schema_version: 1,
@@ -34,6 +36,7 @@ function request(overrides = {}) {
   };
 }
 
+/** Write a bounded request artifact into its isolated test directory. */
 function artifact(t, value = request()) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-release-request-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
@@ -48,8 +51,8 @@ test('release requests accept only exact operation-specific primitive inputs', (
   });
   assert.deepEqual(verifyReleaseRequest(request({
     operation: 'cut-release',
-    inputs: { bump: 'minor' }
-  }), { ...context, operation: 'cut-release' }), { bump: 'minor' });
+    inputs: { bump: 'minor', confirm_play_console_clean: false }
+  }), { ...context, operation: 'cut-release' }), { bump: 'minor', confirm_play_console_clean: false });
   assert.deepEqual(verifyReleaseRequest(request({
     operation: 'build-release-image',
     inputs: {

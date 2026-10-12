@@ -1,3 +1,4 @@
+/** Repository release tooling for native release build. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -51,21 +52,26 @@ const PROVENANCE_ARTIFACT_FIELDS = Object.freeze([
   'id', 'role', 'format', 'path', 'sizeBytes', 'sha256', 'applicationId', 'versionName', 'versionCode'
 ]);
 
+/** Hash exact bytes for reproducible artifact identity. */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+/** Reject missing and additional fields in native build evidence. */
 function exactFields(value, expected) {
   return value && typeof value === 'object' && !Array.isArray(value) &&
     Object.keys(value).sort().join('\n') === [...expected].sort().join('\n');
 }
 
+/** Read a canonical native release version from its manifest. */
 function releaseVersion(manifest, role) {
   const value = manifest?.android?.[role === 'phone' ? 'mobile' : 'wear'];
   return { versionName: value?.version_name, versionCode: value?.version_code };
 }
 
+/** Inspect native build inputs from the exact requested source. */
 export function readNativeReleaseBuildSource(root = repositoryRoot, execute = execFileSync) {
+  /** Provide a deterministic Git adapter for build identity inspection. */
   const git = (args) => execute('git', args, {
     cwd: root,
     encoding: 'utf8',
@@ -81,6 +87,7 @@ export function readNativeReleaseBuildSource(root = repositoryRoot, execute = ex
   return sourceCommit;
 }
 
+/** Record exact native inputs used by the paired artifact build. */
 export function createNativeReleaseBuildProvenance(root, sourceCommit) {
   if (!COMMIT_PATTERN.test(sourceCommit ?? '')) {
     throw new Error('Native release build provenance requires a lowercase 40-character sourceCommit.');
@@ -119,6 +126,7 @@ export function createNativeReleaseBuildProvenance(root, sourceCommit) {
   };
 }
 
+/** Reject source or native-input drift in retained build evidence. */
 export function validateNativeReleaseBuildProvenance(provenance, options = {}) {
   const errors = [];
   if (!exactFields(provenance, PROVENANCE_FIELDS)) errors.push('Build provenance fields are invalid.');
@@ -176,6 +184,7 @@ export function validateNativeReleaseBuildProvenance(provenance, options = {}) {
   return errors;
 }
 
+/** Read and validate retained native build provenance. */
 export function readNativeReleaseBuildProvenance(root, options = {}) {
   const relativePath = NATIVE_RELEASE_BUILD_PROVENANCE_PATH;
   const file = path.resolve(root, relativePath);
@@ -193,6 +202,7 @@ export function readNativeReleaseBuildProvenance(root, options = {}) {
   return provenance;
 }
 
+/** Persist build provenance before credentials are admitted. */
 export function writeNativeReleaseBuildProvenance(root, provenance) {
   const errors = validateNativeReleaseBuildProvenance(provenance);
   if (errors.length) throw new Error(`Native release build provenance is invalid:\n- ${errors.join('\n- ')}`);
@@ -251,12 +261,16 @@ export function resolveNativeReleaseEnvironment(environment, options = {}) {
     EXPO_PUBLIC_CALIBRATE_SERVER_URL: serverUrl.origin,
     EXPO_PUBLIC_EAS_PROJECT_ID: updates.projectId ?? '',
     EXPO_UPDATES_CHANNEL: updates.channel,
+    // Generated CNG directories are not independent native inputs; use the same policy as OTA exports.
+    EXPO_UPDATES_WORKFLOW_OVERRIDE: 'managed',
+    EXPO_UPDATES_FINGERPRINT_OVERRIDE: '',
     // Keep Metro rooted at the mobile app when the release build is launched from this workspace.
     EXPO_NO_METRO_WORKSPACE_ROOT: '1',
     NODE_ENV: 'production'
   };
 }
 
+/** Construct paired release tasks without rebuilding during submission. */
 export function nativeReleaseGradleCommands(platform = process.platform) {
   const wrapper = platform === 'win32' ? 'gradlew.bat' : './gradlew';
   const common = [
@@ -281,6 +295,7 @@ export function nativeReleaseGradleCommands(platform = process.platform) {
   ];
 }
 
+/** Parse reviewed Gradle properties without evaluating arbitrary project code. */
 function gradlePropertyValues(source, name) {
   const pattern = new RegExp(`^\\s*${name}\\s*=\\s*(.*?)\\s*$`);
   return source.split(/\r?\n/).flatMap((line) => {
@@ -333,6 +348,7 @@ export function assertNativeReleaseGradleWrapper(build, options = {}) {
   }
 }
 
+/** Bind native dependency verification files to the prepared build. */
 function nativeReleaseGradleIntegrityManifest(options = {}) {
   if (options.manifest) return options.manifest;
   const readFile = options.readFile ?? fs.readFileSync;
@@ -350,6 +366,7 @@ function nativeReleaseGradleIntegrityManifest(options = {}) {
   }
 }
 
+/** Limit restored Gradle state to approved build-tool locations. */
 function validGradleStatePath(relativePath) {
   return typeof relativePath === 'string' &&
     relativePath.length > 0 &&
@@ -360,6 +377,7 @@ function validGradleStatePath(relativePath) {
     !relativePath.startsWith('../');
 }
 
+/** Normalize retained Gradle state for reproducible comparisons. */
 function canonicalNativeReleaseGradleStateText(bytes) {
   const source = bytes.toString('utf8');
   if (source.includes('\uFFFD') || /\r(?!\n)/.test(source)) {
@@ -368,6 +386,7 @@ function canonicalNativeReleaseGradleStateText(bytes) {
   return source.replace(/\r\n/g, '\n');
 }
 
+/** Require reviewed Gradle dependency verification metadata. */
 export function assertNativeReleaseVerificationMetadata(label, source) {
   if (source.includes('<!--') || source.includes('-->')) {
     throw new Error(`${label} Gradle verification metadata must not contain XML comments.`);
@@ -592,6 +611,7 @@ export function assertNativeReleaseGradleDependencyState(build, options = {}) {
   }
 }
 
+/** Identify the exact pinned Gradle distribution cache. */
 export function nativeReleaseGradleDistributionCachePath(environment = process.env, options = {}) {
   const configuredGradleHome = environment.GRADLE_USER_HOME?.trim();
   const gradleUserHome = configuredGradleHome
@@ -628,6 +648,7 @@ export function prepareNativeReleaseGradleExecution(builds, environment = proces
   return removeDistributionCache(environment, options);
 }
 
+/** Fail before signing when prepared Gradle inputs have changed. */
 export function assertNativeReleaseGradleInputs(builds, options = {}) {
   const assertWrapper = options.assertWrapper ?? assertNativeReleaseGradleWrapper;
   const assertDependencyState = options.assertDependencyState ??
@@ -636,6 +657,7 @@ export function assertNativeReleaseGradleInputs(builds, options = {}) {
   for (const build of builds) assertDependencyState(build);
 }
 
+/** Return the four expected phone and Wear artifact locations. */
 export function nativeReleaseArtifactPaths(build) {
   const outputRoot = path.join(build.cwd, 'app', 'build', 'outputs');
   return [
@@ -649,6 +671,7 @@ export function prepareNativeReleaseArtifacts(build, removeFile = (file) => fs.r
   for (const file of nativeReleaseArtifactPaths(build)) removeFile(file);
 }
 
+/** Require the exact paired release outputs before publication. */
 export function assertNativeReleaseArtifacts(build, fileExists = fs.existsSync) {
   const missing = nativeReleaseArtifactPaths(build).filter((file) => !fileExists(file));
   if (missing.length === 0) return;
@@ -659,6 +682,7 @@ export function assertNativeReleaseArtifacts(build, fileExists = fs.existsSync) 
   );
 }
 
+/** Construct credential-free managed Android prebuild. */
 export function nativeReleasePrebuildCommand(root = repositoryRoot) {
   return {
     label: 'phone prebuild',
@@ -713,6 +737,7 @@ export function nativeReleaseInvocation(build, args, environment, platform = pro
   };
 }
 
+/** Prepare verified Gradle inputs before admitting signing credentials. */
 function prepareGradle() {
   const prebuild = nativeReleasePrebuildCommand();
   const prebuildResult = spawnSync(prebuild.command, prebuild.args, {
@@ -737,6 +762,7 @@ function prepareGradle() {
   );
 }
 
+/** Execute the requested build-tool operation through the injected runner. */
 function run() {
   const provenanceFile = path.resolve(repositoryRoot, NATIVE_RELEASE_BUILD_PROVENANCE_PATH);
   fs.rmSync(provenanceFile, { force: true });

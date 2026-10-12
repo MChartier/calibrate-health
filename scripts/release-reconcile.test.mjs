@@ -1,0 +1,73 @@
+/** Exercise explicit recovery evidence, exact provider readback, and prevention of duplicate enqueue. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { reconcileRelease, validateReconciliation } from './release-reconcile.mjs';
+import { queueSubmission, waitForSubmission, EAS_PROJECT_ID } from './native-eas-submit.mjs';
+
+const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+const hash = 'a'.repeat(64);
+const evidence = 'Inspected provider logs and matched the retained AAB SHA-256 and version code.';
+const submission = { id, app: { id: EAS_PROJECT_ID }, platform: 'ANDROID', androidConfig: { track: 'qa' }, status: 'IN_QUEUE' };
+
+/** Preserve append ordering and let assertions inspect every checkpoint mutation. */
+function storeFixture(checkpoints) {
+  return { state: { release: { draft: true }, record: { source_commit: 'c'.repeat(40) }, checkpoints },
+    /** Return the in-memory recovery state without performing provider I/O. */
+    async read() { return this.state; },
+    /** Append test events in the same order as durable recovery assets. */
+    async checkpoint(_id, stage, value) { this.state.checkpoints.push({ stage, ...value, asset_id: this.state.checkpoints.length + 1 }); } };
+}
+
+test('reconciliation rejects missing acknowledgement, unknown fields and malformed remote identity', () => {
+  const value = { stage: 'phone-submit', status: 'observed', id, artifact_hash: hash, evidence, confirmed: true };
+  assert.deepEqual(validateReconciliation(JSON.stringify(value)), value);
+  assert.throws(() => validateReconciliation({ ...value, confirmed: false }), /explicit operator/);
+  assert.throws(() => validateReconciliation({ ...value, extra: true }), /exact documented/);
+  assert.throws(() => validateReconciliation({ ...value, id: 'latest' }), /exact ID/);
+});
+
+test('ambiguous phone enqueue resumes only the operator-identified, provider-verified submission', async () => {
+  const store = storeFixture([
+    { stage: 'native-build', status: 'succeeded', aab_hashes: { phone: hash }, asset_id: 1 },
+    { stage: 'phone-submit', status: 'enqueueing', asset_id: 2 }
+  ]);
+  const input = { stage: 'phone-submit', status: 'observed', id, artifact_hash: hash, evidence, confirmed: true };
+  await assert.rejects(reconcileRelease({ store, releaseId: '1', input: { ...input, artifact_hash: 'b'.repeat(64) }, runEas: () => assert.fail() }), /retained AAB/);
+  await reconcileRelease({ store, releaseId: '1', input, runEas: (args) => {
+    assert.deepEqual(args, ['submit:view', id, '--json']); return JSON.stringify(submission);
+  } });
+  await queueSubmission({ store, releaseId: '1', role: 'phone', runEas: (args) => {
+    assert.equal(args[0], 'submit:view'); return JSON.stringify(submission);
+  } });
+  assert.equal(store.state.checkpoints.at(-1).submission_id, id);
+});
+
+test('late submission failure and retry preserve the original OTA result and record the replacement ID', async () => {
+  const replacement = 'ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const store = storeFixture([{ stage: 'ota-internal', status: 'succeeded', asset_id: 1 },
+    { stage: 'phone-submit', status: 'queued', submission_id: id, asset_id: 2 }]);
+  await assert.rejects(waitForSubmission({ store, releaseId: '1', role: 'phone', id,
+    runEas: () => JSON.stringify({ ...submission, status: 'ERRORED' }) }), /OTA is independent/);
+  let retryCalls = 0;
+  const result = await queueSubmission({ store, releaseId: '1', role: 'phone', retryFailed: true, runEas: (args) => {
+    if (args[0] === 'submit:retry') { retryCalls++; return JSON.stringify({ id: replacement }); }
+    assert.equal(args[0], 'submit:view');
+    return JSON.stringify(args[1] === id ? { ...submission, status: 'ERRORED', canRetry: true } : { ...submission, id: replacement });
+  } });
+  assert.equal(result, replacement);
+  assert.equal(retryCalls, 1);
+  assert.equal(store.state.checkpoints[0].status, 'succeeded');
+});
+
+test('OTA reconciliation binds channel, runtime and retained artifact, without publishing', async () => {
+  const store = storeFixture([{ stage: 'ota-production-artifact', status: 'succeeded', bundle_integrity: hash,
+    runtime_version: 'b'.repeat(40), asset_id: 1 }, { stage: 'ota-production', status: 'started', asset_id: 2 }]);
+  const input = { stage: 'ota-production', status: 'observed', id, artifact_hash: hash, evidence, confirmed: true };
+  const update = { group: id, platform: 'android', runtimeVersion: 'b'.repeat(40), branch: { name: 'production' } };
+  await assert.rejects(reconcileRelease({ store, releaseId: '1', input,
+    runEas: () => JSON.stringify([{ ...update, runtimeVersion: 'c'.repeat(40) }]) }), /does not match/);
+  await reconcileRelease({ store, releaseId: '1', input, runEas: (args) => {
+    assert.deepEqual(args, ['update:view', id, '--json']); return JSON.stringify([update]);
+  } });
+  assert.equal(store.state.checkpoints.at(-1).publication.group, id);
+});

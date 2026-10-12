@@ -1,3 +1,4 @@
+/** Regression coverage for release config and its failure boundaries. */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -12,6 +13,7 @@ import {
   GOOGLE_PLAY_MAX_VERSION_CODE,
   HISTORICAL_PREPARED_RELEASE_COMMIT,
   PREPARED_RELEASE_MIRROR_PATHS,
+  NATIVE_RELEASE_FILE_PATHS,
   checkRepository,
   compareSemver,
   createServerReleaseReplacements,
@@ -35,6 +37,7 @@ const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url))
 const releaseConfigScriptPath = path.join(repositoryRoot, 'scripts', 'release-config.mjs');
 const nativeTagAllowedSignersRepositoryPath = '.github/native-release-tag-allowed-signers';
 
+/** Encode an SSH string for historical tag-attestation fixtures. */
 function sshString(value) {
   const bytes = Buffer.isBuffer(value) ? value : Buffer.from(value, 'utf8');
   const length = Buffer.alloc(4);
@@ -42,6 +45,7 @@ function sshString(value) {
   return Buffer.concat([length, bytes]);
 }
 
+/** Provide the reviewed public signer fixture for historical verification. */
 function nativeTagAllowedSigner(byte) {
   const keyType = 'ssh-ed25519';
   const blob = Buffer.concat([sshString(keyType), sshString(Buffer.alloc(32, byte))]);
@@ -66,6 +70,7 @@ const releaseFixturePaths = [
   'packages/api-client/src/generated/v1.ts'
 ];
 
+/** Copy version mirrors into a temporary repository before mutation tests. */
 async function createReleaseFixture(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'calibrate-release-config-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -77,6 +82,7 @@ async function createReleaseFixture(t) {
   return root;
 }
 
+/** Read fixture metadata without touching the real application manifest. */
 const readFixtureJson = async (root, relativePath) => JSON.parse(await readFile(path.join(root, relativePath), 'utf8'));
 
 // Exact manifest recorded at 93ff747 for the prepared v0.35.0 release.
@@ -107,6 +113,7 @@ const historicalPreparedV035Manifest = {
   }
 };
 
+/** Model the exact supported pre-iOS historical release layout. */
 async function useHistoricalPreparedV035Mirrors(root) {
   // Freeze native mirrors too: future package/version changes must not rewrite historical evidence.
   for (const relativePath of releaseFixturePaths) {
@@ -160,6 +167,7 @@ async function useHistoricalPreparedV035Mirrors(root) {
   await writeFile(pairingGradlePath, pairingGradle.replace(/versionCode\s+\d+/, 'versionCode 8'));
 }
 
+/** Introduce native mirror drift to prove current validation rejects it. */
 async function useInvalidModernNativeMirrors(root) {
   const manifestPath = path.join(root, 'shared', 'release.json');
   const manifest = await readFixtureJson(root, 'shared/release.json');
@@ -180,8 +188,10 @@ async function useInvalidModernNativeMirrors(root) {
   await writeFile(pairingGradlePath, pairingGradle.replace(/versionCode\s+\d+/, 'versionCode 10'));
 }
 
+/** Assert the injected historical verifier receives the expected tag. */
 const acceptExpectedNativeReleaseTag = ({ expectedTag }) => ({ latestTag: expectedTag });
 
+/** Model origin, ancestry, and signed native tag observations. */
 function createNativeTagGit({
   expectedTag = 'native-v0.2.6',
   remoteTagObject = 'a'.repeat(40),
@@ -196,6 +206,7 @@ function createNativeTagGit({
   let currentLocalTagObject = localTagObject;
   const calls = [];
   const tagRef = `refs/tags/${expectedTag}`;
+  /** Provide a deterministic Git adapter for build identity inspection. */
   const git = (_root, args) => {
     calls.push(args);
     if (args[0] === 'ls-remote') {
@@ -279,13 +290,16 @@ const preparedReleaseSourcePaths = {
   generatedApi: 'packages/api-client/src/generated/v1.ts'
 };
 
+/** Provide canonical parent bytes for candidate reconstruction tests. */
 function createPreparedReleaseParentSources(version, previousVersion) {
   const manifest = structuredClone(validManifest);
   manifest.server.version = version;
   const diagnostics = structuredClone(validDiagnosticVersions);
   diagnostics.previous_web_release = previousVersion;
   diagnostics.supported_versions.web = [version, previousVersion];
+  /** Render a package manifest fixture with a controlled version. */
   const packageSource = (name) => `${JSON.stringify({ name, version }, null, 2)}\n`;
+  /** Render the matching lockfile version mirrors. */
   const lockSource = (name) => `${JSON.stringify({
     name,
     version,
@@ -304,6 +318,7 @@ function createPreparedReleaseParentSources(version, previousVersion) {
   };
 }
 
+/** Model exact candidate Git observations without publishing any refs. */
 function createPreparedReleaseGit({
   releaseTag = 'v1.2.3',
   remoteTagObject = 'a'.repeat(40),
@@ -337,6 +352,7 @@ function createPreparedReleaseGit({
   const targetSources = targetSourceMutator({
     ...createServerReleaseReplacements(parentSources, targetManifest.server.version)
   });
+  /** Provide a deterministic Git adapter for build identity inspection. */
   const git = (_root, args) => {
     calls.push(args);
     if (args[0] === 'ls-remote') return `${remoteTagObject}\t${tagRef}`;
@@ -380,6 +396,7 @@ function createPreparedReleaseGit({
     }
     throw new Error(`Unexpected prepared release Git command: ${args.join(' ')}`);
   };
+  /** Return the controlled mirror validation result for a candidate fixture. */
   const checkRepositoryFn = async (root, options) => {
     checkCalls.push({ root, options });
     return { manifest: targetManifest, errors: checkErrors };
@@ -562,6 +579,7 @@ test('the recorded v0.35.0 commit is the byte-exact canonical transform of its s
     t.skip('The immutable v0.35.0 commit is unavailable in this shallow checkout.');
     return;
   }
+  /** Provide a deterministic Git adapter for build identity inspection. */
   const git = (args) => {
     const result = spawnSync('git', ['--no-replace-objects', ...args], {
       cwd: repositoryRoot,
@@ -603,6 +621,7 @@ test('modern tooling checks, tags, and verifies the exact pre-iOS canonical imag
     encoding: 'utf8'
   });
   assert.equal(clone.status, 0, clone.stderr);
+  /** Provide a deterministic Git adapter for build identity inspection. */
   const git = (args) => {
     const result = spawnSync('git', ['--no-replace-objects', ...args], { cwd: root, encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
@@ -828,6 +847,7 @@ test('pre-branch candidate verification rejects stale parents, wrong commits, an
     parentCommit: currentMasterCommit,
     parentCommits: [currentMasterCommit],
     masterVersion: '1.2.2',
+    /** Inject unrelated candidate content to test exact-byte rejection. */
     targetSourceMutator(sources) {
       sources.generatedApi += 'export const injected = true;\n';
       return sources;
@@ -864,6 +884,7 @@ test('candidate-only verification rejects an older canonical ancestor before tag
   assert.equal(fixture.calls.some((args) => args[0] === 'cat-file'), false);
 });
 
+/** Model protected-master history for workflow authority tests. */
 function currentWorkflowGit(fixture, {
   masterParents = [fixture.parentCommit, fixture.tagCommit],
   masterTree = 'e'.repeat(40),
@@ -968,6 +989,7 @@ test('current release workflow credentials reject stale ancestry, changed merge 
   );
 
   const noncanonical = createPreparedReleaseGit({
+    /** Inject unrelated candidate content to test exact-byte rejection. */
     targetSourceMutator(sources) {
       sources.rootPackage += '{"injected":true}\n';
       return sources;
@@ -989,6 +1011,7 @@ test('prepared release verifier rejects synchronized but noncanonical payloads i
   const cases = [
     {
       path: 'package.json',
+      /** Introduce one deliberate fixture violation for fail-closed validation. */
       mutate(sources) {
         const value = JSON.parse(sources.rootPackage);
         value.scripts = { postinstall: 'node scripts/unreviewed.mjs' };
@@ -998,6 +1021,7 @@ test('prepared release verifier rejects synchronized but noncanonical payloads i
     },
     {
       path: 'package-lock.json',
+      /** Introduce one deliberate fixture violation for fail-closed validation. */
       mutate(sources) {
         const value = JSON.parse(sources.rootLock);
         value.packages['node_modules/unreviewed'] = { version: '1.0.0' };
@@ -1007,6 +1031,7 @@ test('prepared release verifier rejects synchronized but noncanonical payloads i
     },
     {
       path: 'docs/openapi/v1.yaml',
+      /** Introduce one deliberate fixture violation for fail-closed validation. */
       mutate(sources) {
         sources.openApi += 'x-unreviewed-release-change: true\n';
         return sources;
@@ -1014,6 +1039,7 @@ test('prepared release verifier rejects synchronized but noncanonical payloads i
     },
     {
       path: 'packages/api-client/src/generated/v1.ts',
+      /** Introduce one deliberate fixture violation for fail-closed validation. */
       mutate(sources) {
         sources.generatedApi += 'export const unreviewed = true;\n';
         return sources;
@@ -1204,6 +1230,34 @@ test('native version-code allocation advances into permanent odd phone and even 
   exhausted.android.mobile.version_code = GOOGLE_PLAY_MAX_VERSION_CODE - 1;
   exhausted.android.wear.version_code = GOOGLE_PLAY_MAX_VERSION_CODE;
   assert.throws(() => getNextNativeVersionCodes(exhausted), /cannot exceed Google Play's 2100000000 limit/);
+  assert.deepEqual(getNextNativeVersionCodes(validManifest, 30), { mobileVersionCode: 31, wearVersionCode: 32 });
+  assert.throws(() => getNextNativeVersionCodes(validManifest, -1), /minimum|floor|nonnegative/i);
+});
+
+test('combined native/server candidates reconstruct exactly and preserve burned code floors', async (t) => {
+  const root = await createReleaseFixture(t);
+  const originals = Object.fromEntries(await Promise.all(releaseFixturePaths.map(async (file) => [file, await readFile(path.join(root, file), 'utf8')])));
+  const source = 'a'.repeat(40), candidate = 'b'.repeat(40);
+  const before = JSON.parse(originals['shared/release.json']);
+  await prepareNativeRelease({ root, bump: 'patch', minimumCode: 30 });
+  await prepareServerRelease({ root, bump: 'patch', latestTag: `v${before.server.version}` });
+  const prepared = await readFixtureJson(root, 'shared/release.json');
+  const paths = [...new Set([...PREPARED_RELEASE_MIRROR_PATHS, ...Object.values(NATIVE_RELEASE_FILE_PATHS)])].sort();
+  const candidateBytes = Object.fromEntries(await Promise.all(paths.map(async (file) => [file, await readFile(path.join(root, file), 'utf8')])));
+  /** Model protected ancestry while retaining exact real fixture file bytes. */
+  const git = (_root, args) => {
+    if (args[0] === 'fetch' || args[0] === 'merge-base') return '';
+    if (args[0] === 'rev-parse') return candidate;
+    if (args[0] === 'rev-list') return `${candidate} ${source}`;
+    if (args[0] === 'diff-tree') return paths.map(file => `M\t${file}`).join('\n');
+    if (args[0] === 'show') { const [revision, file] = args[1].split(':'); return revision === source ? originals[file] : candidateBytes[file]; }
+    throw new Error(`Unexpected Git fixture: ${args}`);
+  };
+  const options = { root, releaseTag: `v${prepared.server.version}`, expectedCommit: candidate, git, gitRaw: git };
+  await verifyPreparedReleaseCandidate(options);
+  assert.equal(prepared.android.mobile.version_code, 31);
+  candidateBytes['wear/app/build.gradle.kts'] += '\n// unreviewed source change\n';
+  await assert.rejects(verifyPreparedReleaseCandidate(options), /canonical transformation/);
 });
 
 test('published native tag verification fetches an exact remote tag missing locally', () => {
@@ -1211,6 +1265,7 @@ test('published native tag verification fetches an exact remote tag missing loca
   const tagCommit = 'b'.repeat(40);
   const { calls, git, tagRef } = createNativeTagGit({ expectedTag, localTagObject: null, tagCommit });
   const attestationCalls = [];
+  /** Inspect the historical tag verification call without private signing material. */
   const verifyTagAttestation = (options) => {
     attestationCalls.push(options);
     return { tagObject: 'a'.repeat(40) };
@@ -1674,6 +1729,11 @@ test('local internal preparation advances all native mirrors without a tag or ch
 });
 
 
-test('protected preparation cannot disable signed-tag verification with a null callback', async () => {
-  await assert.rejects(prepareNativeRelease({ root: repositoryRoot, bump: 'patch', verifyNativeReleaseTag: null }), /requires signed-tag verification/);
+test('native preparation allocates the next pair without a signed-tag prerequisite', async (t) => {
+  const root = await createReleaseFixture(t);
+  const before = JSON.parse(await readFile(path.join(root, 'shared/release.json'), 'utf8'));
+  await prepareNativeRelease({ root, bump: 'patch' });
+  const after = JSON.parse(await readFile(path.join(root, 'shared/release.json'), 'utf8'));
+  assert.equal(after.android.mobile.version_code, before.android.wear.version_code + 1);
+  assert.equal(after.android.wear.version_code, after.android.mobile.version_code + 1);
 });

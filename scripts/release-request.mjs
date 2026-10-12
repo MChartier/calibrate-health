@@ -1,6 +1,8 @@
+/** Validate source-bound, read-only release requests before privileged default-branch handlers execute. */
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { validateReconciliation } from './release-reconcile.mjs';
 import { pathToFileURL } from 'node:url';
 
 const MAX_REQUEST_BYTES = 4096;
@@ -17,11 +19,12 @@ const TOP_LEVEL_KEYS = Object.freeze([
   'schema_version'
 ]);
 const OPERATION_INPUT_KEYS = Object.freeze({
-  'cut-release': ['bump'],
+  'cut-release': ['bump', 'confirm_play_console_clean'],
   'publish-prepared-release': ['release_branch', 'release_commit'],
   'build-release-image': ['publish_latest', 'release_commit', 'release_tag']
 });
 
+/** Reject extra request fields before forwarding privileged workflow inputs. */
 function exactKeys(value, expected, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${label} must be a JSON object.`);
@@ -33,6 +36,7 @@ function exactKeys(value, expected, label) {
   }
 }
 
+/** Require an explicitly shaped identity at the artifact boundary. */
 function requireString(value, label, pattern) {
   if (typeof value !== 'string' || !pattern.test(value)) {
     throw new Error(`${label} is malformed.`);
@@ -40,20 +44,30 @@ function requireString(value, label, pattern) {
   return value;
 }
 
+/** Bind each request identity to its triggering Actions run. */
 function requireEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(`${label} does not match the triggering workflow run.`);
   }
 }
 
+/** Validate only the exact input shape permitted for this release operation. */
 function validateInputs(operation, inputs) {
-  const keys = OPERATION_INPUT_KEYS[operation];
+  const recordedRecovery = operation === 'publish-prepared-release' && Object.hasOwn(inputs ?? {}, 'release_id');
+  const keys = recordedRecovery ? ['release_id', 'recovery_operation', 'confirm_play_console_clean', 'reconciliation'] : OPERATION_INPUT_KEYS[operation];
   if (!keys) throw new Error(`Unsupported release request operation: ${operation}.`);
   exactKeys(inputs, keys, 'release request inputs');
   if (operation === 'cut-release') {
+    if (typeof inputs.confirm_play_console_clean !== 'boolean') throw new Error('Play Console coordination must be a boolean.');
     if (!['patch', 'minor', 'major'].includes(inputs.bump)) {
       throw new Error('Cut release bump must be patch, minor, or major.');
     }
+  } else if (recordedRecovery) {
+    requireString(inputs.release_id, 'release_id', /^[1-9]\d*$/);
+    if (!['resume', 'reconcile', 'abandon'].includes(inputs.recovery_operation) || typeof inputs.confirm_play_console_clean !== 'boolean') throw new Error('Invalid recorded recovery operation or Console acknowledgement.');
+    if (typeof inputs.reconciliation !== 'string') throw new Error('Reconciliation must be a string.');
+    if (inputs.recovery_operation === 'reconcile') inputs.reconciliation = JSON.stringify(validateReconciliation(inputs.reconciliation));
+    else if (inputs.reconciliation) throw new Error('Evidence is only accepted by reconcile.');
   } else if (operation === 'publish-prepared-release') {
     requireString(inputs.release_commit, 'release_commit', /^[0-9a-f]{40}$/);
     requireString(inputs.release_branch, 'release_branch', /^release\/v[0-9]+\.[0-9]+\.[0-9]+$/);
@@ -67,6 +81,7 @@ function validateInputs(operation, inputs) {
   return inputs;
 }
 
+/** Bind a read-only request to the exact protected source and originating run. */
 export function verifyReleaseRequest(request, expected) {
   exactKeys(request, TOP_LEVEL_KEYS, 'release request');
   if (request.schema_version !== 1) throw new Error('Unsupported release request schema version.');
@@ -88,6 +103,7 @@ export function verifyReleaseRequest(request, expected) {
   return validateInputs(request.operation, request.inputs);
 }
 
+/** Require one bounded regular request file before parsing untrusted artifact content. */
 export function verifyReleaseRequestArtifact({ artifactDirectory, ...expected }) {
   const directory = path.resolve(artifactDirectory);
   const entries = fs.readdirSync(directory, { withFileTypes: true });
@@ -108,6 +124,7 @@ export function verifyReleaseRequestArtifact({ artifactDirectory, ...expected })
   return verifyReleaseRequest(request, expected);
 }
 
+/** Reject unknown or incomplete release CLI options before performing work. */
 function parseArguments(argv) {
   if (argv[0] !== 'verify') throw new Error('Usage: release-request.mjs verify [options].');
   const allowed = new Set([
@@ -130,12 +147,14 @@ function parseArguments(argv) {
   return values;
 }
 
+/** Write validated scalar inputs for dependent workflow jobs. */
 function appendOutputs(file, inputs) {
   for (const [name, value] of Object.entries(inputs)) {
     fs.appendFileSync(file, `${name}=${String(value)}\n`);
   }
 }
 
+/** Verify the request artifact before exposing any privileged workflow outputs. */
 export function runReleaseRequestCli(argv = process.argv.slice(2)) {
   const values = parseArguments(argv);
   const inputs = verifyReleaseRequestArtifact({

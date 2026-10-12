@@ -5,6 +5,14 @@ run-name: Cut ${{ inputs.bump }} release from ${{ github.ref_name }}
 on:
   workflow_call:
     secrets:
+      CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64:
+        required: false
+      CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD:
+        required: false
+      CALIBRATE_ANDROID_SIGNING_KEY_ALIAS:
+        required: false
+      CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD:
+        required: false
       EXPO_TOKEN:
         required: false
       # Forward environment secret names to publish-release -> deploy-self-hosted.
@@ -16,6 +24,11 @@ on:
       DEPLOY_TOKEN:
         required: true
     inputs:
+      confirm_play_console_clean:
+        description: Confirm Console coordination only when native submission is selected
+        required: false
+        default: false
+        type: boolean
       bump:
         description: Semantic server/web version component to bump
         required: true
@@ -40,7 +53,74 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  select:
+    name: Select changed release components
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      server: ${{ steps.select.outputs.server }}
+      native: ${{ steps.select.outputs.native }}
+      reserve_native: ${{ steps.select.outputs.reserve_native }}
+      minimum_native_code: ${{ steps.select.outputs.minimum_native_code }}
+      noop: ${{ steps.select.outputs.noop }}
+      plan_artifact_id: ${{ steps.plan.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.14.0
+      - name: Install locked dependencies without publishing credentials
+        run: npm ci --no-audit --fund=false
+      - name: Inspect component baselines and fingerprint
+        id: select
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          BUMP: ${{ inputs.bump }}
+          CONFIRM_PLAY_CONSOLE_CLEAN: ${{ inputs.confirm_play_console_clean }}
+        run: node scripts/release-orchestrator.mjs select "${SOURCE_SHA}" "${BUMP}" "${RUNNER_TEMP}/release-plan.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan.json
+          retention-days: 30
+        id: plan
+  reserve:
+    name: Reserve one durable release record
+    needs: select
+    if: needs.select.outputs.noop != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      release_id: ${{ steps.reserve.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ job.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: ${{ runner.temp }}/release-plan
+          artifact-ids: ${{ needs.select.outputs.plan_artifact_id }}
+      - name: Reserve this exact inspected request
+        id: reserve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: node scripts/release-orchestrator.mjs begin "${RUNNER_TEMP}/release-plan/release-plan.json"
   prepare:
+    needs: [select, reserve]
+    if: needs.select.outputs.server == 'true'
     name: Prepare exact release candidate
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -94,6 +174,8 @@ jobs:
         shell: bash
         env:
           BUMP: ${{ inputs.bump }}
+          RESERVE_NATIVE: ${{ needs.select.outputs.reserve_native }}
+          MINIMUM_NATIVE_CODE: ${{ needs.select.outputs.minimum_native_code }}
           REQUESTED_SOURCE_SHA: ${{ inputs.source_sha }}
           WORKFLOW_SHA: ${{ job.workflow_sha }}
         run: |
@@ -158,6 +240,9 @@ jobs:
             exit 1
           fi
 
+          if [[ "${RESERVE_NATIVE}" == "true" ]]; then
+            node scripts/release-config.mjs prepare-native --bump patch --minimum-native-code "${MINIMUM_NATIVE_CODE}"
+          fi
           VERSION="$(npm run --silent release:prepare -- --bump "${BUMP}")"
           TAG="v${VERSION}"
           BRANCH="release/${TAG}"
@@ -180,6 +265,9 @@ jobs:
             shared/client-diagnostic-versions.json
             shared/release.json
           )
+          if [[ "${RESERVE_NATIVE}" == "true" ]]; then
+            EXPECTED_FILES+=(mobile/package.json mobile/app.json mobile/modules/wear-pairing/package.json mobile/modules/wear-pairing/android/build.gradle wear/app/build.gradle.kts)
+          fi
           mapfile -t CHANGED_FILES < <(git diff --name-only)
           if [[ "${#CHANGED_FILES[@]}" -ne "${#EXPECTED_FILES[@]}" ]]; then
             printf 'Release preparation changed an unexpected number of files:\n%s\n' "${CHANGED_FILES[*]}" >&2
@@ -468,10 +556,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U calibrate_release_ci -d calibrate_release_ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+          --health-cmd "pg_isready -U calibrate_release_ci -d calibrate_release_ci" --health-interval 5s --health-timeout 5s --health-retries 10
 
     steps:
       - name: Checkout exact published candidate
@@ -748,7 +833,7 @@ jobs:
               '',
               `- synchronize the server and web release mirrors at ${version}`,
               `- prepare immutable source tag ${tag}`,
-              '- leave Android phone and Wear release identities unchanged',
+              '- prepare the selected paired native version in the same candidate when required',
               '',
               '## Validation',
               '',
@@ -887,9 +972,9 @@ jobs:
             echo "- Source: \`${SOURCE_SHA}\`"
             echo "- Validated release commit: \`${RELEASE_SHA}\`"
             echo "- Release PR: ${PR_URL}"
-            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`; publish OTA internal when the native tag is ready"
+            echo "- Next: tag and publish \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/calibratehealth:${TAG}\`; publish selected native clients and fingerprint-targeted OTA"
             echo
-            echo "If tag or image publishing fails, rerun Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`. OTA resumes only when that prepared manifest already records a compatible protected native tag; otherwise use the release runbook's manual OTA path."
+            echo "For historical tag or image recovery, run Publish prepared release with commit \`${RELEASE_SHA}\` and branch \`${{ needs.prepare.outputs.release_branch }}\`. For this orchestration, use its durable release ID to resume remaining components."
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Report blocked release PR
@@ -1127,34 +1212,42 @@ jobs:
             ":refs/heads/${RELEASE_BRANCH}"
 
   publish:
-    name: Tag and publish validated release
-    needs: [prepare, finalize]
+    name: Publish selected components from the validated source
+    needs: [select, reserve, prepare, finalize]
+    if: ${{ !cancelled() && needs.reserve.result == 'success' && (needs.select.outputs.server != 'true' || needs.finalize.result == 'success') }}
     permissions:
       actions: read
       attestations: write
       contents: write
       id-token: write
       packages: write
-    uses: ./.github/workflows/publish-release.yml
+    uses: ./.github/workflows/release-components.yml
     secrets:
       DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
       DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
       DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+      CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+      CALIBRATE_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+      CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
     with:
-      release_commit: ${{ needs.prepare.outputs.release_sha }}
+      release_id: ${{ needs.reserve.outputs.release_id }}
+      release_commit: ${{ needs.prepare.outputs.release_sha || inputs.source_sha }}
       release_branch: ${{ needs.prepare.outputs.release_branch }}
 
   release_status:
     name: Summarize release stages
     if: ${{ always() }}
-    needs: [prepare, publish_candidate, release-validation, finalize, publish]
+    needs: [select, reserve, prepare, publish_candidate, release-validation, finalize, publish]
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Report stage outcomes and recovery
         env:
+          NOOP: ${{ needs.select.outputs.noop }}
+          RELEASE_ID: ${{ needs.reserve.outputs.release_id }}
           PREPARE: ${{ needs.prepare.result }}
           CANDIDATE: ${{ needs.publish_candidate.result }}
           SMOKE: ${{ needs.release-validation.result }}
@@ -1166,10 +1259,11 @@ jobs:
         run: |
           {
             echo '## Release stage outcomes'
+            echo "- No applicable changes: $NOOP; durable release ID: $RELEASE_ID"
             echo "- Prepare: $PREPARE; candidate branch: $CANDIDATE; metadata/smoke: $SMOKE"
             echo "- CI gate and merge: $FINALIZE; publication workflow: $PUBLISH"
             echo "- Release PR: $PR_URL"
             echo 'Before merge: inspect the candidate validation jobs in this release run; a validated candidate is retained for failed-job retry while refs remain unchanged.'
-            echo "After merge: use Publish prepared release with commit $RELEASE_SHA and branch $RELEASE_BRANCH for tag/image recovery. Never recut an already prepared version."
-            echo 'Image, OTA and deployment are separate stages. Read the nested publisher summary/log for the verified image digest and explicit optional rollout skips; a skipped OTA/deploy job does not mean the image failed.'
+            echo "After merge: use Publish prepared release with release_id $RELEASE_ID to resume remaining stages. Never recut an unfinished release."
+            echo 'Read the component summary for image digest, deployment health, native submission IDs, and OTA groups. Unselected components are skipped.'
           } >> "$GITHUB_STEP_SUMMARY"
