@@ -1,7 +1,11 @@
 /** @file Exercise component selection, partial release recovery, and the independent OTA/submission gates. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { affectsComponent, selectRelease, applicationContent } from './release-selection.mjs';
+import { affectsComponent, selectRelease, applicationContent, wearInputHash } from './release-selection.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import { completedBaseline, latestCheckpoint, validateRecord } from './release-record.mjs';
 import { unfinishedStages, finishRelease } from './release-orchestrator.mjs';
 import { parseSubmissionId, verifySubmission, queueSubmission, waitForSubmission } from './native-eas-submit.mjs';
@@ -57,6 +61,29 @@ test('release classification separates browser/native modules and excludes docs/
   assert.equal(affectsComponent('mobile/src/view.web.tsx', 'ota'), false);
   assert.equal(affectsComponent('mobile/src/view.tsx', 'server'), true);
   assert.equal(affectsComponent('mobile/src/view.tsx', 'ota'), true);
+});
+
+test('Wear unit and instrumentation tests do not select a new native release', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wear-selection-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  /** Commit only disposable fixture inputs so production history stays untouched. */
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  git('init');
+  git('config', 'user.name', 'Test');
+  git('config', 'user.email', 'test@example.invalid');
+  for (const source of ['main', 'test', 'androidTest']) {
+    fs.mkdirSync(path.join(root, 'wear/app/src', source), { recursive: true });
+    fs.writeFileSync(path.join(root, 'wear/app/src', source, 'Example.kt'), 'initial');
+  }
+  git('add', '.');
+  git('commit', '-m', 'Initial');
+  const initial = wearInputHash(root, git('rev-parse', 'HEAD'));
+  for (const source of ['test', 'androidTest']) fs.writeFileSync(path.join(root, 'wear/app/src', source, 'Example.kt'), 'changed');
+  git('commit', '-am', 'Tests only');
+  assert.equal(wearInputHash(root, git('rev-parse', 'HEAD')), initial);
+  fs.writeFileSync(path.join(root, 'wear/app/src/main/Example.kt'), 'changed');
+  git('commit', '-am', 'Application change');
+  assert.notEqual(wearInputHash(root, git('rev-parse', 'HEAD')), initial);
 });
 
 test('partial outcomes preserve OTA/server success without claiming completed native distribution', () => {

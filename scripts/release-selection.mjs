@@ -7,7 +7,7 @@ import { resolveExpoRuntime } from './expo-runtime.mjs';
 import { compareSemver, nextReleaseVersion } from './release-config.mjs';
 import { allocateCalibrateNativeCodes, selectCalibrateComponents } from './release-engine.mjs';
 
-const IGNORED = /(^|\/)(__tests__|__mocks__|fixtures|e2e|docs)(\/|$)|\.(test|spec)\.[^/]+$|(^|\/)(README[^/]*|AGENTS\.md)$/i;
+const IGNORED = /(^|\/)(__tests__|__mocks__|fixtures|e2e|docs)(\/|$)|(^|\/)src\/(test|androidTest)\/|\.(test|spec)\.[^/]+$|(^|\/)(README[^/]*|AGENTS\.md)$/i;
 const SERVER_FILES = /^(backend\/|shared\/|packages\/|mobile\/|Dockerfile\.app$|\.dockerignore$|package(?:-lock)?\.json$|scripts\/expo-(?:cli-environment|web-build|web-release)\.mjs$)/;
 const PHONE_FILES = /^(mobile\/|shared\/|packages\/api-client\/|package(?:-lock)?\.json$)/;
 
@@ -68,7 +68,7 @@ export function affectsComponent(file, component) {
 }
 
 /** Find changed tracked paths relative to the last successful source for this component. */
-export function componentChanges(root, baseline, source, component) {
+function componentChanges(root, baseline, source, component) {
   if (!/^[a-f0-9]{40}$/.test(source) || (baseline && !/^[a-f0-9]{40}$/.test(baseline))) {
     throw new Error('Release comparisons require exact source commits.');
   }

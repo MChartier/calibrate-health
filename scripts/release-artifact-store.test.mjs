@@ -72,6 +72,49 @@ test('Release asset redirects never forward GitHub authentication to storage', a
   assert.equal((await store.api('/releases/assets/1', { raw: true })).toString(), 'asset');
 });
 
+test('retained checkpoints require the original protected run or a protected recovery producer', async () => {
+  const record = { schema_version: 1, repository: 'owner/repo', run_id: '10', source_commit: 'a'.repeat(40), workflow_sha: 'a'.repeat(40),
+    plan: { server: false, native: false, ota_internal: true, ota_production: false, reserve_native: false, noop: false,
+      bump: 'patch', runtime_version: 'b'.repeat(40), wear_hash: 'c'.repeat(64) } };
+  const run = { repository: { full_name: record.repository }, path: '.github/workflows/cut-release-handler.yml',
+    event: 'workflow_run', head_branch: 'master', head_sha: record.workflow_sha, run_attempt: 2 };
+  const checkpoint = { stage: 'ota-internal', release_run_id: '10', producing_run_id: '10', producing_run_attempt: '1', status: 'succeeded' };
+  const asset = { id: 20, name: 'checkpoint-ota-internal-uuid.json', size: 200, uploader: { login: 'github-actions[bot]' } };
+  const recovery = { ...run, path: '.github/workflows/publish-release-handler.yml' };
+  /** Serve exact API objects while each assertion mutates one untrusted identity boundary. */
+  const request = async (url) => {
+    const route = new URL(url).pathname.replace('/repos/owner/repo', '');
+    const value = {
+      '/releases/1': { id: 1, tag_name: 'release-run-10', body: JSON.stringify(record) },
+      '/actions/runs/10': run, '/actions/runs/11': recovery,
+      '/releases/1/assets': [asset], '/releases/assets/20': checkpoint
+    }[route];
+    assert.ok(value, `Unexpected API request ${route}`);
+    return new Response(JSON.stringify(value));
+  };
+  const store = new ReleaseRecordStore({ repository: record.repository, token: 'test', request });
+  assert.equal((await store.read('1')).checkpoints[0].asset_id, 20);
+  checkpoint.producing_run_id = '11';
+  assert.equal((await store.read('1')).checkpoints[0].status, 'succeeded');
+  recovery.path = '.github/workflows/cut-release-handler.yml';
+  await assert.rejects(store.read('1'), /protected recovery/);
+  recovery.path = '.github/workflows/publish-release-handler.yml';
+  recovery.head_branch = 'feature';
+  await assert.rejects(store.read('1'), /protected recovery/);
+  recovery.head_branch = 'master';
+  checkpoint.producing_run_attempt = '3';
+  await assert.rejects(store.read('1'), /protected recovery/);
+  checkpoint.producing_run_attempt = '1';
+  asset.uploader.login = 'repository-writer';
+  await assert.rejects(store.read('1'), /Actions publication/);
+  asset.uploader.login = 'github-actions[bot]';
+  checkpoint.release_run_id = '999';
+  await assert.rejects(store.read('1'), /checkpoint binding/);
+  checkpoint.release_run_id = '10';
+  run.head_sha = 'd'.repeat(40);
+  await assert.rejects(store.read('1'), /protected Cut release/);
+});
+
 test('Play promotion verifies both AAB hashes before editing either track', async () => {
   const metadata = { native: { phone_code: 13, wear_code: 14 }, artifacts: [{ id: 'phone-aab', sha256: 'a'.repeat(64) }, { id: 'wear-aab', sha256: 'b'.repeat(64) }] };
   const calls = [];
