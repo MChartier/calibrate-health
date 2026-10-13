@@ -42,6 +42,8 @@ Run a cut and verify its component summary, selected server deployment health, r
 
 Each non-no-op orchestration owns a draft GitHub Release named `Cut release <run-id>`, tagged `release-run-<run-id>`. This identifier is independent of application versions. Its body records the producing protected run, selection/reasons, initial source, and previous successful component baselines. Append-only checkpoint assets record preparation, deployment, artifact identities, EAS submission IDs, OTA groups, and outcomes. Binaries and attested OTA exports are retained as Release assets beyond Actions artifact expiration.
 
+[GitHub requires push access to read draft releases](https://docs.github.com/en/rest/releases/releases#list-releases). OTA checkpoint inspection and recovery therefore use isolated, workflow-pinned tooling jobs with job-scoped `contents: write`; application source verification and OTA exports remain read-only and never receive that credential.
+
 Only one unfinished orchestration is allowed. Another Cut release fails with the pending record ID. Use **Publish prepared release** on `master`, provide `release_id`, leave the legacy commit/branch fields blank, and choose `resume`. Confirm Console coordination if native submission remains.
 
 - Before candidate merge, rerun only failed jobs in the original Cut release while master and candidate remain unchanged. Do not recut, manually merge, or overwrite the candidate. If master advanced, reconcile the retained candidate first.
