@@ -119,8 +119,8 @@ test('retained checkpoints require the original protected run or a protected rec
 test('Play promotion verifies both AAB hashes before editing either track', async () => {
   const metadata = { native: { phone_code: 13, wear_code: 14 }, artifacts: [{ id: 'phone-aab', sha256: 'a'.repeat(64) }, { id: 'wear-aab', sha256: 'b'.repeat(64) }] };
   const calls = [];
-  const tracks = { qa: { track: 'qa', releases: [{ versionCodes: ['13'], status: 'completed' }] },
-    'wear:qa': { track: 'wear:qa', releases: [{ versionCodes: ['14'], status: 'completed' }] } };
+  const tracks = { internal: { track: 'internal', releases: [{ versionCodes: ['13'], status: 'completed' }] },
+    'wear:internal': { track: 'wear:internal', releases: [{ versionCodes: ['14'], status: 'completed' }] } };
   const bundles = { bundles: [{ versionCode: 13, sha256: 'a'.repeat(64) }, { versionCode: 14, sha256: 'b'.repeat(64) }] };
   const publisher = { createEdit: async () => 'edit', deleteEdit: async () => {}, listBundles: async () => bundles,
     getTrack: async (_edit, track) => tracks[track] ?? { track, releases: [] },

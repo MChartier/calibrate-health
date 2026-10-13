@@ -5,7 +5,7 @@ Use [Local native builds and releases](mobile-release.md) for the daily commands
 local private-backend profile. Run `npm.cmd run native:setup` before the first build.
 
 The application ID is `net.darkmachines.healthtracker`. Both phone and Wear use
-`https://calibratehealth.darkmachines.net`, Expo channel `internal`, and Play internal tracks `qa` / `wear:qa`.
+`https://calibratehealth.darkmachines.net`, Expo channel `internal`, and Play internal tracks `internal` / `wear:internal`.
 Testers need WireGuard access to the private backend. Production releases follow the separate [protected store
 workflow](native-store-release.md).
 

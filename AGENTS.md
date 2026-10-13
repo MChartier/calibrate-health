@@ -303,8 +303,8 @@ UI code style:
   remain consumed. Prepare selected versions together in the existing protected PR/CI/merge path. OTA-only cuts use the
   exact protected source without an empty PR; unchanged cuts explicitly do nothing.
 - Build both native clients once and retain attested APK/AAB hashes and runtime provenance. Main release queues the exact
-  phone AAB through pinned EAS Submit to qa, verifies its ID, and permits OTA while submission continues independently.
-  Wait for phone success before submitting Wear to wear:qa. Serialize all CI Play writers, enforce Console acknowledgement
+  phone AAB through pinned EAS Submit to internal, verifies its ID, and permits OTA while submission continues independently.
+  Wait for phone success before submitting Wear to wear:internal. Serialize all CI Play writers, enforce Console acknowledgement
   only for selected submissions, and report later submission failures without undoing OTA. Explicit Native Android Store
   Release operations promote retained codes/hashes through closed testing and protected production without rebuilding.
 - Local Android package operations use `native:build`, `native:install`, and `native:submit`.
@@ -326,7 +326,7 @@ UI code style:
   confirmation flag or prompt. Preserve the protected CI publisher and its independent credential boundaries.
   The existing `node scripts/native-internal-release.mjs prepare --bump patch` helper can allocate a native version
   without a published tag. The local path uses
-  `net.darkmachines.healthtracker`, the private WireGuard origin, Expo channel `internal`, and only `qa`/`wear:qa`.
+  `net.darkmachines.healthtracker`, the private WireGuard origin, Expo channel `internal`, and only `internal`/`wear:internal`.
   The local entry point strips inherited signing/Play credentials, loads external Expo-format signing credentials
   only after credential-free prebuild, verifies all four artifacts,
   and records local provenance. It never creates authoritative `native-v*` tags or adopts uploads into the protected
