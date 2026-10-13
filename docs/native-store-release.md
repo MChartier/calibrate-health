@@ -16,6 +16,8 @@ The workflow compares separate successful source references for server/web, pair
 
 A build failure or failure to establish the initial phone submission blocks OTA. Play processing, review, or production acceptance does not gate OTA. Expo serves each update only to matching runtimes. The production APK, AAB, and OTA export must agree on the resolved runtime.
 
+The Android package CI job also compares the clean managed source fingerprint with the built APK and post-build source. Kotlin's generated `.kotlin` compiler-session/cache files are excluded from fingerprint inputs; native plugin source and Gradle integrity templates remain included. A runtime mismatch stops publication and reports both hashes.
+
 All CI Play-writing operations share one non-cancelling concurrency group. Do not edit the same Play application through another Console/API client while submissions or promotion are running. Google documents that [concurrent edits can invalidate one another or submit pending Console changes](https://developers.google.com/android-publisher/concurrency-considerations).
 
 ## Configuration and rollout

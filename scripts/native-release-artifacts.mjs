@@ -6,8 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { ReleaseRecordStore, latestCheckpoint } from './release-record.mjs';
 import { releaseGit, wearInputHash } from './release-selection.mjs';
-import { resolveExpoRuntime } from './expo-runtime.mjs';
-import { readZipEntry } from './zip-entry.mjs';
+import { resolveExpoRuntime, verifyEmbeddedRuntime } from './expo-runtime.mjs';
 import { parseNativePlayWorkflowTrustSet } from './native-play-receipt.mjs';
 
 export const NATIVE_ARTIFACT_PATHS = Object.freeze({
@@ -33,9 +32,7 @@ export function createNativeArtifactMetadata(root, source, workflowSha) {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared/release.json'), 'utf8'));
   const runtime = resolveExpoRuntime(root, { environment: { ...process.env, EXPO_UPDATES_CHANNEL: 'production' } });
   for (const [id, member] of [['phone-apk', 'assets/fingerprint'], ['phone-aab', 'base/assets/fingerprint']]) {
-    if (readZipEntry(path.join(root, NATIVE_ARTIFACT_PATHS[id]), member).toString('utf8').trim() !== runtime) {
-      throw new Error(`${id} runtime differs from the source fingerprint. Refusing native publication.`);
-    }
+    verifyEmbeddedRuntime(path.join(root, NATIVE_ARTIFACT_PATHS[id]), member, runtime);
   }
   return {
     schema_version: 1, source_commit: source, workflow_sha: workflowSha,
