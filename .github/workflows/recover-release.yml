@@ -31,8 +31,9 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
+    # Recovery reads an unfinished draft, which GitHub exposes only with push access.
     permissions:
-      contents: read
+      contents: write
       actions: read
     outputs:
       source_commit: ${{ steps.recovery.outputs.source_commit }}
@@ -42,6 +43,7 @@ jobs:
         with:
           ref: ${{ job.workflow_sha }}
           persist-credentials: false
+          sparse-checkout: scripts
       - name: Require current protected recovery code
         env:
           WORKFLOW_SHA: ${{ job.workflow_sha }}

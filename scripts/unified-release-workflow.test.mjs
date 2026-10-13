@@ -127,6 +127,32 @@ test('OTA exports, attestations, and both credential stages remain separate on b
   }
 });
 
+test('draft release inspection has push access only in isolated tooling jobs', () => {
+  const { jobs } = workflow('expo-ota-update');
+  const inspection = jobs['inspect-retained-exports'];
+  assert.equal(inspection.permissions.contents, 'write');
+  assert.equal(inspection.permissions.actions, 'read');
+  assert.match(inspection.steps[0].run, /GITHUB_REF.*refs\/heads\/master/);
+  const read = inspection.steps.find(step => step.run?.includes('expo-ota-store.mjs inspect'));
+  assert.match(read.if, /inputs.release_record_id != ''/);
+  assert.equal(jobs['preflight-release-target'].needs, 'inspect-retained-exports');
+  assert.equal(jobs['preflight-release-target'].permissions.contents, 'read');
+  for (const channel of ['internal', 'production']) {
+    assert.equal(jobs['preflight-release-target'].outputs[`${channel}_retained`],
+      '${{ needs.inspect-retained-exports.outputs.' + channel + '_retained }}');
+  }
+  const recovery = workflow('recover-release').jobs.inspect;
+  assert.equal(recovery.permissions.contents, 'write');
+  for (const job of [inspection, recovery]) {
+    assert.doesNotMatch(JSON.stringify(job), /EXPO_TOKEN|secrets\.|npm ci/);
+    const checkouts = job.steps.filter(step => step.uses?.startsWith('actions/checkout@'));
+    assert.equal(checkouts.length, 1);
+    assert.equal(checkouts[0].with.ref, '${{ job.workflow_sha }}');
+    assert.equal(checkouts[0].with['persist-credentials'], false);
+    assert.equal(checkouts[0].with['sparse-checkout'], 'scripts');
+  }
+});
+
 test('paired builds admit signing after prebuild; promotions reuse verified artifacts and serialize Play writes', () => {
   const build = workflow('native-build').jobs;
   const signer = build['build-internal'];
