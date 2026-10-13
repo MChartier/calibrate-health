@@ -46,8 +46,8 @@ one-time pairing exchange. Browser cookie sessions omit these headers and are un
 
 Expo retains its normal update lifecycle; the client does not veto an update download based on the selected server.
 If an incompatible bundle starts, the runtime preflight blocks normal authenticated use before session refresh and
-synchronization. Both internal and production OTA publication now require the configured server's Compose upgrade
-and application health check to succeed. This checks only that target's health, not an exact server/OTA version
+synchronization. When a server change is selected, both OTA channels require its Compose upgrade
+and application health check to succeed. An unselected server requires no deployment or health request. This checks only that target's health, not an exact server/OTA version
 match; independently managed self-hosts still rely on the runtime mismatch guard.
 
 An incompatible native request receives HTTP 426 with `CLIENT_UPGRADE_REQUIRED`, the applicable minimum version, and
@@ -65,8 +65,7 @@ Compatibility changes follow these rules:
 - Raising a minimum client version is a last-resort safety boundary and must be called out in release notes.
 - Phone and Wear artifacts must keep application ID `net.darkmachines.healthtracker` and use the same signing certificate
   for Wear Data Layer communication.
-- Phone and watch versions may advance independently, but each artifact's `version_code` must exceed its previously
-  distributed build.
+- Phone and watch use a shared native version, independent of server/web, and globally unique odd/even version codes.
 
 ## Channels
 
@@ -82,17 +81,10 @@ validated signing environment to the phone and Wear release builds. Any future E
 with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
 generated metadata.
 
-Store delivery uses one paired production-channel build. **Native Android Store Release** uploads its phone AAB to
-Play track `qa` and Wear AAB to `wear:qa` in one edit. Separate operations promote those exact version codes first
-to the custom `closed` and `wear:closed` tracks, then to `production` and `wear:production`, without rebuilding.
-Because both artifacts
-share one Play application, the repository reserves globally unique odd phone and even Wear version codes.
-Before Play authentication, a source-free job attests deterministic receipt bytes binding the repository, app,
-source/tag/version, and exact role/track/code/AAB hashes. The publisher reconstructs and verifies those bytes; recovery
-reconstructs them only from exact Play observations, scrubs Play authentication, and verifies the original
-GitHub-hosted `.github/workflows/native-release.yml@refs/heads/master` certificate before tag signing. Current-master
-`allow`/`revoke` policy governs historical signer revisions, with revocation authoritative. Missing or legacy evidence
-cannot be adopted and requires a fresh higher version-code pair.
+Store delivery is selected by Cut release from phone fingerprint and Wear build-input changes. It builds and attests
+one pair, queues the exact phone AAB through EAS Submit to qa, permits runtime-targeted OTA, and independently finishes
+phone submission before Wear submission to wear:qa. Explicit promotions reuse exact attested codes and AAB hashes.
+No signed native tag or Play acceptance is required for OTA. See [the unified release runbook](native-store-release.md).
 
 ## Explicit server/web releases
 
@@ -117,7 +109,7 @@ the reusable worker. Use the existing repository configuration:
    `packages: write`. A dedicated Server Release GitHub App, GHCR robot, custom publication environment, and extra
    server tag rulesets are not prerequisites.
 4. Retain the configured `EXPO_TOKEN` repository secret and the `preview` and reviewer-protected `production`
-   environments for OTA. A server/image release can complete when its native baseline is unavailable; OTA is skipped.
+   environments for OTA. The first integrated release creates a fingerprint native baseline; OTA waits for build success and phone enqueue, not Play acceptance.
 
 Candidate preparation, validation, and image construction use read-only repository tokens with no registry write
 permission. Separate publication jobs receive only the permissions needed for their operation: Contents write for
@@ -164,7 +156,7 @@ candidates that did not pass that validation. **Publish prepared release** and *
 
 The action requires the checked manifest version to equal the highest stable tag, prepares every server/web mirror on
 `release/vMAJOR.MINOR.PATCH`, and validates that exact commit. It verifies the candidate parent and identity,
-synchronized release configuration, and exact eight-file mirror set. It also builds and starts the production image,
+synchronized release configuration, and exact canonical server/native mirror set. It also builds and starts the production image,
 then checks readiness and the served web application. The trusted release run calls the existing lint, test, release
 configuration, production-image OS scan and populated database upgrade workflows with explicit candidate/source SHAs.
 These jobs receive read-only permissions and no publication/provider secrets. Canonical version-only candidates keep
@@ -189,29 +181,17 @@ annotated tag, and calls the reusable GHCR image workflow with `publish_latest: 
 than relying on
 token-generated push or PR events, whose workflow behavior is restricted by
 [GitHub's `GITHUB_TOKEN` rules](https://docs.github.com/en/actions/concepts/security/github_token).
-After image publication, the workflow publishes the exact release commit to Expo only when the native-build tag from
-`shared/release.json` is a cryptographically verified release attestation and its app version and native fingerprint
-match the prepared source. Internal environment resolution and publication use `preview`. After internal publication,
-one approval in the existing `production` environment gates production environment resolution, export, and publication.
-The four credential stages remain separate from source export. The repository `EXPO_TOKEN` is project-wide, so this
-approval controls workflow sequencing rather than providing a channel-scoped credential boundary. A missing, unattested, or
-incompatible native tag skips OTA without failing the independent server/image release. Rerun **Publish prepared
-release** only when that immutable prepared manifest already records the compatible protected tag; otherwise use the
-manual OTA workflow with an exact source that descends from the installed native baseline. The end-to-end release
-publisher calls the shared homelab deployment webhook over WireGuard and requires confirmed health before calling
-the OTA workflow. Manual OTA publication handles only the client and has no deployment inputs or credentials;
-ensure server compatibility separately when using it.
+The selected server deploys through the existing WireGuard webhook and must report successful application health before client publication. Native builds queue the exact phone AAB with EAS Submit. Once that ID is verified, OTA can proceed independently of submission monitoring. Phone completion precedes Wear submission. Both OTA exports resolve Expo fingerprint runtimes and isolated publishers use those exact recorded values. Production retains its later approval before environment resolution, export and publication. No signed native tag or Play acceptance gates OTA. Standalone OTA remains client-only; ensure server compatibility separately when using it.
 
 Deployment pulls the image configured in the existing Compose stack (`latest`) and upgrades only `app`. It does not
-write image overrides or require deployment state, a lock, or a backup marker. When the native baseline is unavailable,
-the release publisher still deploys the server after image publication and skips OTA.
+write image overrides or require deployment state, a lock, or a backup marker. The first integrated cut establishes the native baseline as part of the same orchestration.
 
 Expo's automatic check and download lifecycle remains unchanged. Compatibility is evaluated only after a bundle is
 running: native startup uses the Fetch `cache: 'no-store'` request described above to compare its bundled expected
 server contract version before restoring the saved session or synchronizing. An incompatible update can therefore
 download and start before the runtime gate blocks normal authenticated use. Protected production approval is the
 public-channel promotion control after internal publication. End-to-end releases additionally require successful
-server deployment before either channel. The deployment job
+server deployment before either channel when server/web is selected. The deployment job
 checks only its configured target; independent self-hosts still require the runtime guard and are not polled by CI.
 
 The preparation command is also available for isolated release tooling tests:
@@ -226,14 +206,8 @@ feature worktree and commit the result manually.
 
 Recovery is deliberately state-specific:
 
-- Before merge, failed validation or `master` drift deletes only the unchanged action-owned candidate branch. Fix the
-  failure on `master` and rerun **Cut release**.
-- If a post-merge tag or image stage failed, rerun **Publish prepared release** with the release commit and branch
-  shown in the action summary. Its OTA stage is also replayable when that prepared manifest already records a
-  compatible protected native tag. A historical release whose recorded native baseline is incompatible requires the explicit
-  exact-source manual OTA path in `docs/native-store-release.md`; do not relax source ancestry or fingerprint checks.
-  Tag creation is idempotent, and a manifest ahead of the latest tag blocks another version bump until this is
-  resolved.
+- Before merge, rerun failed validation jobs in the original run while master and candidate remain unchanged. A validated candidate is retained; master drift requires explicit reconciliation.
+- After merge, use **Publish prepared release** with the durable `release_id` to resume retained artifacts and submission IDs. Successful stages remain skipped and ambiguous remote calls require reconciliation first. Historical server image recovery still accepts the exact commit and branch.
 - **Build Release Image** remains available for an image-only rebuild. Moving `latest` is allowed only for the highest
   stable tag; use **Publish prepared release** when the ordered image and OTA stages must also resume.
 
@@ -245,7 +219,7 @@ config digest equals the credential-free build identity. Moving `latest` is crea
 digest. Validated releases publish version, source-SHA, and moving `latest` tags to GHCR. The release owner configures
 one existing Compose stack for [deployment over WireGuard](../deploy/self-hosted/README.md). Other installations can
 continue deploying manually. **Deploy self-hosted server** retries the normal `latest` upgrade without rebuilding
-or publishing OTA. No GitHub Release object or generated changelog is created.
+or publishing OTA. Each integrated cut creates a durable GitHub Release record; no application version is allocated for an OTA-only cut.
 
 **Cut release** owns exact-candidate metadata validation plus the production container build and startup smoke.
 Affected pull-request and scheduled workflows own the broader test, production-image, and migration gates. Package
@@ -255,41 +229,10 @@ version checks, and the static release-acceptance policy without package-advisor
 Physical Android/Wear, store-console, and distributed-upgrade checks remain available when the owner considers them
 useful for a native distribution, but do not block publishing an independent server/web image.
 
-Phone and Wear can still evolve independently in code, but a Play store release is prepared and published as one
-paired version so the shared signing and Data Layer contract are tested together. Prepare every checked-in mirror,
-the globally unique code pair, and the native source tag atomically:
-
-```powershell
-node scripts/release-config.mjs prepare-native --bump patch
-npm.cmd run release:check
-npm.cmd run test:release
-```
-
-Merge the reviewed native metadata with the implementation, then dispatch **Native Android Store Release** with the
-exact full merge commit. Expo prebuild continues to generate ignored native files. Play/GitHub account setup and
-signing secrets are described in `docs/native-store-release.md`. Native preparation verifies the current manifest tag
-against the exact published `origin` tag and `origin/master` history; an unfetched remote tag is fetched exactly, while
-a local-only tag is rejected. The authoritative evidence is a signed annotated tag whose tag-object signature verifies
-with reviewed verifier code pinned to the workflow SHA, against
-`.github/native-release-tag-allowed-signers` freshly checked out from the exact current protected `master` commit,
-and whose internal name and peeled/direct target SHA exactly match the requested tag and source commit. Each run logs
-the trust-set commit so an old workflow rerun cannot revive a revoked key. The same verification gates native
-upload/recovery, closed and production promotion, prepared-release OTA readiness, and native preparation. A commit
-signature, lightweight tag, unsigned or malformed object, untrusted key, or wrong target is not sufficient.
-
-The independently attested Play receipt is an additional pre-tag boundary, not a substitute for the signed tag. A
-Play release name remains only a state consistency check: changing it cannot transfer another source's receipt because
-the source commit and both exact AAB hashes are in the canonical subject. Recovery is available only while the exact
-attestation remains discoverable within the bounded 100-result lookup and its signer remains on protected-master
-history, post-hardening, and unrevoked. Full critical-tooling drift requires an explicit reviewed `allow SHA`; remove
-that temporary retention after its historical recovery window. Pre-attestation Play pairs require a new higher
-odd/even pair and upload.
-
-Repository creation/update/deletion rulesets for `refs/tags/native-v*` remain defense-in-depth. The read-only GitHub
-Rulesets API hides bypass actors, so observing the expected rules cannot prove which identities may bypass them and
-cannot replace the signed-tag check. Key isolation, onboarding, overlapping-key rotation, old-key retirement, and
-emergency revocation procedures are defined in `docs/native-store-release.md`; the comment-only allowed-signers placeholder
-trusts nobody and therefore fails every release-attestation check closed.
+Native patch versions are prepared automatically with selected server version changes in one release PR. Globally
+unique odd/even codes remain consumed after abandonment. Manual local preparation remains available through
+node scripts/release-config.mjs prepare-native --bump patch; it does not create a protected native release baseline.
+The new [durable release record](native-store-release.md#durable-records-and-recovery) owns CI recovery and artifact identity.
 
 ## Reproducible artifact metadata
 

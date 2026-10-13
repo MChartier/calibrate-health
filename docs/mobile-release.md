@@ -237,11 +237,13 @@ npm.cmd run ota:publish -- --dry-run --message "Describe the tested update"
 npm.cmd run ota:publish -- --message "Describe the tested update"
 ```
 
-The dry run validates ancestry, runtime, native fingerprint, channel, and the EAS environment contract.
-It contacts Expo to inspect configuration but does not publish. The second command publishes.
-The default baseline comes from the last native build; use `--baseline <file>` for a retained baseline
-from the build actually installed on your devices. Do not replace it with metadata from a build those
-devices have never received.
+The dry run resolves the current source fingerprint and validates the channel and EAS environment contract.
+It contacts Expo to inspect configuration but does not publish. The second command publishes. The last local build
+record provides targeting defaults; --baseline can select retained defaults. A new fingerprint can be published
+before a matching binary is installed or accepted by Play; only matching runtimes receive it. Without a build record,
+provide the configured Expo project, channel, and server origin. Existing appVersion installations require one new
+native installation to migrate. The managed resolver includes the repo's Gradle/plugin inputs and ignores server
+version bookkeeping.
 
 Setup installs the reviewed EAS CLI. Authenticate it once from `mobile`:
 

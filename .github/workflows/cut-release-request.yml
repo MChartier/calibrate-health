@@ -5,6 +5,11 @@ run-name: Request ${{ inputs.bump }} release from ${{ github.ref_name }}
 on:
   workflow_dispatch:
     inputs:
+      confirm_play_console_clean:
+        description: If native changes are selected, Play has no unrelated pending changes and other Console/API edits are paused
+        required: false
+        default: false
+        type: boolean
       bump:
         description: Semantic version component to increment
         required: true
@@ -38,6 +43,7 @@ jobs:
         shell: bash
         env:
           BUMP: ${{ inputs.bump }}
+          CONFIRM_PLAY_CONSOLE_CLEAN: ${{ inputs.confirm_play_console_clean }}
           REPOSITORY: ${{ github.repository }}
           REPOSITORY_ID: ${{ github.repository_id }}
           REQUEST_RUN_ATTEMPT: ${{ github.run_attempt }}
@@ -51,6 +57,7 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/calibrate-release-request"
           jq -n \
             --arg bump "${BUMP}" \
+            --argjson confirm_play_console_clean "${CONFIRM_PLAY_CONSOLE_CLEAN}" \
             --arg head_branch "${GITHUB_REF_NAME}" \
             --arg head_sha "${GITHUB_SHA}" \
             --arg operation cut-release \
@@ -58,7 +65,7 @@ jobs:
             --arg repository_id "${REPOSITORY_ID}" \
             --arg request_run_attempt "${REQUEST_RUN_ATTEMPT}" \
             --arg request_run_id "${REQUEST_RUN_ID}" \
-            '{schema_version:1, operation:$operation, repository:$repository, repository_id:$repository_id, request_run_id:$request_run_id, request_run_attempt:$request_run_attempt, head_branch:$head_branch, head_sha:$head_sha, inputs:{bump:$bump}}' \
+            '{schema_version:1, operation:$operation, repository:$repository, repository_id:$repository_id, request_run_id:$request_run_id, request_run_attempt:$request_run_attempt, head_branch:$head_branch, head_sha:$head_sha, inputs:{bump:$bump, confirm_play_console_clean:$confirm_play_console_clean}}' \
             > "${RUNNER_TEMP}/calibrate-release-request/request.json"
 
       - name: Upload fixed cut request

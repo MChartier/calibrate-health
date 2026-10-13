@@ -1,3 +1,4 @@
+/** Canonical historical Play receipts and protected-workflow trust checks for retained releases. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -31,6 +32,7 @@ export const NATIVE_PLAY_RECEIPT_CRITICAL_PATHS = Object.freeze([
   'mobile/plugins/withPinnedGradleWrapper.js'
 ]);
 
+/** Reject missing or noncanonical receipt identifiers before serialization. */
 function requireText(value, pattern, label) {
   if (typeof value !== 'string' || !pattern.test(value)) {
     throw new Error(`${label} is malformed.`);
@@ -38,6 +40,7 @@ function requireText(value, pattern, label) {
   return value;
 }
 
+/** Admit only positive version codes within Play's supported range. */
 function requireVersionCode(value, role) {
   const code = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
   if (!Number.isSafeInteger(code) || code < 1 || code > 2_100_000_000) {
@@ -46,6 +49,7 @@ function requireVersionCode(value, role) {
   return code;
 }
 
+/** Bind each binary hash to its exact track and odd/even code lane. */
 function releaseValues(values, role) {
   const input = values?.releases?.[role] ?? {};
   const track = requireText(input.track, /^[a-z][a-z0-9:.-]*$/, `${role} Play track`);
@@ -67,6 +71,7 @@ function releaseValues(values, role) {
   });
 }
 
+/** Normalize historical release evidence into the single accepted receipt schema. */
 export function createNativePlayReceipt(values) {
   const repository = requireText(values?.repository, REPOSITORY_PATTERN, 'GitHub repository');
   const applicationId = requireText(
@@ -112,6 +117,7 @@ export function createNativePlayReceipt(values) {
   });
 }
 
+/** Convert the historical paired build plan into canonical receipt fields. */
 export function createNativePlayReceiptFromPlan({ repository, plan, releases }) {
   return createNativePlayReceipt({
     repository,
@@ -134,10 +140,12 @@ export function createNativePlayReceiptFromPlan({ repository, plan, releases }) 
   });
 }
 
+/** Preserve byte-identical JSON for hashing and attestation verification. */
 export function serializeNativePlayReceipt(values) {
   return `${JSON.stringify(createNativePlayReceipt(values), null, 2)}\n`;
 }
 
+/** Hash canonical values or already serialized receipt bytes without rewriting them. */
 export function nativePlayReceiptSha256(values) {
   const bytes = typeof values === 'string' || Buffer.isBuffer(values)
     ? values
@@ -145,6 +153,7 @@ export function nativePlayReceiptSha256(values) {
   return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
+/** Bound receipt reads and reject symlinks or non-file inputs. */
 function readRegularFile(file, maximumBytes, label) {
   const resolved = path.resolve(file);
   let stat;
@@ -159,6 +168,7 @@ function readRegularFile(file, maximumBytes, label) {
   return fs.readFileSync(resolved, 'utf8');
 }
 
+/** Reject valid JSON that does not use the canonical attested encoding. */
 export function parseNativePlayReceipt(contents) {
   if (typeof contents !== 'string') throw new Error('Native Play receipt must be UTF-8 text.');
   let parsed;
@@ -174,6 +184,7 @@ export function parseNativePlayReceipt(contents) {
   return receipt;
 }
 
+/** Require exact expected source, versions, tracks, and artifact hashes. */
 export function verifyNativePlayReceiptBytes(contents, expectedValues) {
   const expected = serializeNativePlayReceipt(expectedValues);
   if (contents !== expected) {
@@ -182,15 +193,18 @@ export function verifyNativePlayReceiptBytes(contents, expectedValues) {
   return Object.freeze({ receipt: parseNativePlayReceipt(contents), sha256: nativePlayReceiptSha256(contents) });
 }
 
+/** Read a bounded canonical receipt from disk. */
 export function readNativePlayReceipt(file) {
   return parseNativePlayReceipt(readRegularFile(file, 16 * 1024, 'Native Play receipt'));
 }
 
+/** Compare a retained receipt file with independently reconstructed evidence. */
 export function verifyNativePlayReceiptFile(file, expectedValues) {
   const actual = readRegularFile(file, 16 * 1024, 'Native Play receipt');
   return verifyNativePlayReceiptBytes(actual, expectedValues);
 }
 
+/** Hash a nonempty regular binary while rejecting symlink inputs. */
 function sha256RegularFile(file, label) {
   const resolved = path.resolve(file);
   let stat;
@@ -207,6 +221,7 @@ function sha256RegularFile(file, label) {
   return crypto.createHash('sha256').update(bytes).digest('hex');
 }
 
+/** Check both AABs against the exact receipt digest admitted by the attester. */
 export function verifyNativePlayReceiptArtifacts({ receiptFile, expectedReceiptSha256, phoneAab, watchAab }) {
   const receiptBytes = readRegularFile(receiptFile, 16 * 1024, 'Native Play receipt');
   const receipt = parseNativePlayReceipt(receiptBytes);
@@ -223,6 +238,7 @@ export function verifyNativePlayReceiptArtifacts({ receiptFile, expectedReceiptS
   return Object.freeze({ receipt, sha256: receiptSha256 });
 }
 
+/** Parse explicit protected-master signer retention and revocation directives. */
 export function parseNativePlayWorkflowTrustSet(contents) {
   if (typeof contents !== 'string') throw new Error('Native Play workflow trust set must be text.');
   const allowed = [];
@@ -245,6 +261,7 @@ export function parseNativePlayWorkflowTrustSet(contents) {
   return Object.freeze({ allowed: Object.freeze(allowed), revoked: Object.freeze(revoked) });
 }
 
+/** Extract signer revisions only from matching protected GitHub attestation certificates. */
 export function parseNativePlayAttestationWorkflowCandidates(contents, repository, expectedSourceCommit) {
   requireText(repository, REPOSITORY_PATTERN, 'GitHub repository');
   const source = requireText(expectedSourceCommit, COMMIT_PATTERN, 'Native Play source commit');
@@ -285,6 +302,7 @@ export function parseNativePlayAttestationWorkflowCandidates(contents, repositor
   return Object.freeze(revisions);
 }
 
+/** Prevent inherited Git configuration from redirecting trust-history inspection. */
 function sanitizedGitEnvironment(environment) {
   const sanitized = {};
   for (const [key, value] of Object.entries(environment)) {
@@ -312,6 +330,7 @@ function sanitizedGitEnvironment(environment) {
   };
 }
 
+/** Inspect literal repository objects with replacement objects and prompting disabled. */
 function runGit(root, args) {
   return execFileSync('git', ['--no-replace-objects', ...args], {
     cwd: root,
@@ -322,11 +341,13 @@ function runGit(root, args) {
   }).trim();
 }
 
+/** Require a full commit object rather than an alias or other object type. */
 function requireGitCommit(git, root, revision, label) {
   const resolved = git(root, ['rev-parse', '--verify', `${revision}^{commit}`]);
   if (resolved !== revision || !COMMIT_PATTERN.test(resolved)) throw new Error(`${label} is not one exact commit.`);
 }
 
+/** Keep historical attesters on the current protected master history. */
 function requireAncestor(git, root, ancestor, descendant) {
   try {
     git(root, ['merge-base', '--is-ancestor', ancestor, descendant]);
@@ -335,6 +356,7 @@ function requireAncestor(git, root, ancestor, descendant) {
   }
 }
 
+/** Resolve the reviewed files that define historical receipt verification behavior. */
 function readCriticalBlobIds(git, root, revision) {
   return NATIVE_PLAY_RECEIPT_CRITICAL_PATHS.map((relativePath) => {
     const blob = git(root, ['rev-parse', '--verify', `${revision}:${relativePath}`]);
@@ -345,6 +367,7 @@ function readCriticalBlobIds(git, root, revision) {
   });
 }
 
+/** Refuse historical signers that predate canonical receipt attestation. */
 function hasPostHardeningMarker(git, root, revision) {
   try {
     const workflow = git(root, ['show', `${revision}:.github/workflows/native-release.yml`]);
@@ -360,6 +383,7 @@ function hasPostHardeningMarker(git, root, revision) {
   }
 }
 
+/** Apply current-master revocations before admitting an unchanged or explicitly retained signer. */
 export function authorizeNativePlayReceiptWorkflow({
   repositoryRoot,
   trustSet,
@@ -414,6 +438,7 @@ export function authorizeNativePlayReceiptWorkflow({
   );
 }
 
+/** Validate the historical CLI's command-specific, nonduplicated options. */
 function parseArguments(args) {
   const command = args[0];
   if (![
@@ -457,6 +482,7 @@ function parseArguments(args) {
   return { command, values };
 }
 
+/** Map validated CLI options to the canonical receipt input shape. */
 function receiptValuesFromOptions(values) {
   return {
     repository: values['--repository'],
@@ -479,7 +505,8 @@ function receiptValuesFromOptions(values) {
   };
 }
 
-export function runNativePlayReceiptCli(args = process.argv.slice(2), output = process.stdout) {
+/** Dispatch read-only verification or canonical receipt generation for recovery callers. */
+function runNativePlayReceiptCli(args = process.argv.slice(2), output = process.stdout) {
   const { command, values } = parseArguments(args);
   if (command === 'verify-files') {
     return verifyNativePlayReceiptArtifacts({

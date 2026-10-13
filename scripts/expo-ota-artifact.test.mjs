@@ -1,3 +1,4 @@
+/** Verify credential-separated OTA artifacts and exact fingerprint runtime provenance. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -19,23 +20,25 @@ const sourceCommit = 'a'.repeat(40);
 const projectId = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
 const target = Object.freeze({
   sourceCommit,
-  nativeBuildRef: 'native-v0.2.6',
   channel: 'internal',
   environment: 'preview',
   projectId
 });
 
+/** Create an isolated temporary artifact workspace with automatic cleanup. */
 function createRoot(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-expo-ota-artifact-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return root;
 }
 
+/** Write deterministic JSON fixture or artifact content. */
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+/** Model the public environment handoff while including a credential that must be excluded. */
 function createEnvironmentFixture(root, values = {}) {
   const raw = path.join(root, 'raw.env');
   fs.writeFileSync(raw,
@@ -50,6 +53,7 @@ function createEnvironmentFixture(root, values = {}) {
   return artifact;
 }
 
+/** Model an Android export with explicit bundle and asset metadata. */
 function createExportFixture(root, metadataOverride = null) {
   const exportRoot = path.join(root, 'export');
   fs.mkdirSync(path.join(exportRoot, 'bundles'), { recursive: true });
@@ -69,6 +73,7 @@ function createExportFixture(root, metadataOverride = null) {
   return exportRoot;
 }
 
+/** Provide exact source package and runtime metadata for artifact verification. */
 function createSourceMetadata(root) {
   const publicConfig = path.join(root, 'public-config.json');
   writeJson(publicConfig, {
@@ -77,7 +82,7 @@ function createSourceMetadata(root) {
     owner: 'calibrate-health',
     version: '0.2.6',
     sdkVersion: '57.0.0',
-    runtimeVersion: { policy: 'appVersion' },
+    runtimeVersion: { policy: 'fingerprint' },
     updates: {
       url: `https://u.expo.dev/${projectId}`,
       requestHeaders: { 'expo-channel-name': 'internal' }
@@ -93,20 +98,24 @@ function createSourceMetadata(root) {
       'node_modules/expo-updates': { version: '57.0.8' }
     }
   });
-  return { publicConfig, packageLock };
+  const runtimeFile = path.join(root, 'runtime.json');
+  writeJson(runtimeFile, { runtimeVersion: 'c'.repeat(40) });
+  return { publicConfig, packageLock, runtimeFile };
 }
 
+/** Assemble a verified export fixture through the real packaging entrypoint. */
 function createCompleteUpdateFixture(t) {
   const root = createRoot(t);
   const environmentArtifact = createEnvironmentFixture(root);
   const inputDir = createExportFixture(root);
-  const { publicConfig, packageLock } = createSourceMetadata(root);
+  const { publicConfig, packageLock, runtimeFile } = createSourceMetadata(root);
   const artifactRoot = path.join(root, 'packaged');
   createUpdateArtifact({
     inputDir,
     outputDir: artifactRoot,
     publicConfigFile: publicConfig,
     packageLockFile: packageLock,
+    runtimeFile,
     environmentArtifactFile: environmentArtifact,
     ...target
   });
@@ -119,7 +128,7 @@ test('OTA artifact CLI parses source-bound packaging options', () => {
     '--input-dir', 'dist',
     '--output-dir', 'artifact',
     '--source-commit', sourceCommit,
-    '--native-build-ref', target.nativeBuildRef,
+    '--runtime-file', 'runtime.json',
     '--channel', target.channel,
     '--environment', target.environment,
     '--project-id', projectId
@@ -134,7 +143,7 @@ test('OTA artifact CLI parses source-bound packaging options', () => {
     packageLock: null,
     environmentArtifact: null,
     sourceCommit,
-    nativeBuildRef: target.nativeBuildRef,
+    runtimeFile: 'runtime.json',
     channel: target.channel,
     environment: target.environment,
     projectId,
@@ -199,22 +208,23 @@ test('pre-exported Android update is bound to exact provenance and every file ha
   );
 });
 
-test('update packager rejects an app version outside the installed native tag', (t) => {
+test('update packager requires the fingerprint policy', (t) => {
   const root = createRoot(t);
   const environmentArtifact = createEnvironmentFixture(root);
   const inputDir = createExportFixture(root);
-  const { publicConfig, packageLock } = createSourceMetadata(root);
+  const { publicConfig, packageLock, runtimeFile } = createSourceMetadata(root);
   const config = JSON.parse(fs.readFileSync(publicConfig, 'utf8'));
-  config.version = '0.2.7';
+  config.runtimeVersion = { policy: 'appVersion' };
   writeJson(publicConfig, config);
   assert.throws(() => createUpdateArtifact({
     inputDir,
     outputDir: path.join(root, 'packaged'),
     publicConfigFile: publicConfig,
     packageLockFile: packageLock,
+    runtimeFile,
     environmentArtifactFile: environmentArtifact,
     ...target
-  }), /does not match installed native release tag/);
+  }), /fingerprint/);
 });
 
 test('update verification fails closed after bundle or provenance tampering', (t) => {
@@ -240,7 +250,7 @@ test('update verification fails closed after bundle or provenance tampering', (t
 test('update packager rejects path traversal metadata and symlinks', (t) => {
   const root = createRoot(t);
   const environmentArtifact = createEnvironmentFixture(root);
-  const { publicConfig, packageLock } = createSourceMetadata(root);
+  const { publicConfig, packageLock, runtimeFile } = createSourceMetadata(root);
   const traversalExport = createExportFixture(root, {
     version: 0,
     bundler: 'metro',
@@ -251,6 +261,7 @@ test('update packager rejects path traversal metadata and symlinks', (t) => {
     outputDir: path.join(root, 'traversal-artifact'),
     publicConfigFile: publicConfig,
     packageLockFile: packageLock,
+    runtimeFile,
     environmentArtifactFile: environmentArtifact,
     ...target
   }), /safe artifact-relative path/);
@@ -267,6 +278,7 @@ test('update packager rejects path traversal metadata and symlinks', (t) => {
     outputDir: path.join(root, 'symlink-artifact'),
     publicConfigFile: publicConfig,
     packageLockFile: packageLock,
+    runtimeFile,
     environmentArtifactFile: environmentArtifact,
     ...target
   }), /may not contain symlink/);
@@ -289,7 +301,7 @@ test('clean publisher projects contain only fixed inert configuration', (t) => {
   createUpdatePublisherProject({ outputDir: publisherProject, artifactRoot, ...target });
   const app = JSON.parse(fs.readFileSync(path.join(publisherProject, 'app.json'), 'utf8')).expo;
   const packageJson = JSON.parse(fs.readFileSync(path.join(publisherProject, 'package.json'), 'utf8'));
-  assert.deepEqual(app.runtimeVersion, { policy: 'appVersion' });
+  assert.equal(app.runtimeVersion, 'c'.repeat(40));
   assert.equal(app.version, '0.2.6');
   assert.equal(app.sdkVersion, '57.0.0');
   assert.equal(app.updates.requestHeaders['expo-channel-name'], 'internal');

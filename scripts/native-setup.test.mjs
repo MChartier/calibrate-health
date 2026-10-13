@@ -1,3 +1,4 @@
+/** Regression coverage for native setup and its failure boundaries. */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -13,17 +14,20 @@ import {
   assertNativeNodeVersion, inspectNativeToolchain, NATIVE_SDK_PACKAGES, NATIVE_TOOLCHAIN, NATIVE_TOOL_DOWNLOADS
 } from './native-toolchain.mjs';
 
+/** Allocate a disposable test directory and register cleanup. */
 function temporaryDirectory(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-native-setup-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return root;
 }
 
+/** Write an isolated test input without depending on application source. */
 function write(file, contents = 'fixture') {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, contents);
 }
 
+/** Model native tool installation paths independently of the host configuration. */
 function setupFixture(t) {
   const root = temporaryDirectory(t);
   const installedPackages = new Set();
@@ -202,6 +206,7 @@ test('EAS setup caches the reviewed dependency graph and retries a failed instal
   write(path.join(directory, 'package.json'), '{}');
   write(lock, '{"lockfileVersion":3}');
   const commands = [];
+  /** Execute the requested build-tool operation through the injected runner. */
   const run = (_command, args, environment) => {
     commands.push(args);
     assert.equal(environment.EXPO_TOKEN, undefined);
@@ -248,6 +253,7 @@ test('download checks SHA-256 before use and removes corrupt or interrupted file
   await assert.rejects(downloadNativeTool(artifact, file, async () => new Response(null, { status: 503 })), /503/);
   assert.equal(fs.existsSync(file), false);
   await assert.rejects(downloadNativeTool(artifact, file, async () => new Response(new ReadableStream({
+    /** Start a controlled test process to exercise setup failures. */
     start(controller) { controller.enqueue(bytes); controller.error(new Error('Interrupted download')); }
   }))), /Interrupted download/);
   assert.deepEqual(fs.readdirSync(root), [], 'No partial download should remain after failure');
@@ -274,6 +280,7 @@ test('archive extraction handles literal Windows paths and rejects entries outsi
   const directory = path.join(root, "spaces ' quotes $() & unicode-é");
   fs.mkdirSync(directory);
   const archive = path.join(directory, 'fixture.zip');
+  /** Build an archive fixture for extraction-boundary tests. */
   const createZip = (entry, file = archive) => {
     execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', [
       '$ErrorActionPreference = "Stop"',
@@ -295,7 +302,7 @@ test('archive extraction handles literal Windows paths and rejects entries outsi
 });
 
 test('local tool versions stay aligned with the protected workflow pins', () => {
-  const workflow = fs.readFileSync(new URL('../.github/workflows/native-release.yml', import.meta.url), 'utf8');
+  const workflow = fs.readFileSync(new URL('../.github/workflows/native-build.yml', import.meta.url), 'utf8');
   assert.ok(workflow.includes("ANDROID_BUILD_TOOLS_VERSION: '" + NATIVE_TOOLCHAIN.buildTools + "'"));
   assert.ok(workflow.includes("BUNDLETOOL_VERSION: '" + NATIVE_TOOLCHAIN.bundletool + "'"));
   assert.ok(workflow.includes('BUNDLETOOL_SHA256: ' + NATIVE_TOOL_DOWNLOADS.bundletool.sha256));

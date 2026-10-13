@@ -32,6 +32,7 @@ jobs:
       pull-requests: read
     outputs:
       bump: ${{ steps.verify.outputs.bump }}
+      confirm_play_console_clean: ${{ steps.verify.outputs.confirm_play_console_clean }}
       source_sha: ${{ steps.verify.outputs.source_sha }}
 
     steps:
@@ -120,10 +121,15 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/cut-release.yml
     secrets:
+      CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.CALIBRATE_ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+      CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD }}
+      CALIBRATE_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_ALIAS }}
+      CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.CALIBRATE_ANDROID_SIGNING_KEY_PASSWORD }}
       DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
       DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
       DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
       bump: ${{ needs.verify_request.outputs.bump }}
+      confirm_play_console_clean: ${{ needs.verify_request.outputs.confirm_play_console_clean == 'true' }}
       source_sha: ${{ needs.verify_request.outputs.source_sha }}

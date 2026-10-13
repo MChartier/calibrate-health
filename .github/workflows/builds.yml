@@ -180,6 +180,11 @@ jobs:
               - '!packages/api-client/src/generated/v1.ts'
               - '!shared/client-diagnostic-versions.json'
               - '!shared/release.json'
+              - '!mobile/package.json'
+              - '!mobile/app.json'
+              - '!mobile/modules/wear-pairing/package.json'
+              - '!mobile/modules/wear-pairing/android/build.gradle'
+              - '!wear/app/build.gradle.kts'
 
       - name: Validate manual native upgrade baseline
         if: github.event_name == 'workflow_dispatch' && inputs.run_native_upgrade
@@ -292,7 +297,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked configuration-test dependencies
+        run: npm ci --ignore-scripts --include=dev --no-audit --fund=false
 
       - name: Validate versions and quality-gate tests
         run: |

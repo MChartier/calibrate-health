@@ -1,3 +1,4 @@
+/** Regression coverage for native ota contract and its failure boundaries. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -12,6 +13,7 @@ import {
   writeNativeOtaBaseline
 } from './native-ota-contract.mjs';
 
+/** Create isolated native-input fixtures so tests cannot mutate repository versions. */
 function createFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-ota-contract-'));
   for (const file of [
@@ -296,6 +298,7 @@ test('OTA baseline records the exact native runtime contract without secrets', (
   const root = createFixture();
   try {
     const result = writeNativeOtaBaseline({
+      resolveRuntime: () => "a".repeat(40),
       root,
       environment: {
         EXPO_PUBLIC_EAS_PROJECT_ID: '01234567-89ab-4def-8123-456789abcdef',
@@ -306,7 +309,7 @@ test('OTA baseline records the exact native runtime contract without secrets', (
       commit: 'abc123',
       createdAt: '2026-07-19T00:00:00.000Z'
     });
-    assert.equal(result.baseline.runtime_version, '0.1.0');
+    assert.equal(result.baseline.runtime_version, 'a'.repeat(40));
     assert.equal(result.baseline.channel, 'internal');
     assert.equal(result.baseline.server_url, 'https://health.example');
     assert.equal(result.baseline.commit, 'abc123');

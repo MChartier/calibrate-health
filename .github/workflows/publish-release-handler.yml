@@ -31,6 +31,10 @@ jobs:
     outputs:
       release_branch: ${{ steps.verify.outputs.release_branch }}
       release_commit: ${{ steps.verify.outputs.release_commit }}
+      release_id: ${{ steps.verify.outputs.release_id }}
+      recovery_operation: ${{ steps.verify.outputs.recovery_operation }}
+      confirm_play_console_clean: ${{ steps.verify.outputs.confirm_play_console_clean }}
+      reconciliation: ${{ steps.verify.outputs.reconciliation }}
 
     steps:
       - name: Require current protected master handler
@@ -65,13 +69,7 @@ jobs:
       - name: Verify exact protected request run
         shell: bash
         run: >-
-          node .release-tooling/scripts/release-handler-event.mjs verify
-          --event-file "${GITHUB_EVENT_PATH}"
-          --workflow-path .github/workflows/publish-release-request.yml
-          --repository "${{ github.repository }}"
-          --repository-id "${{ github.repository_id }}"
-          --handler-ref "${{ github.ref }}"
-          --handler-sha "${{ job.workflow_sha }}"
+          node .release-tooling/scripts/release-handler-event.mjs verify --event-file "${GITHUB_EVENT_PATH}" --workflow-path .github/workflows/publish-release-request.yml --repository "${{ github.repository }}" --repository-id "${{ github.repository_id }}" --handler-ref "${{ github.ref }}" --handler-sha "${{ job.workflow_sha }}"
 
       - name: Download exact prepared release request artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -105,6 +103,7 @@ jobs:
             --github-output "${GITHUB_OUTPUT}"
 
   run_release:
+    if: needs.verify_request.outputs.release_id == ''
     name: Run protected prepared release
     needs: verify_request
     permissions:
@@ -114,11 +113,40 @@ jobs:
       id-token: write
       packages: write
     uses: ./.github/workflows/publish-release.yml
+    with:
+      release_branch: ${{ needs.verify_request.outputs.release_branch }}
+      release_commit: ${{ needs.verify_request.outputs.release_commit }}
+
+  deploy_legacy:
+    name: Verify recovered legacy server deployment
+    needs: [verify_request, run_release]
+    if: needs.run_release.result == 'success'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/deploy-self-hosted.yml
+    secrets:
+      DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
+      DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
+      DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+    with:
+      release_commit: ${{ needs.verify_request.outputs.release_commit }}
+  recover_record:
+    needs: verify_request
+    if: needs.verify_request.outputs.release_id != ''
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+      packages: write
+    uses: ./.github/workflows/recover-release.yml
     secrets:
       DEPLOY_WG_ENDPOINT: ${{ secrets.DEPLOY_WG_ENDPOINT }}
       DEPLOY_WG_PRIVATE_KEY: ${{ secrets.DEPLOY_WG_PRIVATE_KEY }}
       DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     with:
-      release_branch: ${{ needs.verify_request.outputs.release_branch }}
-      release_commit: ${{ needs.verify_request.outputs.release_commit }}
+      release_id: ${{ needs.verify_request.outputs.release_id }}
+      operation: ${{ needs.verify_request.outputs.recovery_operation }}
+      confirm_play_console_clean: ${{ needs.verify_request.outputs.confirm_play_console_clean == 'true' }}
+      reconciliation: ${{ needs.verify_request.outputs.reconciliation }}

@@ -5,11 +5,12 @@ GitHub-hosted Actions use an existing WireGuard peer and call the shared `deploy
 runner's temporary tunnel and request. The homelab owns the service, Compose configuration, tokens, WireGuard peers,
 routing, and firewall. No host installer, uninstaller, deployment SSH account, or sudo rule is needed here.
 
-The end-to-end **Cut release** / **Publish prepared release** flow publishes the GHCR image (including `latest`),
-calls the webhook, and requires completed deployment and affirmative health before internal OTA. Production OTA
-retains its later `production` approval. Releases without an available native baseline still deploy and skip OTA.
-**Deploy self-hosted server** independently tests or retries deployment. **Publish Expo OTA Update** stays client-only;
-ensure server compatibility separately when using it. **Build Release Image** stays image-only.
+When server/web changes are selected, **Cut release** publishes the GHCR image (including latest), calls the webhook,
+and requires completed deployment and affirmative health before client publication. Production OTA retains its later
+production approval. An unchanged server is neither deployed nor health-checked. **Publish prepared release** resumes
+remaining recorded stages. **Deploy self-hosted server** independently tests deployment. A timed-out request may still
+be deploying: inspect service logs before retrying. **Publish Expo OTA Update** stays client-only; ensure server
+compatibility separately when using it. **Build Release Image** stays image-only.
 
 ## Webhook contract
 

@@ -1,3 +1,4 @@
+/** Verify dynamically loaded release/config entrypoints remain covered by dead-code analysis. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,6 +38,7 @@ test('dynamic workflow, plugin, scenario, and Playwright entry points stay disco
     'plugins/withHealthConnect.js',
     'plugins/withPinnedGradleWrapper.js',
     'plugins/withSharedAndroidSigning.js',
+    'fingerprint.config.js',
   ]);
   assert.deepEqual(knipConfig.workspaces.shared.entry, ['calibrationScenarios.ts']);
 });

@@ -87,7 +87,6 @@
         "publish",
         "tag_release",
         "build_release_image",
-        "publish_ota",
         "publish-internal",
         "publish-production"
       ]

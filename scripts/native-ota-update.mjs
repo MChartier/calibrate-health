@@ -1,3 +1,4 @@
+/** Publish client-only Expo updates; fingerprint runtimes select compatible installed binaries. */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,9 +7,9 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
-  createNativeRuntimeFingerprint,
   readNativeOtaBaseline
 } from './native-ota-contract.mjs';
+import { resolveExpoRuntime } from './expo-runtime.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, '..');
@@ -17,12 +18,14 @@ const IGNORED_LOCAL_STATUS_PREFIXES = Object.freeze([
   '.codex-screenshots/'
 ]);
 
+/** Require a value for the preceding CLI option. */
 function requiredValue(argv, index, option) {
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) throw new Error(`${option} requires a value.`);
   return value;
 }
 
+/** Parse the client-only OTA command and reject unsupported options. */
 export function parseNativeOtaArgs(argv) {
   const values = {
     baseline: null,
@@ -47,6 +50,7 @@ export function parseNativeOtaArgs(argv) {
   return values;
 }
 
+/** Provide injectable command execution for local OTA tooling. */
 function createNativeOtaRunner() {
   return function runCommand(request) {
     const invocation = { command: request.command, args: request.args ?? [] };
@@ -71,6 +75,7 @@ function createNativeOtaRunner() {
   };
 }
 
+/** Use the repository-pinned EAS CLI rather than a global installation. */
 export function resolveLockedEasCliInvocation(root, args, options = {}) {
   const nodeExecutable = options.nodeExecutable ?? process.execPath;
   const fileExists = options.fileExists ?? fs.existsSync;
@@ -92,10 +97,12 @@ export function resolveLockedEasCliInvocation(root, args, options = {}) {
   return { command: nodeExecutable, args: [entryPoint, ...args], entryPoint };
 }
 
+/** Read source identity through the injected Git command runner. */
 function gitRequest(root, args, label, allowFailure = false) {
   return { command: 'git', args, cwd: root, label, allowFailure };
 }
 
+/** Interpret changed paths before allowing a source-bound publication. */
 export function parseDirtyPaths(statusOutput) {
   return statusOutput.split(/\r?\n/)
     .filter(Boolean)
@@ -104,6 +111,7 @@ export function parseDirtyPaths(statusOutput) {
     .filter((file) => !IGNORED_LOCAL_STATUS_PREFIXES.some((prefix) => file.startsWith(prefix)));
 }
 
+/** Construct an explicit runtime-targeted Android update command. */
 export function nativeOtaPublishCommand(config, baseline, options = {}) {
   const channel = config.channel ?? baseline.channel;
   if (channel !== baseline.channel) {
@@ -127,6 +135,7 @@ export function nativeOtaPublishCommand(config, baseline, options = {}) {
   };
 }
 
+/** Read EAS dotenv output without evaluating shell expressions. */
 export function parseEasEnvironmentFile(contents) {
   const values = {};
   for (const originalLine of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
@@ -146,6 +155,7 @@ export function parseEasEnvironmentFile(contents) {
   return values;
 }
 
+/** Require the public EAS environment to match the selected local target. */
 export function validateEasUpdateEnvironment(values, baseline, environmentName) {
   const expected = {
     EXPO_PUBLIC_CALIBRATE_SERVER_URL: baseline.server_url,
@@ -167,6 +177,7 @@ export function validateEasUpdateEnvironment(values, baseline, environmentName) 
   }
 }
 
+/** Read and verify public EAS configuration before source export. */
 function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environment }) {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-eas-environment-'));
   const environmentFile = path.join(temporaryDirectory, '.env');
@@ -194,46 +205,37 @@ function verifyEasUpdateEnvironment({ root, baseline, publish, runner, environme
   }
 }
 
+/** Describe the exact OTA source in its default release message. */
 function defaultMessage(runner, root) {
   const commit = runner(gitRequest(root, ['rev-parse', '--short', 'HEAD'], 'read current commit')).stdout.trim();
   const subject = runner(gitRequest(root, ['log', '-1', '--pretty=%s'], 'read current commit message')).stdout.trim();
   return `Calibrate ${commit}: ${subject}`;
 }
 
+/** Show supported commands without reading credentials or performing release work. */
 function printHelp() {
   process.stdout.write(`Usage: npm run ota:publish -- [options]
 
-Publish an Android JavaScript/assets update to the channel embedded in the last local release build.
+Publish Android JavaScript/assets for the current source fingerprint runtime.
 
 Options:
   --message <text>             Update message (default: current Git commit subject)
-  --channel <name>             Must match the installed build's recorded channel
+  --channel <name>             Target channel (defaults to the local build configuration)
   --environment <name>         EAS environment (default: preview, or production for production channel)
   --baseline <path>            Override the recorded local native-build baseline
   --non-interactive            Require token-based EAS authentication and disable CLI prompts
-  --dry-run                    Validate the baseline and EAS environment without uploading
+  --dry-run                    Validate the source runtime and EAS environment without uploading
   --help                       Show this help
 
 Native module/configuration and Wear OS changes cannot be delivered by Expo OTA.
 `);
 }
 
+/** Require a clean publication source and resolve its current fingerprint runtime. */
 function validateNativeOtaState({ root, baseline, runner, environment = process.env }) {
   const mobilePackage = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'package.json'), 'utf8'));
   if (!mobilePackage.dependencies?.['expo-updates']) {
     throw new Error('mobile/package.json does not include expo-updates. A new native build is required.');
-  }
-
-  const currentFingerprint = createNativeRuntimeFingerprint(root);
-  if (currentFingerprint.sha256 !== baseline.native_fingerprint_sha256) {
-    throw new Error(
-      'Native runtime inputs changed after the installed build. Create and install a new signed phone/Watch build instead of publishing OTA.'
-    );
-  }
-
-  const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'mobile', 'app.json'), 'utf8'));
-  if (appConfig.expo?.version !== baseline.runtime_version) {
-    throw new Error('The Expo runtime version changed after the installed build. Create a new signed native build.');
   }
 
   const status = runner(gitRequest(
@@ -246,25 +248,14 @@ function validateNativeOtaState({ root, baseline, runner, environment = process.
     throw new Error(`Commit OTA contents before publishing. Dirty paths: ${dirtyPaths.slice(0, 8).join(', ')}`);
   }
 
-  if (baseline.commit) {
-    const ancestry = runner(gitRequest(
-      root,
-      ['merge-base', '--is-ancestor', baseline.commit, 'HEAD'],
-      'verify OTA descends from native build',
-      true
-    ));
-    if (ancestry.status !== 0) {
-      throw new Error('Current HEAD does not descend from the recorded native build commit. Rebuild before publishing OTA.');
-    }
-  }
-
   if (environment.EXPO_PUBLIC_EAS_PROJECT_ID &&
       environment.EXPO_PUBLIC_EAS_PROJECT_ID.trim() !== baseline.project_id) {
     throw new Error('EXPO_PUBLIC_EAS_PROJECT_ID does not match the installed build baseline.');
   }
-  return currentFingerprint;
+
 }
 
+/** Publish or describe a client-only update using the locked EAS toolchain. */
 export function runNativeOtaUpdate(options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const environment = options.environment ?? process.env;
@@ -274,7 +265,18 @@ export function runNativeOtaUpdate(options = {}) {
     return { help: true };
   }
   const runner = options.runner ?? createNativeOtaRunner();
-  const { file: baselineFile, baseline } = readNativeOtaBaseline(root, config.baseline);
+  let saved;
+  try { saved = readNativeOtaBaseline(root, config.baseline); }
+  catch (error) {
+    if (config.baseline || !/baseline is missing/.test(error.message)) throw error;
+    const app = JSON.parse(fs.readFileSync(path.join(root, 'mobile/app.json'), 'utf8')).expo;
+    saved = { file: 'configured Expo target', baseline: {
+      project_id: environment.EXPO_PUBLIC_EAS_PROJECT_ID || app.extra?.eas?.projectId,
+      channel: config.channel || environment.EXPO_UPDATES_CHANNEL || 'internal',
+      server_url: environment.EXPO_PUBLIC_CALIBRATE_SERVER_URL
+    } };
+  }
+  const { file: baselineFile, baseline } = saved;
   validateNativeOtaState({ root, baseline, runner, environment });
   if (config.nonInteractive && !environment.EXPO_TOKEN?.trim()) {
     throw new Error('--non-interactive requires EXPO_TOKEN. Use interactive mode to sign in with EAS CLI.');
@@ -301,11 +303,11 @@ export function runNativeOtaUpdate(options = {}) {
     runner,
     environment: publishEnvironment
   });
+  baseline.runtime_version = (options.resolveRuntime ?? resolveExpoRuntime)(root, { environment: publishEnvironment });
   process.stdout.write(
-    `OTA baseline: ${baselineFile}\n` +
+    `OTA targeting defaults: ${baselineFile}\n` +
     `Runtime: ${baseline.runtime_version} | Channel: ${publish.channel} | Environment: ${publish.environment}\n` +
     'EAS environment contract: verified\n' +
-    `Native fingerprint: ${baseline.native_fingerprint_sha256}\n` +
     `Message: ${resolvedConfig.message}\n`
   );
   if (config.dryRun) {
