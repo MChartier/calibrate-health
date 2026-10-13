@@ -115,17 +115,22 @@ const historicalPreparedV035Manifest = {
 
 /** Model the exact supported pre-iOS historical release layout. */
 async function useHistoricalPreparedV035Mirrors(root) {
+  const current = await readFixtureJson(root, 'shared/release.json');
+  const currentDiagnostics = await readFixtureJson(root, 'shared/client-diagnostic-versions.json');
+  const laterNativeVersions = [...new Set([
+    current.android.mobile.version_name,
+    ...['android_phone', 'ios', 'wear_os'].flatMap(platform => currentDiagnostics.supported_versions[platform] ?? [])
+  ])].filter(version => compareSemver(version, '0.2.6') > 0);
   // Freeze native mirrors too: future package/version changes must not rewrite historical evidence.
   for (const relativePath of releaseFixturePaths) {
     const file = path.join(root, relativePath);
     let source = await readFile(file, 'utf8');
-    const current = JSON.parse(await readFile(path.join(repositoryRoot, 'shared/release.json'), 'utf8'));
-    source = source.replaceAll(current.android.application_id, 'app.calibratehealth.mobile')
-      .replaceAll(current.android.mobile.version_name, '0.2.6');
-    // Advancing diagnostics may introduce the frozen version a second time.
-    source = source.replaceAll('"0.2.6",\n      "0.2.6"', '"0.2.6"')
-      .replaceAll('0.2.6, 0.2.6', '0.2.6')
-      .replaceAll('"0.2.6" | "0.2.6"', '"0.2.6"');
+    source = source.replaceAll(current.android.application_id, 'app.calibratehealth.mobile');
+    for (const version of laterNativeVersions) source = source.replaceAll(version, '0.2.6');
+    // Any number of later native releases may have extended each diagnostics representation.
+    source = source.replace(/("0\.2\.6")(?:,\s*"0\.2\.6")+/g, '$1')
+      .replace(/(0\.2\.6)(?:,\s*0\.2\.6)+/g, '$1')
+      .replace(/("0\.2\.6")(?:\s*\|\s*"0\.2\.6")+/g, '$1');
     await writeFile(file, source);
   }
 
@@ -1469,6 +1474,17 @@ test('historical-prepared check and tag reject a mirror-consistent modern invali
     assert.match(result.stderr, /mobile and Wear version_code values must be globally unique/);
     assert.match(result.stderr, /native_release_tag must match android\.mobile\.version_name/);
   }
+});
+
+test('historical mirrors stay frozen after paired native preparation extends diagnostics', async (t) => {
+  const root = await createReleaseFixture(t);
+  await prepareNativeRelease({ root, bump: 'patch' });
+  await prepareNativeRelease({ root, bump: 'patch' });
+  await useHistoricalPreparedV035Mirrors(root);
+  const result = await checkRepository(root, {
+    validationMode: 'historical-prepared', sourceCommit: HISTORICAL_PREPARED_RELEASE_COMMIT
+  });
+  assert.deepEqual(result.errors, []);
 });
 
 test('release-config rejects unknown, duplicate, incomplete, and write-command repository-root options', () => {
