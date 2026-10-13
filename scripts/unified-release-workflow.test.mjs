@@ -123,10 +123,18 @@ test('no-op and client-only cuts avoid an empty version PR; recovery never calls
   assert.match(jobs.publish.if, /outputs.server != 'true' \|\| needs.finalize.result == 'success'/);
   assert.match(jobs.publish.with.release_commit, /inputs.source_sha/);
   const graph = workflow('release-components').jobs;
+  assert.equal(graph.state.steps.find(step => step.uses?.startsWith('actions/checkout@')).with['fetch-depth'], 0,
+    'Historical recovery sources must remain available for the protected ancestry check');
   assert.match(graph.native_build.if, /!inputs.recovery/);
   assert.match(graph.native_build.if, /native_build_complete != 'true'/);
+  assert.match(graph.retain_native.if, /inputs.recovery/);
+  const nativeDownload = graph.retain_native.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(nativeDownload.with['run-id'], '${{ needs.state.outputs.producing_run_id }}');
   assert.match(graph.server_image.if, /image_complete != 'true'/);
   assert.equal(workflow('recover-release').jobs.resume.with.recovery, true);
   assert.doesNotMatch(JSON.stringify(workflow('publish-release')), /native-trust|\.release-trust|native_build_ref/);
   assert.equal(jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@')).with['artifact-ids'], '${{ needs.select.outputs.plan_artifact_id }}');
+  const planDownload = jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(planDownload.with['merge-multiple'], true, 'ID-based downloads must flatten the single plan into the path consumed by begin');
+  assert.match(jobs.reserve.steps.at(-1).run, /release-plan\/release-plan\.json/);
 });

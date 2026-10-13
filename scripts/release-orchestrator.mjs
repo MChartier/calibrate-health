@@ -79,6 +79,7 @@ export async function recoveryInputs(store, releaseId) {
   /** Treat only an explicit successful checkpoint as a completed stage. */
   const stageDone = (stage) => latestCheckpoint(state.checkpoints, stage)?.status === 'succeeded';
   return { ...state.record.plan, source_commit: source, release_id: releaseId,
+    producing_run_id: state.record.run_id,
     release_branch: prepared?.release_branch ?? '',
     image_complete: stageDone('image'), native_build_complete: stageDone('native-build'),
     server: state.record.plan.server && !stageDone('deploy'),

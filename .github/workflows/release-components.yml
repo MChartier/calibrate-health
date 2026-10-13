@@ -49,10 +49,13 @@ jobs:
       ota_production: ${{ steps.state.outputs.ota_production }}
       image_complete: ${{ steps.state.outputs.image_complete }}
       native_build_complete: ${{ steps.state.outputs.native_build_complete }}
+      producing_run_id: ${{ steps.state.outputs.producing_run_id }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ job.workflow_sha }}
+          # Recovery must prove ancestry of retained sources older than current master.
+          fetch-depth: 0
           persist-credentials: false
       - name: Bind release source and inspect checkpoints
         id: state
@@ -162,7 +165,8 @@ jobs:
       source_commit: ${{ inputs.release_commit }}
   retain_native:
     needs: [ state, native_build ]
-    if: needs.native_build.result == 'success'
+    # Recover an attested Actions artifact if interruption preceded durable Release retention.
+    if: ${{ !cancelled() && needs.state.result == 'success' && (needs.native_build.result == 'success' || (inputs.recovery && needs.state.outputs.native == 'true' && needs.state.outputs.native_build_complete != 'true')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -179,6 +183,8 @@ jobs:
         with:
           name: native-play-release-${{ inputs.release_commit }}
           path: ${{ runner.temp }}/native-build
+          run-id: ${{ needs.state.outputs.producing_run_id }}
+          github-token: ${{ github.token }}
       - name: Retain exact attested native binaries
         env:
           GITHUB_TOKEN: ${{ github.token }}
