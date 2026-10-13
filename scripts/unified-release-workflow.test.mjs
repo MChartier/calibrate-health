@@ -127,6 +127,9 @@ test('no-op and client-only cuts avoid an empty version PR; recovery never calls
     'Historical recovery sources must remain available for the protected ancestry check');
   assert.match(graph.native_build.if, /!inputs.recovery/);
   assert.match(graph.native_build.if, /native_build_complete != 'true'/);
+  assert.match(graph.retain_native.if, /inputs.recovery/);
+  const nativeDownload = graph.retain_native.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(nativeDownload.with['run-id'], '${{ needs.state.outputs.producing_run_id }}');
   assert.match(graph.server_image.if, /image_complete != 'true'/);
   assert.equal(workflow('recover-release').jobs.resume.with.recovery, true);
   assert.doesNotMatch(JSON.stringify(workflow('publish-release')), /native-trust|\.release-trust|native_build_ref/);

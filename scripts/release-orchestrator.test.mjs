@@ -7,7 +7,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { completedBaseline, latestCheckpoint, validateRecord } from './release-record.mjs';
-import { unfinishedStages, finishRelease } from './release-orchestrator.mjs';
+import { unfinishedStages, finishRelease, recoveryInputs } from './release-orchestrator.mjs';
 import { parseSubmissionId, verifySubmission, queueSubmission, waitForSubmission } from './native-eas-submit.mjs';
 
 const manifest = { server: { version: '0.40.1' }, android: { mobile: { version_name: '0.2.7', version_code: 11 }, wear: { version_code: 12 } } };
@@ -105,6 +105,17 @@ test('partial outcomes preserve OTA/server success without claiming completed na
 test('an ambiguous remote operation cannot be abandoned', async () => {
   const store = { read: async () => ({ record: { plan: { native: true } }, checkpoints: [{ stage: 'phone-submit', status: 'enqueueing', asset_id: 1 }] }) };
   await assert.rejects(finishRelease(store, '1', true), /Reconcile phone-submit/);
+});
+
+test('recovery carries the trusted producing run when durable native retention was interrupted', async () => {
+  const source = 'a'.repeat(40);
+  const store = { read: async () => ({ record: { run_id: '123', source_commit: source,
+    plan: { server: false, native: true, ota_internal: true, ota_production: true } }, checkpoints: [] }) };
+  const inputs = await recoveryInputs(store, '456');
+  assert.equal(inputs.producing_run_id, '123');
+  assert.equal(inputs.source_commit, source);
+  assert.equal(inputs.native_build_complete, false);
+  assert.equal(inputs.native, true);
 });
 
 const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
