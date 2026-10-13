@@ -67,7 +67,7 @@ export function affectsComponent(file, component) {
 }
 
 /** Find changed tracked paths relative to the last successful source for this component. */
-export function componentChanges(root, baseline, source, component) {
+function componentChanges(root, baseline, source, component) {
   if (!/^[a-f0-9]{40}$/.test(source) || (baseline && !/^[a-f0-9]{40}$/.test(baseline))) {
     throw new Error('Release comparisons require exact source commits.');
   }

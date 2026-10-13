@@ -16,7 +16,7 @@
         "tools/**/*.{js,cjs,mjs,ts}",
         "*.{js,cjs,mjs,ts}"
       ],
-      "ignoreDependencies": ["@expo/config-plugins", "react", "react-dom", "react-native-safe-area-context"],
+      "ignoreDependencies": ["@expo/config-plugins", "react", "react-dom", "react-native-safe-area-context", "expo-updates"],
       "github-actions": true,
       "playwright": {
         "config": ["playwright.expo-web.config.ts", "playwright.ux.config.ts"]
@@ -32,7 +32,8 @@
       "entry": [
         "plugins/withHealthConnect.js",
         "plugins/withPinnedGradleWrapper.js",
-        "plugins/withSharedAndroidSigning.js"
+        "plugins/withSharedAndroidSigning.js",
+        "fingerprint.config.js"
       ],
       "project": [
         "app/**/*.{ts,tsx}!",
