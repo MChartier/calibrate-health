@@ -29,7 +29,7 @@ test('a valid-looking hash cannot hide failed autolinking or appVersion policy',
 });
 
 test('SDK hashing ignores transient Kotlin sessions while retaining native plugin source', async (t) => {
-  const require = createRequire(import.meta.url);
+  const require = createRequire(new URL('../mobile/package.json', import.meta.url));
   const sdkRoot = path.dirname(require.resolve('@expo/fingerprint/package.json'));
   const { normalizeOptionsAsync } = require(path.join(sdkRoot, 'build/Options.js'));
   const { createFingerprintFromSourcesAsync } = require(path.join(sdkRoot, 'build/hash/Hash.js'));
