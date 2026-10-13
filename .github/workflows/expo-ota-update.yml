@@ -57,8 +57,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  inspect-retained-exports:
+    name: Inspect retained OTA exports with draft release access
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # GitHub requires push access to read drafts. Keep it away from source verification and exports.
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      internal_retained: ${{ steps.retained.outputs.internal_retained }}
+      production_retained: ${{ steps.retained.outputs.production_retained }}
+    steps:
+      - name: Require protected workflow before inspecting release state
+        run: test "${GITHUB_REF}" = refs/heads/master
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ job.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: scripts
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22.14.0
+      - name: Inspect retained OTA exports
+        id: retained
+        if: ${{ inputs.release_record_id != '' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_record_id }}
+        run: node scripts/expo-ota-store.mjs inspect "${RELEASE_ID}"
+
   preflight-release-target:
     name: Verify exact protected OTA source before Expo credentials
+    needs: inspect-retained-exports
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -66,8 +97,8 @@ jobs:
       actions: read
     outputs:
       source_commit: ${{ steps.release-target.outputs.source_commit }}
-      internal_retained: ${{ steps.retained.outputs.internal_retained }}
-      production_retained: ${{ steps.retained.outputs.production_retained }}
+      internal_retained: ${{ needs.inspect-retained-exports.outputs.internal_retained }}
+      production_retained: ${{ needs.inspect-retained-exports.outputs.production_retained }}
 
     steps:
       - name: Require an exact protected master source
@@ -135,13 +166,6 @@ jobs:
           fi
 
           echo "source_commit=${OTA_SOURCE_REF}" >> "${GITHUB_OUTPUT}"
-      - name: Inspect retained OTA exports
-        id: retained
-        if: ${{ inputs.release_record_id != '' }}
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_ID: ${{ inputs.release_record_id }}
-        run: node .release-tooling/scripts/expo-ota-store.mjs inspect "${RELEASE_ID}"
 
   resolve-internal-environment:
     name: Resolve internal public EAS environment
@@ -204,6 +228,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-tag-attestation.mjs
             /scripts/release-config.mjs
             /tools/eas-cli/
@@ -342,6 +367,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-ota-contract.mjs
             /scripts/native-ota-update.mjs
             /scripts/native-tag-attestation.mjs
@@ -605,6 +631,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-tag-attestation.mjs
             /scripts/release-config.mjs
             /tools/eas-cli/
@@ -744,6 +771,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-ota-contract.mjs
             /scripts/native-ota-update.mjs
             /scripts/native-tag-attestation.mjs

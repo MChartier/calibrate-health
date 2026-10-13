@@ -155,6 +155,7 @@ jobs:
               - 'scripts/xcode-uuid-compatibility.test.mjs'
               - 'shared/**'
             native_package:
+              - 'mobile/fingerprint.config.js'
               - 'mobile/app.config.js'
               - 'mobile/app.json'
               - 'mobile/eas.json'
@@ -553,6 +554,11 @@ jobs:
     if: needs.changes.outputs.native_package == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      EXPO_NO_DOTENV: '1'
+      EXPO_NO_METRO_WORKSPACE_ROOT: '1'
+      EXPO_UPDATES_CHANNEL: production
+      EXPO_UPDATES_WORKFLOW_OVERRIDE: managed
 
     steps:
       - name: Checkout
@@ -596,10 +602,18 @@ jobs:
         working-directory: mobile
         run: npx expo prebuild --platform android --no-install
 
+      - name: Capture clean managed runtime before Gradle
+        run: node scripts/expo-runtime.mjs . "${RUNNER_TEMP}/clean-runtime.json"
+
       - name: Build Android debug
         id: android_debug_build
         working-directory: mobile/android
         run: ./gradlew assembleDebug -PreactNativeArchitectures=x86_64
+        env:
+          NODE_ENV: production
+
+      - name: Verify built APK runtime matches clean and post-build source
+        run: node scripts/expo-runtime.mjs . "${RUNNER_TEMP}/clean-runtime.json" mobile/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Share Android debug APK with emulator E2E
         if: needs.changes.outputs.native_release == 'true'

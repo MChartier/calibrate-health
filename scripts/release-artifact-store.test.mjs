@@ -11,6 +11,7 @@ import { publishOta } from './expo-ota-publish.mjs';
 import { promoteEasPair } from './native-eas-promote.mjs';
 import { ReleaseRecordStore } from './release-record.mjs';
 import { readZipEntry } from './zip-entry.mjs';
+import { verifyEmbeddedRuntime } from './expo-runtime.mjs';
 
 /** Make a small real export fixture with the same provenance checks as production. */
 function fixture(t) {
@@ -145,6 +146,8 @@ test('native runtime inspection reads one bounded APK/AAB fingerprint member', (
   const file = path.join(root, 'app.aab');
   fs.writeFileSync(file, Buffer.concat([local, name, value, central, name, end]));
   assert.equal(readZipEntry(file, name.toString()).toString(), value.toString());
+  assert.doesNotThrow(() => verifyEmbeddedRuntime(file, name.toString(), value.toString()));
+  assert.throws(() => verifyEmbeddedRuntime(file, name.toString(), 'b'.repeat(40)), /runtime a+ differs from source fingerprint b+/);
   assert.throws(() => readZipEntry(file, 'assets/fingerprint'), /Expected one ZIP member/);
   assert.throws(() => readZipEntry(file, name.toString(), 16), /Unsupported ZIP member/);
 });

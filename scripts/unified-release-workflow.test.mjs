@@ -2,12 +2,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 
 /** Parse workflow YAML as data so assertions cover actual job dependencies and permission scopes. */
 function workflow(name) {
   return parse(fs.readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
 }
+
+test('isolated OTA tooling checkouts contain the complete local import graph', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ota-tooling-imports-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const seen = new Set();
+  let checkouts = 0;
+  for (const job of Object.values(workflow('expo-ota-update').jobs)) {
+    for (const step of job.steps ?? []) {
+      const sparse = step.with?.['sparse-checkout'];
+      if (!sparse?.includes('/scripts/expo-runtime.mjs')) continue;
+      checkouts += 1;
+      if (seen.has(sparse)) continue;
+      seen.add(sparse);
+      const checkout = path.join(root, String(checkouts));
+      const files = sparse.trim().split(/\s+/).filter((file) => file.startsWith('/scripts/') && file.endsWith('.mjs'));
+      for (const file of files) {
+        const destination = path.join(checkout, file.slice(1));
+        fs.mkdirSync(path.dirname(destination), { recursive: true });
+        fs.copyFileSync(new URL(`..${file}`, import.meta.url), destination);
+      }
+      const urls = files.map((file) => pathToFileURL(path.join(checkout, file.slice(1))).href);
+      execFileSync(process.execPath, ['--input-type=module', '--eval',
+        `await Promise.all(${JSON.stringify(urls)}.map(url => import(url)));`], { cwd: checkout, stdio: 'pipe' });
+    }
+  }
+  assert.equal(checkouts, 4, 'both environment resolvers and source exporters stay isolated');
+});
 
 test('the replacement graph retains the existing WireGuard deployment worker and named secrets', () => {
   const { jobs } = workflow('release-components');
@@ -96,6 +127,32 @@ test('OTA exports, attestations, and both credential stages remain separate on b
   }
 });
 
+test('draft release inspection has push access only in isolated tooling jobs', () => {
+  const { jobs } = workflow('expo-ota-update');
+  const inspection = jobs['inspect-retained-exports'];
+  assert.equal(inspection.permissions.contents, 'write');
+  assert.equal(inspection.permissions.actions, 'read');
+  assert.match(inspection.steps[0].run, /GITHUB_REF.*refs\/heads\/master/);
+  const read = inspection.steps.find(step => step.run?.includes('expo-ota-store.mjs inspect'));
+  assert.match(read.if, /inputs.release_record_id != ''/);
+  assert.equal(jobs['preflight-release-target'].needs, 'inspect-retained-exports');
+  assert.equal(jobs['preflight-release-target'].permissions.contents, 'read');
+  for (const channel of ['internal', 'production']) {
+    assert.equal(jobs['preflight-release-target'].outputs[`${channel}_retained`],
+      '${{ needs.inspect-retained-exports.outputs.' + channel + '_retained }}');
+  }
+  const recovery = workflow('recover-release').jobs.inspect;
+  assert.equal(recovery.permissions.contents, 'write');
+  for (const job of [inspection, recovery]) {
+    assert.doesNotMatch(JSON.stringify(job), /EXPO_TOKEN|secrets\.|npm ci/);
+    const checkouts = job.steps.filter(step => step.uses?.startsWith('actions/checkout@'));
+    assert.equal(checkouts.length, 1);
+    assert.equal(checkouts[0].with.ref, '${{ job.workflow_sha }}');
+    assert.equal(checkouts[0].with['persist-credentials'], false);
+    assert.equal(checkouts[0].with['sparse-checkout'], 'scripts');
+  }
+});
+
 test('paired builds admit signing after prebuild; promotions reuse verified artifacts and serialize Play writes', () => {
   const build = workflow('native-build').jobs;
   const signer = build['build-internal'];
@@ -123,10 +180,18 @@ test('no-op and client-only cuts avoid an empty version PR; recovery never calls
   assert.match(jobs.publish.if, /outputs.server != 'true' \|\| needs.finalize.result == 'success'/);
   assert.match(jobs.publish.with.release_commit, /inputs.source_sha/);
   const graph = workflow('release-components').jobs;
+  assert.equal(graph.state.steps.find(step => step.uses?.startsWith('actions/checkout@')).with['fetch-depth'], 0,
+    'Historical recovery sources must remain available for the protected ancestry check');
   assert.match(graph.native_build.if, /!inputs.recovery/);
   assert.match(graph.native_build.if, /native_build_complete != 'true'/);
+  assert.match(graph.retain_native.if, /inputs.recovery/);
+  const nativeDownload = graph.retain_native.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(nativeDownload.with['run-id'], '${{ needs.state.outputs.producing_run_id }}');
   assert.match(graph.server_image.if, /image_complete != 'true'/);
   assert.equal(workflow('recover-release').jobs.resume.with.recovery, true);
   assert.doesNotMatch(JSON.stringify(workflow('publish-release')), /native-trust|\.release-trust|native_build_ref/);
   assert.equal(jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@')).with['artifact-ids'], '${{ needs.select.outputs.plan_artifact_id }}');
+  const planDownload = jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(planDownload.with['merge-multiple'], true, 'ID-based downloads must flatten the single plan into the path consumed by begin');
+  assert.match(jobs.reserve.steps.at(-1).run, /release-plan\/release-plan\.json/);
 });

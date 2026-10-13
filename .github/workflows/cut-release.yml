@@ -115,6 +115,8 @@ jobs:
         with:
           path: ${{ runner.temp }}/release-plan
           artifact-ids: ${{ needs.select.outputs.plan_artifact_id }}
+          # ID-based downloads otherwise add an artifact-name subdirectory, even for one ID.
+          merge-multiple: true
       - name: Reserve this exact inspected request
         id: reserve
         env:

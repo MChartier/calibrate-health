@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "server": {
-    "version": "0.40.1",
+    "version": "0.40.3",
     "api": {
       "current": "v1",
       "supported": [
@@ -13,14 +13,14 @@
   "android": {
     "application_id": "net.darkmachines.healthtracker",
     "mobile": {
-      "version_name": "0.2.7",
-      "version_code": 11,
-      "native_release_tag": "native-v0.2.7",
+      "version_name": "0.2.9",
+      "version_code": 17,
+      "native_release_tag": "native-v0.2.9",
       "minimum_supported_version": "0.1.0"
     },
     "wear": {
-      "version_name": "0.2.7",
-      "version_code": 12,
+      "version_name": "0.2.9",
+      "version_code": 18,
       "minimum_supported_version": "0.2.0"
     },
     "channels": {

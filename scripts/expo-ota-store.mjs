@@ -28,7 +28,7 @@ export function verifyOtaAttestation(file, signer, root, repository, execute = e
   const policy = parseNativePlayWorkflowTrustSet(releaseGit(root, ['show', `${current}:.github/native-play-attestation-trusted-workflow-shas`]));
   if (policy.revoked.includes(signer)) throw new Error('OTA artifact signer is revoked by current master.');
   const critical = ['.github/workflows/expo-ota-update.yml', 'scripts/expo-ota-artifact.mjs',
-    'scripts/expo-ota-store.mjs', 'scripts/expo-runtime.mjs', 'scripts/release-config.mjs', ...RELEASE_ENGINE_TRUST_FILES];
+    'scripts/expo-ota-store.mjs', 'scripts/expo-runtime.mjs', 'scripts/zip-entry.mjs', 'scripts/release-config.mjs', ...RELEASE_ENGINE_TRUST_FILES];
   if (!policy.allowed.includes(signer) && !critical.every((name) =>
     releaseGit(root, ['rev-parse', `${signer}:${name}`]) === releaseGit(root, ['rev-parse', `${current}:${name}`]))) {
     throw new Error('Retain the reviewed OTA signer in the master trust policy before recovery.');

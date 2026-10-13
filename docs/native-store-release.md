@@ -16,6 +16,8 @@ The workflow compares separate successful source references for server/web, pair
 
 A build failure or failure to establish the initial phone submission blocks OTA. Play processing, review, or production acceptance does not gate OTA. Expo serves each update only to matching runtimes. The production APK, AAB, and OTA export must agree on the resolved runtime.
 
+The Android package CI job also compares the clean managed source fingerprint with the built APK and post-build source. Kotlin's generated `.kotlin` compiler-session/cache files are excluded from fingerprint inputs; native plugin source and Gradle integrity templates remain included. A runtime mismatch stops publication and reports both hashes.
+
 All CI Play-writing operations share one non-cancelling concurrency group. Do not edit the same Play application through another Console/API client while submissions or promotion are running. Google documents that [concurrent edits can invalidate one another or submit pending Console changes](https://developers.google.com/android-publisher/concurrency-considerations).
 
 ## Configuration and rollout
@@ -40,11 +42,13 @@ Run a cut and verify its component summary, selected server deployment health, r
 
 Each non-no-op orchestration owns a draft GitHub Release named `Cut release <run-id>`, tagged `release-run-<run-id>`. This identifier is independent of application versions. Its body records the producing protected run, selection/reasons, initial source, and previous successful component baselines. Append-only checkpoint assets record preparation, deployment, artifact identities, EAS submission IDs, OTA groups, and outcomes. Binaries and attested OTA exports are retained as Release assets beyond Actions artifact expiration.
 
+[GitHub requires push access to read draft releases](https://docs.github.com/en/rest/releases/releases#list-releases). OTA checkpoint inspection and recovery therefore use isolated, workflow-pinned tooling jobs with job-scoped `contents: write`; application source verification and OTA exports remain read-only and never receive that credential.
+
 Only one unfinished orchestration is allowed. Another Cut release fails with the pending record ID. Use **Publish prepared release** on `master`, provide `release_id`, leave the legacy commit/branch fields blank, and choose `resume`. Confirm Console coordination if native submission remains.
 
 - Before candidate merge, rerun only failed jobs in the original Cut release while master and candidate remain unchanged. Do not recut, manually merge, or overwrite the candidate. If master advanced, reconcile the retained candidate first.
 - After merge, recovery uses the original source, retained artifacts, and recorded IDs. Successful stages are skipped. It does not allocate versions or rebuild retained native artifacts.
-- If the original build/export failed before retention, resume that original job. Recovery must not silently substitute a fresh artifact for an accepted one.
+- If a native build was attested but Release retention was interrupted, recovery downloads the exact named artifact from the recorded producing run and verifies its original attestation before retaining it. This requires the original Actions artifact to remain available (30 days). If the build or attestation itself failed, resume that original job. Recovery must not silently substitute a fresh artifact for an accepted one.
 - A recorded failed EAS submission can be retried through EAS's supported retry operation on explicit recovery; its replacement ID is recorded before readback. If EAS no longer permits retry, explicitly abandon and cut a fresh higher pair.
 - An interrupted enqueue without a confirmed ID, an interrupted OTA publish, or a timed-out deployment is ambiguous. Inspect provider/service logs and reconcile it before retrying. A timed-out webhook POST may still be deploying; never send an automatic second POST.
 - Explicit `abandon` preserves all successful stages and burns reserved native version codes. An unresolved remote operation must first be reconciled. Before abandoning an unmerged candidate, close its reviewed PR and remove only its unchanged branch. A merged server candidate must finish its tag/image stage before abandonment, preserving the existing server recovery contract.

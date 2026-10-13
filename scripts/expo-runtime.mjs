@@ -2,8 +2,9 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { readZipEntry } from './zip-entry.mjs';
 
 /** Autolinking errors can produce a hash of an empty graph; such a hash is not a usable runtime. */
 export function validateRuntimeResolution(value) {
@@ -36,11 +37,25 @@ export function resolveExpoRuntime(root, { environment = process.env, execute = 
   return validateRuntimeResolution(value);
 }
 
-/** Write a small runtime artifact without admitting Expo authentication to source evaluation. */
+/** Compare embedded runtime bytes against the independently resolved source runtime. */
+export function verifyEmbeddedRuntime(file, member, runtime) {
+  const embedded = readZipEntry(file, member).toString('utf8').trim();
+  if (embedded !== runtime) {
+    throw new Error(`${path.basename(file)} runtime ${embedded} differs from source fingerprint ${runtime}. Refusing native publication.`);
+  }
+}
+
+/** Capture a clean runtime or verify a built APK and post-build source against that capture. */
 function main() {
-  const [root, output] = process.argv.slice(2);
-  if (!root || !output) throw new Error('Usage: expo-runtime.mjs <repository-root> <output.json>');
-  writeFileSync(output, `${JSON.stringify({ runtimeVersion: resolveExpoRuntime(path.resolve(root)) })}\n`);
+  const [root, output, apk] = process.argv.slice(2);
+  if (!root || !output) throw new Error('Usage: expo-runtime.mjs <repository-root> <output.json> [built.apk]');
+  const runtimeVersion = resolveExpoRuntime(path.resolve(root));
+  if (apk) {
+    const expected = JSON.parse(readFileSync(output, 'utf8')).runtimeVersion;
+    if (runtimeVersion !== expected) throw new Error(`Gradle changed source fingerprint from ${expected} to ${runtimeVersion}.`);
+    verifyEmbeddedRuntime(apk, 'assets/fingerprint', expected);
+    console.log(`Clean source, built APK, and post-build source use runtime ${expected}.`);
+  } else writeFileSync(output, `${JSON.stringify({ runtimeVersion })}\n`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) main();

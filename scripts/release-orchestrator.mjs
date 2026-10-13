@@ -76,6 +76,7 @@ export async function recoveryInputs(store, releaseId) {
   const stageDone = (stage) => latestCheckpoint(state.checkpoints, stage)?.status === 'succeeded';
   const complete = new Set(summarizeCalibrateRelease(state.record, state.checkpoints).completedComponents);
   return { ...state.record.plan, source_commit: source, release_id: releaseId,
+    producing_run_id: state.record.run_id,
     release_branch: prepared?.release_branch ?? '',
     image_complete: stageDone('image'), native_build_complete: stageDone('native-build'),
     server: state.record.plan.server && !complete.has('server'),
