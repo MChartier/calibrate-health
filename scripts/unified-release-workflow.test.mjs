@@ -129,4 +129,7 @@ test('no-op and client-only cuts avoid an empty version PR; recovery never calls
   assert.equal(workflow('recover-release').jobs.resume.with.recovery, true);
   assert.doesNotMatch(JSON.stringify(workflow('publish-release')), /native-trust|\.release-trust|native_build_ref/);
   assert.equal(jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@')).with['artifact-ids'], '${{ needs.select.outputs.plan_artifact_id }}');
+  const planDownload = jobs.reserve.steps.find(step => step.uses?.startsWith('actions/download-artifact@'));
+  assert.equal(planDownload.with['merge-multiple'], true, 'ID-based downloads must flatten the single plan into the path consumed by begin');
+  assert.match(jobs.reserve.steps.at(-1).run, /release-plan\/release-plan\.json/);
 });
