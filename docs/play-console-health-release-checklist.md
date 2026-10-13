@@ -146,8 +146,8 @@ enrollment and duration remain Play Console onboarding work.
 - [ ] Configure the Android upload keystore only in protected `native-release-signing`, plus separate Android
   Publisher identities and keys: a testing-only identity in `play-internal`, and a distinct production-capable
   identity only in protected `play-production`, as described in `docs/native-store-release.md`.
-- [ ] Assign an app-scoped testing submission key to the existing Expo project. Verify EAS accepts qa and the exact
-  Wear track wear:qa before integrated rollout. Preserve separate production credentials and environment protection.
+- [ ] Assign an app-scoped testing submission key to the existing Expo project. Verify EAS accepts internal and the exact
+  Wear track wear:internal before integrated rollout. Preserve separate production credentials and environment protection.
 - [ ] Migrate to Cut release with fresh available odd/even codes, verify native/OTA fingerprint agreement, then remove
   unused native-release-attestation and native-release-tags environments. Native tag signing and a GitHub App are no
   longer prerequisites. Retain historical image verification and native artifact signer trust for recovery.

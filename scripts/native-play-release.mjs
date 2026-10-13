@@ -1,3 +1,4 @@
+/** Verify paired Android artifacts and manage exact Play uploads, promotions, and historical receipts. */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -44,9 +45,9 @@ const ANDROID_PUBLISHER_UPLOAD_ROOT = 'https://androidpublisher.googleapis.com/u
 const GOOGLE_OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 export const NATIVE_PLAY_APPLICATION_ID = NATIVE_RELEASE_APPLICATION_ID;
-// Google Play's Publisher API names its built-in internal-test track `qa`; form-factor tracks prefix that alias.
+// Exact IDs returned for this app's existing internal-testing tracks by the Publisher API.
 export const NATIVE_PLAY_TRACKS = Object.freeze({
-  internal: Object.freeze({ phone: 'qa', watch: 'wear:qa' }),
+  internal: Object.freeze({ phone: 'internal', watch: 'wear:internal' }),
   closed: Object.freeze({ phone: 'closed', watch: 'wear:closed' }),
   production: Object.freeze({ phone: 'production', watch: 'wear:production' })
 });
@@ -56,18 +57,22 @@ const PLAY_AAB_CONTRACTS = Object.freeze({
   watch: NATIVE_RELEASE_ARTIFACT_CONTRACTS.find(({ id }) => id === 'watch-aab')
 });
 
+/** Reject missing credential and identifier strings before use. */
 function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+/** Bind artifact and manifest bytes to stable release evidence. */
 function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+/** Translate Play's phone/watch roles to the manifest's client keys. */
 function roleManifestKey(role) {
   return role === 'phone' ? 'mobile' : 'wear';
 }
 
+/** Resolve the reserved version identity for one form factor. */
 function expectedVersion(manifest, role) {
   const version = manifest?.android?.[roleManifestKey(role)];
   return {
@@ -76,6 +81,7 @@ function expectedVersion(manifest, role) {
   };
 }
 
+/** Preserve manifest bytes alongside parsed values for provenance checks. */
 function readReleaseManifest(root) {
   const file = path.join(root, 'shared', 'release.json');
   let content;
@@ -89,10 +95,12 @@ function readReleaseManifest(root) {
   return { content, manifest };
 }
 
+/** Label legacy Play releases with their exact source and form factor. */
 function releaseSourceMarker(role, sourceCommit) {
   return `${role === 'phone' ? 'cal-p' : 'cal-w'}@${sourceCommit}`;
 }
 
+/** Validate the paired version lanes and bind each binary to its configured tracks. */
 export function createNativePlayReleasePlan(options = {}) {
   const root = options.root ?? repositoryRoot;
   const sourceCommit = options.sourceCommit;
@@ -163,6 +171,7 @@ export function createNativePlayReleasePlan(options = {}) {
   };
 }
 
+/** Require a clean exact source checkout before reading release metadata. */
 export function assertNativePlaySourceCheckout(root, sourceCommit, execute = execFileSync) {
   if (!COMMIT_PATTERN.test(sourceCommit ?? '')) {
     throw new Error('Native Play release requires a lowercase 40-character --source-commit.');
@@ -199,6 +208,7 @@ export function assertNativePlaySourceCheckout(root, sourceCommit, execute = exe
   return head;
 }
 
+/** Remove Play authentication from package inspection subprocesses. */
 function artifactInspectionEnvironment(environment) {
   return Object.fromEntries(Object.entries(environment ?? {}).filter(([name]) => {
     const normalized = name.toUpperCase();
@@ -206,6 +216,7 @@ function artifactInspectionEnvironment(environment) {
   }));
 }
 
+/** Bound inspection output and replace subprocess failures with actionable errors. */
 function runArtifactInspection(execute, command, args, errorMessage, environment) {
   try {
     return execute(command, args, {
@@ -219,6 +230,7 @@ function runArtifactInspection(execute, command, args, errorMessage, environment
   }
 }
 
+/** Read package identity and signing certificates using pinned Android tooling. */
 export function inspectNativePlayArtifact(file, contract, options = {}) {
   const execute = options.execute ?? execFileSync;
   const environment = artifactInspectionEnvironment(options.environment ?? process.env);
@@ -271,6 +283,7 @@ export function inspectNativePlayArtifact(file, contract, options = {}) {
   throw new Error(`Unsupported native release artifact format: ${contract?.format ?? '(missing)'}.`);
 }
 
+/** Match all four signed packages to the manifest and original build provenance. */
 export function verifyNativePlayArtifacts(options = {}) {
   const root = options.root ?? repositoryRoot;
   const plan = options.plan ?? createNativePlayReleasePlan({ root, sourceCommit: options.sourceCommit });
@@ -350,10 +363,12 @@ export function verifyNativePlayArtifacts(options = {}) {
   };
 }
 
+/** Encode JWT fields without padding or URL-unsafe characters. */
 function base64Url(value) {
   return Buffer.from(value).toString('base64url');
 }
 
+/** Sign a short-lived Publisher assertion for the official Google token endpoint only. */
 export function createGoogleServiceAccountAssertion(credentials, options = {}) {
   if (!isNonEmptyString(credentials?.client_email) || !isNonEmptyString(credentials?.private_key)) {
     throw new Error('Google Play service-account JSON must contain client_email and private_key.');
@@ -381,6 +396,7 @@ export function createGoogleServiceAccountAssertion(credentials, options = {}) {
   return { assertion: `${signingInput}.${signature}`, tokenUri };
 }
 
+/** Limit provider diagnostics and redact common credential formats. */
 function safeGoogleMessage(payload) {
   const candidate = payload?.error?.message ?? payload?.error_description ??
     (typeof payload?.error === 'string' ? payload.error : null);
@@ -393,6 +409,7 @@ function safeGoogleMessage(payload) {
     .slice(0, 300);
 }
 
+/** Accept empty responses while sanitizing unexpected non-JSON bodies. */
 async function responsePayload(response) {
   const body = await response.text();
   if (!body) return null;
@@ -403,6 +420,7 @@ async function responsePayload(response) {
   }
 }
 
+/** Associate failed HTTP responses with their operation without exposing secrets. */
 async function checkedGoogleResponse(response, operation) {
   const payload = await responsePayload(response);
   if (response.ok) return payload;
@@ -412,6 +430,7 @@ async function checkedGoogleResponse(response, operation) {
   );
 }
 
+/** Exchange an explicit service-account key or use an injected short-lived Play token. */
 export async function resolveGooglePlayAccessToken(options = {}) {
   const environment = options.environment ?? process.env;
   const serviceAccountFile = options.serviceAccountFile ?? environment.GOOGLE_PLAY_SERVICE_ACCOUNT_FILE;
@@ -447,11 +466,13 @@ export async function resolveGooglePlayAccessToken(options = {}) {
   );
 }
 
+/** Select Google's normal or media-upload edit endpoint for the exact app. */
 function editRoot(applicationId, upload = false) {
   const apiRoot = upload ? ANDROID_PUBLISHER_UPLOAD_ROOT : ANDROID_PUBLISHER_ROOT;
   return `${apiRoot}/applications/${encodeURIComponent(applicationId)}/edits`;
 }
 
+/** Restrict authenticated edit operations to Calibrate's application ID. */
 export function createGooglePlayPublisher(options) {
   const applicationId = options?.applicationId;
   const accessToken = options?.accessToken;
@@ -461,6 +482,7 @@ export function createGooglePlayPublisher(options) {
   if (!isNonEmptyString(accessToken)) throw new Error('Google Play publisher requires an access token.');
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
 
+  /** Admit authentication only to the fixed Publisher API endpoints below. */
   const request = async (url, init, operation) => {
     const response = await fetchImpl(url, {
       ...init,
@@ -473,6 +495,7 @@ export function createGooglePlayPublisher(options) {
   };
 
   return Object.freeze({
+    /** Stage a transaction without changing live tracks. */
     async createEdit() {
       const payload = await request(editRoot(applicationId), {
         method: 'POST',
@@ -483,12 +506,14 @@ export function createGooglePlayPublisher(options) {
       return payload.id;
     },
 
+    /** Discard only the edit created for this operation. */
     async deleteEdit(editId) {
       await request(`${editRoot(applicationId)}/${encodeURIComponent(editId)}`, {
         method: 'DELETE'
       }, 'Delete Google Play edit');
     },
 
+    /** Read the exact configured track inside a staged edit. */
     async getTrack(editId, track) {
       return request(
         `${editRoot(applicationId)}/${encodeURIComponent(editId)}/tracks/${encodeURIComponent(track)}`,
@@ -497,6 +522,7 @@ export function createGooglePlayPublisher(options) {
       );
     },
 
+    /** Retrieve existing version codes and hashes for idempotency checks. */
     async listBundles(editId) {
       return request(
         `${editRoot(applicationId)}/${encodeURIComponent(editId)}/bundles`,
@@ -505,6 +531,7 @@ export function createGooglePlayPublisher(options) {
       );
     },
 
+    /** Recheck retained bytes before sending a bundle into the staged edit. */
     async uploadBundle(editId, file, expectedSha256) {
       let bytes;
       try {
@@ -526,6 +553,7 @@ export function createGooglePlayPublisher(options) {
       );
     },
 
+    /** Stage a single exact release on the requested track. */
     async updateTrack(editId, track, release) {
       return request(
         `${editRoot(applicationId)}/${encodeURIComponent(editId)}/tracks/${encodeURIComponent(track)}`,
@@ -538,6 +566,7 @@ export function createGooglePlayPublisher(options) {
       );
     },
 
+    /** Publish the staged pair while refusing concurrent changes already in review. */
     async commitEdit(editId) {
       return request(
         `${editRoot(applicationId)}/${encodeURIComponent(editId)}:commit?changesInReviewBehavior=ERROR_IF_IN_REVIEW`,
@@ -548,21 +577,25 @@ export function createGooglePlayPublisher(options) {
   });
 }
 
+/** Treat an empty track as having no published candidates. */
 function trackReleases(track) {
   return Array.isArray(track?.releases) ? track.releases : [];
 }
 
+/** Normalize Publisher API version codes before comparing identities. */
 function releaseVersionCodes(release) {
   return Array.isArray(release?.versionCodes)
     ? release.versionCodes.map((value) => String(value))
     : [];
 }
 
+/** Find every occurrence of a reserved code so duplicates fail verification. */
 function releasesWithCode(track, versionCode) {
   const wanted = String(versionCode);
   return trackReleases(track).filter((release) => releaseVersionCodes(release).includes(wanted));
 }
 
+/** Require one completed singleton release with the expected source marker. */
 function assertExactCompletedCandidate(track, candidate, label) {
   const matches = releasesWithCode(track, candidate.versionCode);
   const exact = matches.filter((release) =>
@@ -577,12 +610,14 @@ function assertExactCompletedCandidate(track, candidate, label) {
   }
 }
 
+/** Distinguish a missing candidate from a conflicting or incomplete one. */
 function exactCompletedCandidateExists(track, candidate, label) {
   if (releasesWithCode(track, candidate.versionCode).length === 0) return false;
   assertExactCompletedCandidate(track, candidate, label);
   return true;
 }
 
+/** Refuse to adopt a reserved code associated with another source. */
 function assertNoConflictingCandidateCode(track, candidate, label) {
   const conflicts = releasesWithCode(track, candidate.versionCode)
     .filter(({ name }) => name !== candidate.releaseName);
@@ -594,6 +629,7 @@ function assertNoConflictingCandidateCode(track, candidate, label) {
   }
 }
 
+/** Preserve pending Console changes instead of replacing them during an upload. */
 function assertDestinationReleasesCompleted(track, label) {
   const unsettled = trackReleases(track).filter(({ status }) => status !== 'completed');
   if (unsettled.length > 0) {
@@ -603,6 +639,7 @@ function assertDestinationReleasesCompleted(track, label) {
   }
 }
 
+/** Prevent code reuse or downgrade relative to the destination track. */
 function assertCandidateIsNewer(track, candidate, label) {
   const existing = trackReleases(track)
     .flatMap(releaseVersionCodes)
@@ -615,6 +652,7 @@ function assertCandidateIsNewer(track, candidate, label) {
   }
 }
 
+/** Construct the exact singleton release written by direct Play operations. */
 function completedRelease(candidate) {
   return {
     name: candidate.releaseName,
@@ -623,6 +661,7 @@ function completedRelease(candidate) {
   };
 }
 
+/** Attempt edit cleanup without hiding the original publication failure. */
 async function abandonEdit(publisher, editId) {
   try {
     await publisher.deleteEdit(editId);
@@ -631,6 +670,7 @@ async function abandonEdit(publisher, editId) {
   }
 }
 
+/** Commit paired changes together, discarding no-op or failed transactions. */
 async function runAtomicEdit(publisher, operation) {
   const editId = await publisher.createEdit();
   let closed = false;
@@ -650,6 +690,7 @@ async function runAtomicEdit(publisher, operation) {
   }
 }
 
+/** Require one provider-reported bundle hash for each reserved code. */
 function existingBundleReceipts(payload, plan) {
   const bundles = Array.isArray(payload?.bundles) ? payload.bundles : [];
   const receipts = {};
@@ -680,6 +721,7 @@ function existingBundleReceipts(payload, plan) {
   return receipts;
 }
 
+/** Select only the exact verified phone and Wear AABs from build evidence. */
 function verifiedNativePlayAabs(plan, verification) {
   return Object.fromEntries(['phone', 'watch'].map((role) => {
     const candidate = plan.candidates[role];
@@ -692,6 +734,7 @@ function verifiedNativePlayAabs(plan, verification) {
   }));
 }
 
+/** Bind the inspected binaries to the legacy canonical Play receipt. */
 export function createNativePlayArtifactReceipt({ repository, plan, verification }) {
   if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
     throw new Error('Native artifact verification does not match the requested Play release.');
@@ -703,6 +746,7 @@ export function createNativePlayArtifactReceipt({ repository, plan, verification
   });
 }
 
+/** Persist deterministic receipt bytes and their digest for attestation. */
 export function writeNativePlayArtifactReceipt({ root = repositoryRoot, receiptFile, repository, plan, verification }) {
   const receipt = createNativePlayArtifactReceipt({ repository, plan, verification });
   const relativeOrAbsolute = receiptFile ?? NATIVE_PLAY_RECEIPT_PATH;
@@ -713,6 +757,7 @@ export function writeNativePlayArtifactReceipt({ root = repositoryRoot, receiptF
   return Object.freeze({ receipt, file, sha256: nativePlayReceiptSha256(bytes) });
 }
 
+/** Reject existing uploads whose bytes differ from the retained build. */
 function assertExistingBundleDigests(payload, plan, verifiedAabs) {
   const receipts = existingBundleReceipts(payload, plan);
   for (const role of ['phone', 'watch']) {
@@ -726,6 +771,7 @@ function assertExistingBundleDigests(payload, plan, verifiedAabs) {
   }
 }
 
+/** Admit legacy protected uploads only with the exact independently verified receipt. */
 export async function uploadNativePlayInternal(options) {
   const { plan, verification, publisher, repository, receipt } = options;
   const root = options.root ?? repositoryRoot;
@@ -746,6 +792,7 @@ export async function uploadLocalNativePlayInternal({ root = repositoryRoot, pla
   return uploadVerifiedInternalPair({ root, plan, verification, publisher });
 }
 
+/** Keep local publication bound to internal tracks and distinct local source markers. */
 function assertLocalInternalPlan(plan) {
   if (plan?.applicationId !== NATIVE_PLAY_APPLICATION_ID || !COMMIT_PATTERN.test(plan?.sourceCommit ?? '')) {
     throw new Error('Invalid local internal application or source commit.');
@@ -782,6 +829,7 @@ export async function inspectLocalNativePlayInternal({ plan, verification, publi
   }
 }
 
+/** Upload or verify the exact pair, then atomically commit both internal tracks. */
 async function uploadVerifiedInternalPair({ root, plan, verification, publisher }) {
   if (verification?.sourceCommit !== plan?.sourceCommit || verification?.applicationId !== plan?.applicationId) {
     throw new Error('Native artifact verification does not match the requested Play release.');
@@ -847,14 +895,17 @@ async function uploadVerifiedInternalPair({ root, plan, verification, publisher 
   });
 }
 
+/** Resolve a previously validated stage-specific destination. */
 function candidateTrack(candidate, stage) {
   return candidate[`${stage}Track`];
 }
 
+/** Identify the form factor and stage in actionable validation errors. */
 function stageTrackLabel(role, stage) {
   return `${role === 'phone' ? 'Phone' : 'Wear'} ${stage} track`;
 }
 
+/** Move the verified pair between explicit tracks without uploading new binaries. */
 async function promoteNativePlayStage(options, sourceStage, destinationStage) {
   const { plan, publisher } = options;
   return runAtomicEdit(publisher, async (editId) => {
@@ -903,14 +954,17 @@ async function promoteNativePlayStage(options, sourceStage, destinationStage) {
   });
 }
 
+/** Promote completed internal releases to the configured closed tracks. */
 export function promoteNativePlayClosed(options) {
   return promoteNativePlayStage(options, 'internal', 'closed');
 }
 
+/** Promote the exact closed-testing pair after external production approval. */
 export function promoteNativePlayProduction(options) {
   return promoteNativePlayStage(options, 'closed', 'production');
 }
 
+/** Reconstruct historical receipts from exact Play observations without committing an edit. */
 export async function recoverNativePlayInternal(options) {
   const { plan, publisher, repository } = options;
   const editId = await publisher.createEdit();
@@ -928,6 +982,7 @@ export async function recoverNativePlayInternal(options) {
   }
 }
 
+/** Validate command-specific flags before source or credential access. */
 function parseArguments(argv) {
   const command = argv[0];
   const credentialedCommands = new Set([
@@ -995,6 +1050,7 @@ function parseArguments(argv) {
   };
 }
 
+/** Verify source and artifacts before admitting credentials to the selected Play operation. */
 export async function runNativePlayReleaseCli(argv, options = {}) {
   const parsed = parseArguments(argv);
   const root = path.resolve(parsed.repositoryRoot?.trim() ?? options.root ?? repositoryRoot);
@@ -1085,6 +1141,7 @@ export async function runNativePlayReleaseCli(argv, options = {}) {
   return promoteNativePlayProduction({ plan, publisher });
 }
 
+/** Print successful results and report CLI failures without credential contents. */
 async function run() {
   const result = await runNativePlayReleaseCli(process.argv.slice(2));
   console.log(JSON.stringify(result, null, 2));

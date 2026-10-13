@@ -8,7 +8,7 @@ import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { completedBaseline, latestCheckpoint, validateRecord } from './release-record.mjs';
 import { unfinishedStages, finishRelease, recoveryInputs } from './release-orchestrator.mjs';
-import { parseSubmissionId, verifySubmission, queueSubmission, waitForSubmission } from './native-eas-submit.mjs';
+import { parseSubmissionId, verifySubmission, queueSubmission, waitForSubmission, writeSubmissionProject } from './native-eas-submit.mjs';
 
 const manifest = { server: { version: '0.40.1' }, android: { mobile: { version_name: '0.2.7', version_code: 11 }, wear: { version_code: 12 } } };
 const baseline = { native: { version: '0.2.7', runtime_version: 'a'.repeat(40), wear_hash: 'b'.repeat(64) } };
@@ -120,7 +120,25 @@ test('recovery carries the trusted producing run when durable native retention w
 });
 
 const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
-const submission = { id, platform: 'ANDROID', app: { id: 'fda8f8c5-e646-47ac-82fb-35003c9cbec7' }, androidConfig: { track: 'qa' }, status: 'IN_QUEUE' };
+const submission = { id, platform: 'ANDROID', app: { id: 'fda8f8c5-e646-47ac-82fb-35003c9cbec7' }, androidConfig: { track: 'internal' }, status: 'IN_QUEUE' };
+
+test('EAS profiles and provider readback use exact internal IDs for each form factor', (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'eas-track-profiles-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  writeSubmissionProject(directory);
+  const profiles = JSON.parse(fs.readFileSync(path.join(directory, 'eas.json'), 'utf8')).submit;
+  for (const [role, track, wrongTracks] of [
+    ['phone', 'internal', ['qa', 'wear:internal', 'production']],
+    ['wear', 'wear:internal', ['wear:qa', 'internal', 'wear:production']]
+  ]) {
+    assert.equal(profiles[role].android.track, track);
+    assert.equal(profiles[role].android.releaseStatus, 'completed');
+    assert.equal(verifySubmission({ ...submission, androidConfig: { track } }, id, role).id, id);
+    for (const wrongTrack of wrongTracks) {
+      assert.throws(() => verifySubmission({ ...submission, androidConfig: { track: wrongTrack } }, id, role), /track mismatch/);
+    }
+  }
+});
 
 /** In-memory append-only checkpoints let tests observe external-call ordering. */
 function fakeStore(initial = []) {

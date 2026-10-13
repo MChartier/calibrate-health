@@ -14,7 +14,7 @@ const VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/;
 const TAG_PATTERN = /^native-v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$/;
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const PLAY_APPLICATION_ID = 'net.darkmachines.healthtracker';
-const PLAY_TRACKS = Object.freeze({ phone: 'qa', watch: 'wear:qa' });
+const PLAY_TRACKS = Object.freeze({ phone: 'internal', watch: 'wear:internal' });
 const ATTEST_ACTION_PIN = 'actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d';
 
 export const NATIVE_PLAY_RECEIPT_PATH = 'build/native-play-receipt.json';

@@ -7,7 +7,7 @@ import { queueSubmission, waitForSubmission, EAS_PROJECT_ID } from './native-eas
 const id = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const hash = 'a'.repeat(64);
 const evidence = 'Inspected provider logs and matched the retained AAB SHA-256 and version code.';
-const submission = { id, app: { id: EAS_PROJECT_ID }, platform: 'ANDROID', androidConfig: { track: 'qa' }, status: 'IN_QUEUE' };
+const submission = { id, app: { id: EAS_PROJECT_ID }, platform: 'ANDROID', androidConfig: { track: 'internal' }, status: 'IN_QUEUE' };
 
 /** Preserve append ordering and let assertions inspect every checkpoint mutation. */
 function storeFixture(checkpoints) {
@@ -93,4 +93,36 @@ test('OTA reconciliation binds channel, runtime and retained artifact, without p
     assert.deepEqual(args, ['update:view', id, '--json']); return JSON.stringify([update]);
   } });
   assert.equal(store.state.checkpoints.at(-1).publication.group, id);
+});
+
+test('wrong-track submission requires explicit absence reconciliation before corrected enqueue', async () => {
+  const store = storeFixture([
+    { stage: 'native-build', status: 'succeeded', aab_hashes: { phone: hash }, asset_id: 1 },
+    { stage: 'phone-submit', status: 'failed', submission_id: id, asset_id: 2 }
+  ]);
+  const oldSubmission = { ...submission, status: 'ERRORED', canRetry: true, androidConfig: { track: 'qa' } };
+  await assert.rejects(queueSubmission({ store, releaseId: '1', role: 'phone', retryFailed: true, runEas: (args) => {
+    assert.deepEqual(args, ['submit:view', id, '--json']);
+    return JSON.stringify(oldSubmission);
+  } }), /track mismatch/);
+  await reconcileRelease({ store, releaseId: '1', input: {
+    stage: 'phone-submit', status: 'not-published', id: '', artifact_hash: '', confirmed: true,
+    evidence: 'Provider reports terminal Track not found; inspected Play bundles and confirmed code 17 was not committed.'
+  }, runEas: () => assert.fail('absence reconciliation must not enqueue or retry') });
+  const replacement = 'ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const calls = [];
+  const options = { store, releaseId: '1', role: 'phone', aab: '/retained/phone-17.aab', runEas: (args) => {
+    calls.push(args);
+    if (args[0] === 'submit') {
+      assert.deepEqual(args, ['submit', '--platform', 'android', '--profile', 'phone', '--path', '/retained/phone-17.aab', '--non-interactive', '--no-wait']);
+      return `https://expo.dev/accounts/calibrate-health/projects/calibrate-health-app/submissions/${replacement}`;
+    }
+    assert.deepEqual(args, ['submit:view', replacement, '--json']);
+    return JSON.stringify({ ...submission, id: replacement });
+  } };
+  assert.equal(await queueSubmission(options), replacement);
+  assert.equal(await queueSubmission(options), replacement);
+  assert.equal(calls.filter(args => args[0] === 'submit').length, 1);
+  assert.equal(calls.some(args => args[0] === 'submit:retry'), false);
+  assert.equal(store.state.checkpoints[0].status, 'succeeded');
 });

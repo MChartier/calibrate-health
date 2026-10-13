@@ -12,7 +12,7 @@ export const RELEASE_ENGINE_CONFIG = Object.freeze({
     owner: 'calibrate-health',
     slug: 'calibrate-health-app',
     applicationId: 'net.darkmachines.healthtracker',
-    tracks: Object.freeze({ phone: 'qa', wear: 'wear:qa' })
+    tracks: Object.freeze({ phone: 'internal', wear: 'wear:internal' })
   })
 });
 

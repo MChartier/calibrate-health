@@ -8,6 +8,7 @@ import { checkpointReleaseOperation } from './release-engine.mjs';
 import { RELEASE_ENGINE_CONFIG } from './release-engine.config.mjs';
 
 export const EAS_PROJECT_ID = RELEASE_ENGINE_CONFIG.expo.projectId;
+// Match the existing tracks returned by Play, including the Wear form-factor prefix.
 export const SUBMISSION_TRACKS = RELEASE_ENGINE_CONFIG.expo.tracks;
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
