@@ -53,6 +53,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ job.workflow_sha }}
+          # Recovery must prove ancestry of retained sources older than current master.
+          fetch-depth: 0
           persist-credentials: false
       - name: Bind release source and inspect checkpoints
         id: state

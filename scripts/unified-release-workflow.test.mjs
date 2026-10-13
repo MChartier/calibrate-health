@@ -123,6 +123,8 @@ test('no-op and client-only cuts avoid an empty version PR; recovery never calls
   assert.match(jobs.publish.if, /outputs.server != 'true' \|\| needs.finalize.result == 'success'/);
   assert.match(jobs.publish.with.release_commit, /inputs.source_sha/);
   const graph = workflow('release-components').jobs;
+  assert.equal(graph.state.steps.find(step => step.uses?.startsWith('actions/checkout@')).with['fetch-depth'], 0,
+    'Historical recovery sources must remain available for the protected ancestry check');
   assert.match(graph.native_build.if, /!inputs.recovery/);
   assert.match(graph.native_build.if, /native_build_complete != 'true'/);
   assert.match(graph.server_image.if, /image_complete != 'true'/);
