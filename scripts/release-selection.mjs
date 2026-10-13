@@ -6,7 +6,7 @@ import path from 'node:path';
 import { resolveExpoRuntime } from './expo-runtime.mjs';
 import { compareSemver, getNextNativeVersionCodes, nextReleaseVersion } from './release-config.mjs';
 
-const IGNORED = /(^|\/)(__tests__|__mocks__|fixtures|e2e|docs)(\/|$)|\.(test|spec)\.[^/]+$|(^|\/)(README[^/]*|AGENTS\.md)$/i;
+const IGNORED = /(^|\/)(__tests__|__mocks__|fixtures|e2e|docs)(\/|$)|(^|\/)src\/(test|androidTest)\/|\.(test|spec)\.[^/]+$|(^|\/)(README[^/]*|AGENTS\.md)$/i;
 const SERVER_FILES = /^(backend\/|shared\/|packages\/|mobile\/|Dockerfile\.app$|\.dockerignore$|package(?:-lock)?\.json$|scripts\/expo-(?:cli-environment|web-build|web-release)\.mjs$)/;
 const PHONE_FILES = /^(mobile\/|shared\/|packages\/api-client\/|package(?:-lock)?\.json$)/;
 
