@@ -202,6 +202,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-tag-attestation.mjs
             /scripts/release-config.mjs
             /tools/eas-cli/
@@ -335,6 +336,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-ota-contract.mjs
             /scripts/native-ota-update.mjs
             /scripts/native-tag-attestation.mjs
@@ -588,6 +590,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-tag-attestation.mjs
             /scripts/release-config.mjs
             /tools/eas-cli/
@@ -722,6 +725,7 @@ jobs:
             /scripts/expo-ota-publish.mjs
             /scripts/release-record.mjs
             /scripts/expo-runtime.mjs
+            /scripts/zip-entry.mjs
             /scripts/native-ota-contract.mjs
             /scripts/native-ota-update.mjs
             /scripts/native-tag-attestation.mjs
