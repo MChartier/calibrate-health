@@ -2,12 +2,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 
 /** Parse workflow YAML as data so assertions cover actual job dependencies and permission scopes. */
 function workflow(name) {
   return parse(fs.readFileSync(new URL(`../.github/workflows/${name}.yml`, import.meta.url), 'utf8'));
 }
+
+test('isolated OTA tooling checkouts contain the complete local import graph', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ota-tooling-imports-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const seen = new Set();
+  let checkouts = 0;
+  for (const job of Object.values(workflow('expo-ota-update').jobs)) {
+    for (const step of job.steps ?? []) {
+      const sparse = step.with?.['sparse-checkout'];
+      if (!sparse?.includes('/scripts/expo-runtime.mjs')) continue;
+      checkouts += 1;
+      if (seen.has(sparse)) continue;
+      seen.add(sparse);
+      const checkout = path.join(root, String(checkouts));
+      const files = sparse.trim().split(/\s+/).filter((file) => file.startsWith('/scripts/') && file.endsWith('.mjs'));
+      for (const file of files) {
+        const destination = path.join(checkout, file.slice(1));
+        fs.mkdirSync(path.dirname(destination), { recursive: true });
+        fs.copyFileSync(new URL(`..${file}`, import.meta.url), destination);
+      }
+      const urls = files.map((file) => pathToFileURL(path.join(checkout, file.slice(1))).href);
+      execFileSync(process.execPath, ['--input-type=module', '--eval',
+        `await Promise.all(${JSON.stringify(urls)}.map(url => import(url)));`], { cwd: checkout, stdio: 'pipe' });
+    }
+  }
+  assert.equal(checkouts, 4, 'both environment resolvers and source exporters stay isolated');
+});
 
 test('the replacement graph retains the existing WireGuard deployment worker and named secrets', () => {
   const { jobs } = workflow('release-components');
