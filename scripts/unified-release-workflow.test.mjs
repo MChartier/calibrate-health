@@ -1,11 +1,11 @@
-/** Protect the unified release graph: server health and native handoff gate OTA, store completion does not. */
+/** @file Protect isolated tooling imports and the unified server-health/native-handoff publication graph. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parse } from 'yaml';
 
 /** Parse workflow YAML as data so assertions cover actual job dependencies and permission scopes. */
@@ -26,11 +26,14 @@ test('isolated OTA tooling checkouts contain the complete local import graph', (
       if (seen.has(sparse)) continue;
       seen.add(sparse);
       const checkout = path.join(root, String(checkouts));
-      const files = sparse.trim().split(/\s+/).filter((file) => file.startsWith('/scripts/') && file.endsWith('.mjs'));
-      for (const file of files) {
+      const entries = sparse.trim().split(/\s+/);
+      const files = entries.filter((file) => file.startsWith('/scripts/') && file.endsWith('.mjs'));
+      for (const file of entries) {
         const destination = path.join(checkout, file.slice(1));
         fs.mkdirSync(path.dirname(destination), { recursive: true });
-        fs.copyFileSync(new URL(`..${file}`, import.meta.url), destination);
+        fs.cpSync(fileURLToPath(new URL(`..${file}`, import.meta.url)), destination, {
+          recursive: true, filter: (source) => !source.split(path.sep).includes('node_modules')
+        });
       }
       const urls = files.map((file) => pathToFileURL(path.join(checkout, file.slice(1))).href);
       execFileSync(process.execPath, ['--input-type=module', '--eval',
