@@ -19,7 +19,7 @@ The only supporting root commands are `native:configure` for EAS signing credent
 
 The local profile is fixed: application ID `net.darkmachines.healthtracker`, server
 `https://calibratehealth.darkmachines.net`, Expo project `@calibrate-health/calibrate-health-app`
-(`fda8f8c5-e646-47ac-82fb-35003c9cbec7`), channel `internal`, and Play tracks `qa` / `wear:qa`.
+(`fda8f8c5-e646-47ac-82fb-35003c9cbec7`), channel `internal`, and Play tracks `internal` / `wear:internal`.
 Devices need WireGuard access to the backend. Public production builds and promotions use the
 separate [protected GitHub store workflow](native-store-release.md).
 
@@ -222,7 +222,7 @@ implicitly supplies the internal worker's Console-coordination acknowledgement. 
 required. Check Publishing overview and coordinate other Console/API writers before submitting:
 Play commits can include pending changes for the same application.
 
-Submission uploads only the verified phone/Wear AABs to `qa` and `wear:qa`, then reads back their
+Submission uploads only the verified phone/Wear AABs to `internal` and `wear:internal`, then reads back their
 versions and hashes as part of the same command. No separate status step is required.
 Submission does not promote to closed testing or production. Enroll testers through the Console
 opt-in links and install/update both form factors through Play.

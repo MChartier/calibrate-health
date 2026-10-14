@@ -6,7 +6,8 @@ import { pathToFileURL } from 'node:url';
 import { ReleaseRecordStore, latestCheckpoint } from './release-record.mjs';
 
 export const EAS_PROJECT_ID = 'fda8f8c5-e646-47ac-82fb-35003c9cbec7';
-export const SUBMISSION_TRACKS = Object.freeze({ phone: 'qa', wear: 'wear:qa' });
+// Match the existing tracks returned by Play, including the Wear form-factor prefix.
+export const SUBMISSION_TRACKS = Object.freeze({ phone: 'internal', wear: 'wear:internal' });
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 
 /** The pinned submit command has no JSON flag; bind only its unique project-specific details URL. */

@@ -1,3 +1,4 @@
+/** Exercise paired Play artifact verification, exact track routing, and atomic upload/promotion behavior. */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -40,6 +41,7 @@ const SOURCE_COMMIT = 'a'.repeat(40);
 const SHARED_SIGNER = 'f'.repeat(64);
 const REPOSITORY = 'calibratehealth/calibrate';
 
+/** Model Google responses without network access. */
 function jsonResponse(payload, status = 200) {
   return new Response(payload === null ? '' : JSON.stringify(payload), {
     status,
@@ -47,6 +49,7 @@ function jsonResponse(payload, status = 200) {
   });
 }
 
+/** Create an isolated version manifest for valid and invalid release plans. */
 function createReleaseRoot(t, options = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-play-release-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -71,6 +74,7 @@ function createReleaseRoot(t, options = {}) {
   return { root, manifest };
 }
 
+/** Bind fixture binaries to the same provenance format used by native builds. */
 function addReleaseArtifacts(root) {
   for (const contract of NATIVE_RELEASE_ARTIFACT_CONTRACTS) {
     const file = path.join(root, contract.path);
@@ -82,6 +86,7 @@ function addReleaseArtifacts(root) {
   return provenance;
 }
 
+/** Supply deterministic package metadata with optional corruption cases. */
 function createArtifactInspector(root, options = {}) {
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'shared', 'release.json'), 'utf8'));
   return (_file, contract) => {
@@ -104,8 +109,8 @@ test('Play plan binds one package to distinct phone and Wear tracks and code lan
   assert.equal(plan.versionName, '1.2.3');
   assert.equal(plan.candidates.phone.versionCode, 9);
   assert.equal(plan.candidates.watch.versionCode, 10);
-  assert.equal(plan.candidates.phone.internalTrack, 'qa');
-  assert.equal(plan.candidates.watch.internalTrack, 'wear:qa');
+  assert.equal(plan.candidates.phone.internalTrack, 'internal');
+  assert.equal(plan.candidates.watch.internalTrack, 'wear:internal');
   assert.equal(plan.candidates.phone.closedTrack, 'closed');
   assert.equal(plan.candidates.watch.closedTrack, 'wear:closed');
   assert.equal(plan.candidates.phone.productionTrack, 'production');
@@ -498,7 +503,7 @@ test('publisher uses one edit, media upload, form-factor tracks, and safe commit
       if (url.endsWith('/edits')) return jsonResponse({ id: 'edit-123' });
       if (url.includes('/bundles') && init.method === 'GET') return jsonResponse({ bundles: [] });
       if (url.includes('/bundles')) return jsonResponse({ versionCode: 9 });
-      if (init.method === 'GET') return jsonResponse({ track: 'wear:qa', releases: [] });
+      if (init.method === 'GET') return jsonResponse({ track: 'wear:internal', releases: [] });
       if (init.method === 'PUT') return jsonResponse(JSON.parse(init.body));
       if (init.method === 'DELETE') return new Response('', { status: 204 });
       return jsonResponse({ id: 'edit-123', expiryTimeSeconds: '1' });
@@ -516,38 +521,45 @@ test('publisher uses one edit, media upload, form-factor tracks, and safe commit
 
   assert.equal(requests[0].url,
     'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/net.darkmachines.healthtracker/edits');
-  assert.match(requests[1].url, /tracks\/wear%3Aqa$/);
+  assert.match(requests[1].url, /tracks\/wear%3Ainternal$/);
   assert.match(requests[2].url, /edits\/edit-123\/bundles$/);
   assert.equal(requests[2].init.method, 'GET');
   assert.match(requests[3].url,
     /^https:\/\/androidpublisher\.googleapis\.com\/upload\/androidpublisher\/v3\/.*\/bundles\?uploadType=media$/);
   assert.equal(requests[3].init.headers['Content-Type'], 'application/octet-stream');
   assert.deepEqual(JSON.parse(requests[4].init.body), {
-    track: 'wear:qa',
+    track: 'wear:internal',
     releases: [{ name: 'Wear candidate', versionCodes: ['10'], status: 'completed' }]
   });
   assert.match(requests[5].url, /edit-123:commit\?changesInReviewBehavior=ERROR_IF_IN_REVIEW$/);
   assert.ok(requests.every(({ init }) => init.headers.Authorization === 'Bearer secret-access-token'));
 });
 
+/** Record edit operations while modeling exact track and bundle observations. */
 function fakePublisher(trackValues = {}, options = {}) {
   const calls = [];
   return {
     calls,
+    /** Record the start of a staged transaction. */
     async createEdit() { calls.push(['create']); return 'edit'; },
+    /** Model cleanup failures independently from the publication error. */
     async deleteEdit(editId) {
       calls.push(['delete', editId]);
       if (options.deleteError) throw new Error('transient delete failure');
     },
+    /** Record the publication boundary without external writes. */
     async commitEdit(editId) { calls.push(['commit', editId]); },
+    /** Expose only the requested fixture track. */
     async getTrack(editId, track) {
       calls.push(['get', editId, track]);
       return trackValues[track] ?? { track, releases: [] };
     },
+    /** Return fixture bundle hashes for receipt verification. */
     async listBundles(editId) {
       calls.push(['list-bundles', editId]);
       return { bundles: options.bundles ?? [] };
     },
+    /** Model Play's uploaded code/hash response, including mismatches. */
     async uploadBundle(editId, file) {
       calls.push(['upload', editId, file]);
       const localSha256 = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -556,6 +568,7 @@ function fakePublisher(trackValues = {}, options = {}) {
         : options.uploadSha256 ?? localSha256;
       return { versionCode: file.includes('wear') ? 10 : 9, sha256: reportedSha256 };
     },
+    /** Record exact staged destinations and release payloads. */
     async updateTrack(editId, track, release) {
       calls.push(['update', editId, track, release]);
       return { track, releases: [release] };
@@ -563,12 +576,14 @@ function fakePublisher(trackValues = {}, options = {}) {
   };
 }
 
+/** Convert verified AAB fixtures to the provider's list response. */
 function existingBundleEntries(verification) {
   return verification.artifacts
     .filter(({ format }) => format === 'aab')
     .map(({ versionCode, sha256 }) => ({ versionCode, sha256 }));
 }
 
+/** Supply the independently verified receipt required by protected uploads. */
 function uploadWithReceipt(options) {
   return uploadNativePlayInternal({
     ...options,
@@ -598,7 +613,7 @@ test('internal upload commits paired bundles and tracks as one edit', async (t) 
     publisher.calls.filter(([operation]) => operation === 'update').map(([, , track, release]) => ({ track, release })),
     [
       {
-        track: 'qa',
+        track: 'internal',
         release: {
           name: plan.candidates.phone.releaseName,
           versionCodes: ['9'],
@@ -606,7 +621,7 @@ test('internal upload commits paired bundles and tracks as one edit', async (t) 
         }
       },
       {
-        track: 'wear:qa',
+        track: 'wear:internal',
         release: {
           name: plan.candidates.watch.releaseName,
           versionCodes: ['10'],
@@ -717,12 +732,12 @@ test('internal recovery returns an exact Play receipt without local artifacts or
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, {
@@ -743,8 +758,8 @@ test('internal recovery returns an exact Play receipt without local artifacts or
     native_release_tag: 'native-v1.2.3',
     version_name: '1.2.3',
     releases: {
-      phone: { track: 'qa', version_code: 9, aab_sha256: 'a'.repeat(64) },
-      watch: { track: 'wear:qa', version_code: 10, aab_sha256: 'b'.repeat(64) }
+      phone: { track: 'internal', version_code: 9, aab_sha256: 'a'.repeat(64) },
+      watch: { track: 'wear:internal', version_code: 10, aab_sha256: 'b'.repeat(64) }
     }
   });
   assert.deepEqual(publisher.calls.map(([operation]) => operation), [
@@ -762,12 +777,12 @@ test('Play name-only source relabeling reconstructs new bytes that cannot reuse 
     watch: { sha256: 'd'.repeat(64) }
   };
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: planB.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: planB.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, {
@@ -791,8 +806,8 @@ test('internal recovery rejects a conflicting source marker and abandons the rea
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: `cal-p@${'b'.repeat(40)}`, status: 'completed', versionCodes: ['9'] }]
     }
   });
@@ -809,12 +824,12 @@ test('internal recovery rejects ambiguous or invalid stored bundle digests', asy
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const tracks = {
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   };
@@ -848,12 +863,12 @@ test('recover-internal CLI reads Play state without requiring local release arti
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, {
@@ -910,12 +925,12 @@ test('internal retry requires version codes to belong to the same source commit'
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: 'calibrate Android from another source', status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, { bundles: existingBundleEntries(verification) });
@@ -935,12 +950,12 @@ test('internal retry is complete only when both code and source marker match', a
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, { bundles: existingBundleEntries(verification) });
@@ -976,8 +991,8 @@ test('internal retry rejects duplicate releases and releases with extra version 
 
   for (const releases of invalidPhoneReleases) {
     const publisher = fakePublisher({
-      qa: { track: 'qa', releases },
-      'wear:qa': { track: 'wear:qa', releases: [exactWatch] }
+      internal: { track: 'internal', releases },
+      'wear:internal': { track: 'wear:internal', releases: [exactWatch] }
     }, { bundles: existingBundleEntries(verification) });
 
     await assert.rejects(
@@ -999,12 +1014,12 @@ test('internal retry rejects a stored Play bundle hash that differs from the ver
   const bundles = existingBundleEntries(verification);
   bundles.find(({ versionCode }) => versionCode === 9).sha256 = '0'.repeat(64);
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, { bundles });
@@ -1024,12 +1039,12 @@ test('internal no-op retry succeeds when empty-edit deletion fails transiently',
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     }
   }, {
@@ -1049,12 +1064,12 @@ test('closed promotion moves the exact internal pair to custom closed form-facto
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     },
     closed: { track: 'closed', releases: [{ status: 'completed', versionCodes: ['7'] }] },
@@ -1086,8 +1101,8 @@ test('promotion requires exact singleton releases on source and idempotent desti
     versionCodes: ['10']
   };
   const ambiguousSource = fakePublisher({
-    qa: { track: 'qa', releases: [{ ...phone, versionCodes: ['9', '11'] }] },
-    'wear:qa': { track: 'wear:qa', releases: [watch] }
+    internal: { track: 'internal', releases: [{ ...phone, versionCodes: ['9', '11'] }] },
+    'wear:internal': { track: 'wear:internal', releases: [watch] }
   });
 
   await assert.rejects(
@@ -1098,8 +1113,8 @@ test('promotion requires exact singleton releases on source and idempotent desti
   assert.equal(ambiguousSource.calls.some(([operation]) => operation === 'commit'), false);
 
   const ambiguousDestination = fakePublisher({
-    qa: { track: 'qa', releases: [phone] },
-    'wear:qa': { track: 'wear:qa', releases: [watch] },
+    internal: { track: 'internal', releases: [phone] },
+    'wear:internal': { track: 'wear:internal', releases: [watch] },
     closed: { track: 'closed', releases: [phone, { ...phone }] },
     'wear:closed': { track: 'wear:closed', releases: [watch] }
   });
@@ -1122,12 +1137,12 @@ test('promote-closed CLI routes the exact checkout through the closed stage', as
   });
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     },
     closed: { track: 'closed', releases: [] },
@@ -1161,12 +1176,12 @@ test('closed promotion fails closed for an unknown destination release status', 
   const { root } = createReleaseRoot(t);
   const plan = createNativePlayReleasePlan({ root, sourceCommit: SOURCE_COMMIT });
   const publisher = fakePublisher({
-    qa: {
-      track: 'qa',
+    internal: {
+      track: 'internal',
       releases: [{ name: plan.candidates.phone.releaseName, status: 'completed', versionCodes: ['9'] }]
     },
-    'wear:qa': {
-      track: 'wear:qa',
+    'wear:internal': {
+      track: 'wear:internal',
       releases: [{ name: plan.candidates.watch.releaseName, status: 'completed', versionCodes: ['10'] }]
     },
     closed: { track: 'closed', releases: [{ status: 'futureStatus', versionCodes: ['7'] }] },
@@ -1267,7 +1282,7 @@ test('local internal upload uses paired transaction, checks retries and rejects 
   const verification = verifyNativePlayArtifacts({ root, plan, artifactInspector: createArtifactInspector(root) });
   const fresh = fakePublisher();
   await uploadLocalNativePlayInternal({ root, plan, verification, publisher: fresh });
-  assert.deepEqual(fresh.calls.filter(([kind]) => kind === 'update').map((call) => call[2]), ['qa', 'wear:qa']);
+  assert.deepEqual(fresh.calls.filter(([kind]) => kind === 'update').map((call) => call[2]), ['internal', 'wear:internal']);
   assert.equal(fresh.calls.filter(([kind]) => kind === 'commit').length, 1);
   const tracks = Object.fromEntries(Object.values(plan.candidates).map((c) => [c.internalTrack, {
     releases: [{ status: 'completed', name: c.releaseName, versionCodes: [String(c.versionCode)] }]
@@ -1279,7 +1294,7 @@ test('local internal upload uses paired transaction, checks retries and rejects 
   const status = fakePublisher(tracks, { bundles: existingBundleEntries(verification) });
   assert.equal((await inspectLocalNativePlayInternal({ plan, verification, publisher: status })).verified, true);
   assert.equal(status.calls.some(([kind]) => kind === 'commit'), false);
-  const partial = fakePublisher({ qa: tracks.qa });
+  const partial = fakePublisher({ internal: tracks.internal });
   await assert.rejects(uploadLocalNativePlayInternal({ root, plan, verification, publisher: partial }), /one half/);
   assert.equal(partial.calls.some(([kind]) => kind === 'upload'), false);
   const wrongHashes = fakePublisher(tracks, { bundles: existingBundleEntries(verification).map((v) => ({ ...v, sha256: '0'.repeat(64) })) });

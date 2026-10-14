@@ -82,8 +82,8 @@ with a Wear artifact signed by that same certificate. Never place signing materi
 generated metadata.
 
 Store delivery is selected by Cut release from phone fingerprint and Wear build-input changes. It builds and attests
-one pair, queues the exact phone AAB through EAS Submit to qa, permits runtime-targeted OTA, and independently finishes
-phone submission before Wear submission to wear:qa. Explicit promotions reuse exact attested codes and AAB hashes.
+one pair, queues the exact phone AAB through EAS Submit to internal, permits runtime-targeted OTA, and independently finishes
+phone submission before Wear submission to wear:internal. Explicit promotions reuse exact attested codes and AAB hashes.
 No signed native tag or Play acceptance is required for OTA. See [the unified release runbook](native-store-release.md).
 
 ## Explicit server/web releases

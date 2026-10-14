@@ -17,7 +17,7 @@ const ACTIONS = {
   build: 'Build signed phone and Wear APKs/AABs for manual upload, install or submit.',
   ota: 'Publish compatible phone JavaScript/assets through Expo.',
   install: 'Install and verify the last build on a local phone and watch.',
-  submit: 'Upload the last verified AABs through Play API to qa and wear:qa.',
+  submit: 'Upload the last verified AABs through Play API to internal and wear:internal.',
   configure: 'Download EAS Android signing and assigned Play credentials for local releases.',
   setup: 'Install/check Windows native tools and repository dependencies.'
 };
