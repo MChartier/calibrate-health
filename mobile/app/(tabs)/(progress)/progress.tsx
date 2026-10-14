@@ -368,6 +368,7 @@ export default function ProgressScreen() {
                 expansion={{
                     id: expandedSection,
                     title: expandedSection === 'plan' ? 'Plan check' : 'Trend',
+                    backLabel: 'Back to Progress',
                     onClose: () => setExpandedSection(null),
                     onRestore: id => { if (id === 'trend' || id === 'plan') setExpandedSection(id); },
                     focused: pathname === '/progress',

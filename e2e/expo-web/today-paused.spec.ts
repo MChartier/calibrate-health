@@ -93,11 +93,11 @@ test('a past paused day replaces an expanded food log and can be backfilled', as
   await hideTransientPwaNotices(page);
   await expectWeightBoundary(page, false);
   await page.getByTestId('today-food-preview').click();
-  await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Back to Today', exact: true })).toBeVisible();
   options.foodDayStatus = 'PAUSED';
   await page.getByRole('button', { name: 'Previous day', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Tracking was paused', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Back to Today', exact: true })).toHaveCount(0);
   await expect(page.getByText(/It is not counted as a zero-calorie day/)).toBeVisible();
   await expect(page.getByTestId('today-food-preview')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Resume tracking', exact: true })).toHaveCount(0);
