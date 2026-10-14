@@ -155,7 +155,7 @@ test('calendar refresh, uncached month failure, retry, and completion reopening 
   await page.getByRole('textbox', { name: 'Calories', exact: true }).fill('2501');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByText('1 food | 2,501 kcal', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to Today', exact: true }).click();
   await page.getByRole('button', { name: 'Choose date', exact: true }).click();
   await expect(page.getByTestId('calendar-day-2026-07-21')).toHaveAccessibleName(/in progress, above maintenance/);
   await expect(page.getByTestId('calendar-date-badge-2026-07-21')).toHaveCSS('border-color', rgb(calibrateDesignTokens.schemes.light.calendarBeyond));

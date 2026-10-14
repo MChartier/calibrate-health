@@ -18,7 +18,7 @@ describe('native expansion Back handling', () => {
             return { remove };
         });
         const onClose = jest.fn();
-        const config: PageExpansionConfig = { id: null, title: 'Food log', onClose, onRestore: jest.fn(), renderContent: () => null };
+        const config: PageExpansionConfig = { id: null, title: 'Food log', backLabel: 'Back to Today', onClose, onRestore: jest.fn(), renderContent: () => null };
         const page = (value: PageExpansionConfig) => <PageExpansion config={value} columnStyle={undefined}>{() => null}</PageExpansion>;
         const view = render(page(config));
         expect(listen).not.toHaveBeenCalled();
@@ -50,7 +50,7 @@ it.each([450, 180])('shrinks on every native cycle after %i ms of expansion', (o
     function Example() {
         const [id, setId] = React.useState<string | null>(null);
         return <PageExpansion columnStyle={undefined} config={{
-            id, title: 'Trend', onClose: () => setId(null), onRestore: setId,
+            id, title: 'Trend', backLabel: 'Back to Progress', onClose: () => setId(null), onRestore: setId,
             focused: false, renderContent: () => <View testID="trend-detail" />
         }}>{() => <ExpansionRegion id="trend" order={2} testID="trend-source">
             <MotionConsumer />
@@ -71,8 +71,8 @@ it.each([450, 180])('shrinks on every native cycle after %i ms of expansion', (o
             }
             // Native measurement includes the source's translation, even mid-expansion.
             sourceY = opening.top;
-            fireEvent.press(screen.getByLabelText('Collapse Trend'));
-            fireEvent.press(screen.getByLabelText('Collapse Trend')); // A repeated tap must not stop collapse.
+            fireEvent.press(screen.getByRole('button', { name: 'Back to Progress' }));
+            fireEvent.press(screen.getByRole('button', { name: 'Back to Progress' })); // A repeated tap must not stop collapse.
             act(() => jest.advanceTimersByTime(180));
             const middle = StyleSheet.flatten(screen.getByTestId('expanded-trend').props.style);
             expect(middle.top).toBeGreaterThan(opening.top);

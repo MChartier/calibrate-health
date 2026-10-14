@@ -3,7 +3,7 @@ import { AccessibilityInfo, Animated, BackHandler, Easing, findNodeHandle, Platf
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useReducedMotionPreference } from '../hooks/useReducedMotionPreference';
 import { useExpansionHistory } from '../hooks/useExpansionHistory';
-import { spacing, useAppTheme } from '../theme';
+import { interaction, radius, spacing, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 import { useFocusVisible } from './useFocusVisible';
 
@@ -11,6 +11,7 @@ import { useFocusVisible } from './useFocusVisible';
 const PAGE_EXPAND_DURATION = 400;
 const PAGE_COLLAPSE_DURATION = 360;
 const DETAIL_REVEAL_END = 0.65; // Crossfade source and detail together so the growing pane never blanks the source.
+const BACK_ICON_SIZE = 20; // Keeps the return arrow aligned with the header's label text.
 
 type Region = { ref: React.RefObject<View | null>; order: number };
 type Bounds = { top: number; height: number };
@@ -18,6 +19,7 @@ type Transition = Bounds & { id: string; order: number };
 export type PageExpansionConfig = {
     id: string | null;
     title: string;
+    backLabel: string;
     onClose: () => void;
     onRestore: (id: string) => void;
     renderContent: (id: string) => React.ReactNode;
@@ -74,14 +76,15 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
     const reducedMotion = useReducedMotionPreference();
     const viewport = useRef<View>(null);
     const overview = useRef<View>(null);
-    const collapseControl = useRef<View>(null);
+    const backControl = useRef<View>(null);
     const regions = useRef(new Map<string, Region>());
     const progress = useRef(new Animated.Value(0)).current;
     const [height, setHeight] = useState(0);
     const [transition, setTransition] = useState<Transition | null>(null);
     const transitionRef = useRef(transition);
     transitionRef.current = transition;
-    const [title, setTitle] = useState('');
+    const [{ title, backLabel }, setHeading] = useState({ title: '', backLabel: '' });
+    const [backHovered, setBackHovered] = useState(false);
     const [moving, setMoving] = useState(false);
     const returnFocus = useRef<HTMLElement | null>(null);
     const returnRegion = useRef<string | null>(null);
@@ -126,7 +129,8 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
         const token = ++generation.current;
         const source = regions.current.get(id);
         if (!source || !viewport.current) return;
-        setTitle(configRef.current?.title ?? '');
+        setHeading({ title: configRef.current?.title ?? '', backLabel: configRef.current?.backLabel ?? '' });
+        setBackHovered(false);
         returnRegion.current = id;
         if (Platform.OS === 'web' && typeof document !== 'undefined') {
             const sourceElement = source.ref.current as unknown as HTMLElement | null;
@@ -164,9 +168,9 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
             } else if (configRef.current?.focused === false) {
                 return;
             } else if (Platform.OS === 'web') {
-                (collapseControl.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
+                (backControl.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
             } else {
-                const handle = findNodeHandle(collapseControl.current);
+                const handle = findNodeHandle(backControl.current);
                 if (handle) AccessibilityInfo.setAccessibilityFocus(handle);
             }
         });
@@ -232,19 +236,26 @@ export function PageExpansion({ config, columnStyle, children, footer }: PageExp
             </View>
             {transition && <Animated.View testID={`expanded-${transition.id}`} style={[styles.pane, paneStyle]}>
                 <View style={[columnStyle, styles.heading]}>
-                    <AppText variant="section" accessibilityRole="header" style={styles.title}>{title}</AppText>
                     <Pressable
-                        ref={collapseControl}
+                        ref={backControl}
                         accessibilityRole="button"
-                        accessibilityLabel={`Collapse ${title}`}
+                        accessibilityLabel={backLabel}
                         onPress={requestClose}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
-                        style={({ pressed }) => [styles.collapse, pressed && { backgroundColor: theme.colors.surfacePressed }, focusVisible && { outlineWidth: theme.interaction.focusRingWidth, outlineColor: theme.colors.focusRing, outlineStyle: 'solid' }]}
+                        onHoverIn={() => setBackHovered(true)}
+                        onHoverOut={() => setBackHovered(false)}
+                        style={({ pressed }) => [
+                            styles.back,
+                            backHovered && { backgroundColor: theme.colors.surfaceHovered },
+                            pressed && { backgroundColor: theme.colors.surfacePressed },
+                            focusVisible && { outlineWidth: theme.interaction.focusRingWidth, outlineColor: theme.colors.focusRing, outlineStyle: 'solid' }
+                        ]}
                     >
-                        <Ionicons name="contract-outline" size={20} color={theme.colors.primary} />
-                        <AppText variant="label" style={{ color: theme.colors.primary }}>Collapse</AppText>
+                        <Ionicons name="arrow-back" size={BACK_ICON_SIZE} color={theme.colors.primary} accessible={false} aria-hidden />
+                        <AppText variant="label" style={[styles.backLabel, { color: theme.colors.primary }]}>{backLabel}</AppText>
                     </Pressable>
+                    <AppText variant="section" accessibilityRole="header">{title}</AppText>
                 </View>
                 <View style={styles.detail} pointerEvents={moving ? 'none' : 'auto'}>
                     {config?.renderContent(transition.id)}
@@ -259,8 +270,12 @@ const styles = StyleSheet.create({
     viewport: { flex: 1, minHeight: 0, overflow: 'hidden' },
     overview: { flex: 1, minHeight: 0 },
     pane: { position: 'absolute', left: 0, right: 0, overflow: 'hidden' },
-    heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs, flexShrink: 0 },
-    title: { flex: 1, minWidth: 0 },
-    collapse: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm },
+    heading: { paddingTop: spacing.xs, paddingBottom: spacing.sm, flexShrink: 0 },
+    back: {
+        minHeight: interaction.minimumTouchTarget, maxWidth: '100%', alignSelf: 'flex-start',
+        flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.sm,
+        marginLeft: -spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm
+    },
+    backLabel: { flexShrink: 1 },
     detail: { flex: 1, minHeight: 0 }
 });

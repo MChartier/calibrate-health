@@ -137,8 +137,11 @@ Undo action. Preserve all calculation, data-state, offline, attribution, and con
 
 Food log expands into the shell content below Today's retained date picker. Trend and Plan check
 expand into everything below Progress's app bar, above the existing tabs. Preserve the app bar,
-desktop rail, tabs, and centered reading width. These are page regions with a pinned heading and
-Collapse action; there is no modal scrim or second navigation bar. Direct detail URLs remain supported.
+desktop rail, tabs, and centered reading width. These page regions have a pinned header: a left-aligned
+arrow and **Back to Today** or **Back to Progress** above the section title. The labeled button collapses
+to the originating overview and retains a 48px minimum target with wrapping text. Keep the route name
+in the app bar; do not repeat it as breadcrumbs. There is no modal scrim or second navigation bar.
+Direct detail URLs remain supported.
 
 Measure the source region and available pane. Animate its top and height together with the overview
 sections moving past the upper and lower edges: 400ms to expand and 360ms to collapse. Crossfade the
@@ -155,7 +158,7 @@ Reduced motion changes state immediately. Keep detail content scrollable, includ
 and remeasure the source before collapsing after resize or reflow.
 
 Keep the overview mounted and preserve its scroll position. Hide its controls from interaction and
-accessibility while expanded. Focus Collapse after opening and restore the source's keyboard focus
+accessibility while expanded. Focus the labeled Back button after opening and restore the source's keyboard focus
 after closing. Escape and native system Back collapse; nested dialogs handle dismissal first. Browser
 Back/Forward traverses the expansion without changing the route URL. Food editing, copy, recipes,
 date selection, and Add food, plus Trend controls and Plan check review/apply/undo retain their behavior.

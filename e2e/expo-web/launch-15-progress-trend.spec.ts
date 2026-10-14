@@ -315,7 +315,7 @@ test('Progress and Trend explain fresh, stale, gapped, and raw-only weight histo
   await hideTransientPwaNotices(page);
   await page.getByText('Month', { exact: true }).click();
   await expect(selectedSummary).toContainText('Jul 18, 2026');
-  await page.getByRole('button', { name: 'Collapse Trend', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to Progress', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === '/progress');
   await expect(page.locator('#route-focus-title')).toHaveText('Progress');
 
