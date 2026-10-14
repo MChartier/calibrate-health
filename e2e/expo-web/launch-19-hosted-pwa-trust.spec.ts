@@ -429,7 +429,8 @@ test('hosted and installed web keep public trust, route truth, and server-accoun
   const advanced = page.getByTestId('advanced-settings-page');
   await expect(advanced).toBeVisible();
   await expect(advanced.getByRole('textbox', { name: 'Server URL' })).toHaveCount(0);
-  await expect(advanced).toContainText("A self-hosted service's operator is responsible for privacy, security, availability, backups, and support.");
+  await expect(advanced).not.toContainText(/self-host/i);
+  await expect(advanced).toContainText('Service address');
 
   await controller.activateOffline();
   const offlineNotice = page.getByTestId('pwa-offline');

@@ -8,7 +8,6 @@ describe('ClientServerIncompatibleScreen', () => {
                 mismatch={{ clientVersion: '1.3.0', serverVersion: '1.2.9', status: 'server_behind' }}
                 serverUrl="https://health.example.com"
                 onRecheck={jest.fn(async () => false)}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 
@@ -24,7 +23,6 @@ describe('ClientServerIncompatibleScreen', () => {
                 mismatch={{ clientVersion: '2.5.0', serverVersion: '1.99.9', status: 'server_behind' }}
                 serverUrl="https://health.example.com"
                 onRecheck={jest.fn(async () => false)}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 
@@ -38,7 +36,6 @@ describe('ClientServerIncompatibleScreen', () => {
                 mismatch={{ clientVersion: '1.99.9', serverVersion: '2.5.0', status: 'client_behind' }}
                 serverUrl="https://health.example.com"
                 onRecheck={jest.fn(async () => false)}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 
@@ -53,7 +50,6 @@ describe('ClientServerIncompatibleScreen', () => {
                 mismatch={{ clientVersion: '1.3.0', serverVersion: '1.2.9', status: 'server_behind' }}
                 serverUrl="https://health.example.com"
                 onRecheck={onRecheck}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 

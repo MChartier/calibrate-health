@@ -9,19 +9,31 @@ const TRACKING_KEYS = new Set([
     'mobile-recent-foods', 'mobile-food-search', 'mobile-calibration-status'
 ]);
 const pending = new Map<string, Promise<unknown>>();
+const interruptedSnapshots = new Map<string, string | null>();
 type Snapshot = { version: 1; origin: string; user: UserClientPayload; cache: DehydratedState };
 const origin = (server: string) => new URL(server).origin;
 const key = (server: string) => PREFIX + encodeURIComponent(origin(server));
 
 function serialize<T>(server: string, work: () => Promise<T>): Promise<T> {
     const storageKey = key(server);
-    const result = (pending.get(storageKey) ?? Promise.resolve()).then(work);
+    const result = (pending.get(storageKey) ?? Promise.resolve()).then(async () => {
+        await restoreInterruptedSave(storageKey);
+        return work();
+    });
     pending.set(storageKey, result.catch(() => undefined));
     return result;
 }
 
+async function restoreInterruptedSave(storageKey: string): Promise<void> {
+    if (!interruptedSnapshots.has(storageKey)) return;
+    const previous = interruptedSnapshots.get(storageKey)!;
+    if (previous === null) await AsyncStorage.removeItem(storageKey);
+    else await AsyncStorage.setItem(storageKey, previous);
+    interruptedSnapshots.delete(storageKey);
+}
+
 /** Local workspace only. Neither this snapshot nor its user ID authorizes a server request. */
-export function saveOfflineWorkspace(server: string, user: UserClientPayload, client: QueryClient): Promise<void> {
+export function saveOfflineWorkspace(server: string, user: UserClientPayload, client: QueryClient, isCurrent: () => boolean = () => true): Promise<void> {
     const snapshot: Snapshot = {
         version: 1, origin: origin(server), user,
         cache: dehydrate(client, {
@@ -32,9 +44,12 @@ export function saveOfflineWorkspace(server: string, user: UserClientPayload, cl
     // Capture before queuing so an account switch cannot serialize the replacement user's cache.
     const encoded = JSON.stringify(snapshot);
     return serialize(server, async () => {
+        if (!isCurrent()) return;
+        const previousEncoded = await AsyncStorage.getItem(key(server));
+        if (!isCurrent()) return;
         const next = JSON.parse(encoded) as Snapshot;
         try {
-            const previous = JSON.parse(await AsyncStorage.getItem(key(server)) ?? 'null') as Snapshot | null;
+            const previous = JSON.parse(previousEncoded ?? 'null') as Snapshot | null;
             if (previous?.version === 1 && previous.origin === next.origin && previous.user.id === next.user.id && Array.isArray(previous.cache?.queries)) {
                 const queries = new Map(previous.cache.queries.filter(query => Array.isArray(query.queryKey) && TRACKING_KEYS.has(String(query.queryKey[0]))).map(query => [query.queryHash, query]));
                 for (const query of next.cache.queries) {
@@ -44,7 +59,15 @@ export function saveOfflineWorkspace(server: string, user: UserClientPayload, cl
                 next.cache.queries = [...queries.values()];
             }
         } catch { /* Invalid prior data cannot replace the verified account snapshot. */ }
-        await AsyncStorage.setItem(key(server), JSON.stringify(next));
+        if (!isCurrent()) return;
+        try {
+            await AsyncStorage.setItem(key(server), JSON.stringify(next));
+        } finally {
+            if (!isCurrent()) {
+                interruptedSnapshots.set(key(server), previousEncoded);
+                await restoreInterruptedSave(key(server));
+            }
+        }
     });
 }
 

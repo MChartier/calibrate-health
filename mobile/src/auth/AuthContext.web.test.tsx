@@ -6,22 +6,26 @@ import React from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const mockClientOptions: Array<{ onRequestError?: (error: unknown) => void }> = [];
+const mockClientOptions: Array<{ fetchImpl?: (input: string) => Promise<unknown>; onRequestError?: (error: unknown) => void; onUnauthorized?: () => Promise<void> | void }> = [];
 const mockLoginBrowser = jest.fn();
+const mockRegisterBrowser = jest.fn();
 const mockLogoutBrowser = jest.fn(async () => undefined);
 const mockRestoreSession = jest.fn();
 const mockGetMe = jest.fn();
 jest.mock('@calibrate/api-client', () => ({
     ApiError: class extends Error { status: number; constructor(status: number, message: string) { super(message); this.status = status; } },
     CalibrateApiClient: class {
-            constructor(options: { onRequestError?: (error: unknown) => void }) { mockClientOptions.push(options); }
+        constructor(options: typeof mockClientOptions[number]) { mockClientOptions.push(options); }
         getMe = (...args: unknown[]) => mockGetMe(...args);
         loginBrowser = (...args: unknown[]) => mockLoginBrowser(...args);
+        registerBrowser = (...args: unknown[]) => mockRegisterBrowser(...args);
         logoutBrowser = () => mockLogoutBrowser();
     }
 }));
 jest.mock('../config/server', () => ({
     getDefaultServerUrl: () => 'https://health.example',
+    normalizeServerUrl: (url: string) => new URL(url).origin,
+    HOSTED_SERVER_URL: 'https://calibratehealth.app',
     INITIAL_SERVER_CONNECTION_STATE: { status: 'idle' },
     testCalibrateServerConnection: async () => ({ ok: true, url: 'https://health.example', message: 'Connected' })
 }));
@@ -48,6 +52,8 @@ describe('browser onboarding draft cleanup', () => {
         jest.clearAllMocks();
         mockRestoreSession.mockReset().mockResolvedValue({ user: USER });
         mockLoginBrowser.mockReset().mockResolvedValue({ user: USER });
+        mockLogoutBrowser.mockReset().mockResolvedValue(undefined);
+        mockRegisterBrowser.mockReset().mockResolvedValue({ user: USER });
     });
 
     it.each(['logout', 'clearLocalSession'] as const)('clears the current account draft on %s', async (method) => {
@@ -63,10 +69,10 @@ describe('browser onboarding draft cleanup', () => {
         const { result } = renderAuth();
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
-        await act(async () => { await result.current.login('person@example.com', 'password', 'https://health.example'); });
+        await act(async () => { await result.current.login('person@example.com', 'password'); });
         expect(clearOnboardingDraft).not.toHaveBeenCalled();
         mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
-        await act(async () => { await result.current.login('another@example.com', 'password', 'https://health.example'); });
+        await act(async () => { await result.current.login('another@example.com', 'password'); });
         expect(clearOnboardingDraft).toHaveBeenCalledWith('https://health.example', 7);
         expect(result.current.user?.id).toBe(8);
     });
@@ -87,6 +93,109 @@ describe('browser onboarding draft cleanup', () => {
         expect(clearBrowserUserScopedCaches).toHaveBeenCalled();
         expect(mockLogoutBrowser).toHaveBeenCalledTimes(1);
     });
+    it('a stale browser unauthorized response cannot clear a newer session', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        const oldClient = mockClientOptions.filter((options) => options.onUnauthorized).at(-1)!;
+        await act(async () => result.current.clearLocalSession());
+        mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
+        await act(async () => { await result.current.login('new@example.com', 'secret'); });
+        await act(async () => oldClient.onUnauthorized!());
+        act(() => oldClient.onRequestError!(new TypeError('Late network error')));
+        expect(result.current.pendingReconnection).toBe(false);
+        expect(result.current.user?.id).toBe(8);
+        expect(mockRestoreSession).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['login', 'register'] as const)('revokes the stale %s cookie before sending replacement credentials', async method => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        let finish!: () => void;
+        let cookie: number | null = 7;
+        const events: string[] = [];
+        const pending = new Promise<void>(resolve => { finish = resolve; });
+        const first = method === 'login' ? mockLoginBrowser : mockRegisterBrowser;
+        first.mockImplementationOnce(async () => { await pending; cookie = 7; events.push('old-cookie'); return { user: USER }; });
+        mockLogoutBrowser.mockImplementation(async () => { cookie = null; events.push('revoked'); });
+        let old!: Promise<boolean>;
+        act(() => { old = method === 'login' ? result.current.login('old@example.invalid', 'password') : result.current.register('old@example.invalid', 'password', { acceptTerms: true, acceptPrivacy: true }); });
+        await waitFor(() => expect(first).toHaveBeenCalled());
+        mockLoginBrowser.mockImplementationOnce(async () => { expect(cookie).toBeNull(); cookie = 8; events.push('replacement'); return { user: { ...USER, id: 8 } }; });
+        let replacement!: Promise<boolean>;
+        act(() => { replacement = result.current.login('new@example.invalid', 'password'); });
+        const client = mockClientOptions.filter(options => options.fetchImpl).at(-1)!;
+        await expect(client.fetchImpl!('/api/v1/user/profile')).rejects.toThrow('scope changed');
+        expect(events).toEqual([]);
+        await act(async () => { finish(); expect(await old).toBe(false); expect(await replacement).toBe(true); });
+        expect(events).toEqual(['old-cookie', 'revoked', 'replacement']);
+        expect(cookie).toBe(8);
+        expect(result.current.user?.id).toBe(8);
+    });
+
+    it('blocks replacement credentials while stale cookie revocation fails, then recovers', async () => {
+        const { result } = renderAuth();
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        let finish!: () => void;
+        mockLoginBrowser.mockImplementationOnce(async () => { await new Promise<void>(resolve => { finish = resolve; }); return { user: USER }; });
+        mockLogoutBrowser.mockRejectedValue(new TypeError('Offline'));
+        let old!: Promise<boolean>, replacement!: Promise<boolean>;
+        act(() => { old = result.current.login('old@example.invalid', 'password'); });
+        await waitFor(() => expect(mockLoginBrowser).toHaveBeenCalledTimes(1));
+        act(() => { replacement = result.current.login('new@example.invalid', 'password'); });
+        const outcomes = Promise.allSettled([old, replacement]);
+        await act(async () => { finish(); expect((await outcomes).map(value => value.status)).toEqual(['rejected', 'rejected']); });
+        expect(mockLoginBrowser).toHaveBeenCalledTimes(1);
+        expect(result.current.user).toBeNull();
+        expect((await AsyncStorage.getAllKeys()).some(key => key.startsWith('calibrate.logout.'))).toBe(true);
+        mockLogoutBrowser.mockResolvedValue(undefined);
+        mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
+        await act(async () => { expect(await result.current.login('new@example.invalid', 'password')).toBe(true); });
+        expect(result.current.user?.id).toBe(8);
+    });
+
+    it('revokes an old provider cookie before a remounted provider restores a session', async () => {
+        const first = renderAuth();
+        await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+        let finish!: () => void;
+        mockLoginBrowser.mockImplementationOnce(async () => { await new Promise<void>(resolve => { finish = resolve; }); return { user: USER }; });
+        let old!: Promise<boolean>;
+        act(() => { old = first.result.current.login('old@example.invalid', 'password'); });
+        await waitFor(() => expect(mockLoginBrowser).toHaveBeenCalledTimes(1));
+        first.unmount();
+        mockRestoreSession.mockClear();
+        const second = renderAuth();
+        expect(mockRestoreSession).not.toHaveBeenCalled();
+        await act(async () => { finish(); expect(await old).toBe(false); });
+        await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+        expect(mockLogoutBrowser).toHaveBeenCalled();
+        expect(mockRestoreSession).not.toHaveBeenCalled();
+        expect(second.result.current.user).toBeNull();
+        second.unmount();
+    });
+
+    it('ends a browser cookie delivered after logout instead of restoring it on reload', async () => {
+        const first = renderAuth();
+        await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+        let finish!: () => void;
+        let cookie: number | null = 7;
+        mockLoginBrowser.mockImplementationOnce(async () => { await new Promise<void>(resolve => { finish = resolve; }); cookie = 8; return { user: { ...USER, id: 8 } }; });
+        mockLogoutBrowser.mockImplementation(async () => { cookie = null; });
+        let login!: Promise<boolean>, logout!: Promise<void>;
+        act(() => { login = first.result.current.login('late@example.invalid', 'password'); });
+        await waitFor(() => expect(mockLoginBrowser).toHaveBeenCalled());
+        act(() => { logout = first.result.current.logout(); });
+        await act(async () => { finish(); await Promise.all([login, logout]); });
+        expect(cookie).toBeNull();
+        expect(first.result.current.user).toBeNull();
+        first.unmount();
+        mockRestoreSession.mockClear();
+        const second = renderAuth();
+        await waitFor(() => expect(second.result.current.isLoading).toBe(false));
+        expect(mockRestoreSession).not.toHaveBeenCalled();
+        expect(second.result.current.user).toBeNull();
+        second.unmount();
+    });
+
 });
 
 describe('browser offline workspace restoration', () => {
@@ -130,7 +239,7 @@ it('keeps the established identity and enters reconnection after a completed tim
     mockRestoreSession.mockResolvedValue({ user: USER });
     const { result } = renderAuth();
     await waitFor(() => expect(result.current.user?.id).toBe(7));
-    const observer = mockClientOptions.find((options) => options.onRequestError)?.onRequestError;
+    const observer = mockClientOptions.filter((options) => options.onRequestError).at(-1)?.onRequestError;
     expect(observer).toBeDefined();
     act(() => observer!(new Error('Request timed out while connecting to https://health.example')));
     expect(result.current.pendingReconnection).toBe(true);
@@ -167,7 +276,7 @@ it('stays explicitly signed out across failed invalidation, restart, recovery an
     expect(mockRestoreSession).not.toHaveBeenCalled();
     mockLogoutBrowser.mockResolvedValue(undefined);
     mockLoginBrowser.mockResolvedValue({ user: { ...USER, id: 8 } });
-    await act(async () => { expect(await second.result.current.login('other@example.com', 'password', 'https://health.example')).toBe(true); });
+    await act(async () => { expect(await second.result.current.login('other@example.com', 'password')).toBe(true); });
     expect(second.result.current.user?.id).toBe(8);
     expect(mockLogoutBrowser).toHaveBeenCalled();
     second.unmount();

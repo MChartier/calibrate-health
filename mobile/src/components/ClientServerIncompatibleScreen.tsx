@@ -15,15 +15,13 @@ type ClientServerIncompatibleScreenProps = {
     mismatch: ClientServerCompatibilityMismatch;
     serverUrl: string;
     onRecheck: () => Promise<boolean>;
-    onChooseServer: () => Promise<void>;
 };
 
 /** Block normal authenticated runtime without discarding the retained session or offline outbox. */
 export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleScreenProps> = ({
     mismatch,
     serverUrl,
-    onRecheck,
-    onChooseServer
+    onRecheck
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -85,12 +83,6 @@ export const ClientServerIncompatibleScreen: React.FC<ClientServerIncompatibleSc
                     onPress={() => void recheck()}
                     disabled={checking}
                     leftIcon={checking ? <ActivityIndicator color={theme.colors.onPrimary} /> : undefined}
-                />
-                <AppButton
-                    title="Sign out and choose another server"
-                    variant="secondary"
-                    onPress={() => void onChooseServer()}
-                    disabled={checking}
                 />
             </View>
         </ScrollView>
