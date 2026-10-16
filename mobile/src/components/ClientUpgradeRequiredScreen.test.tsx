@@ -17,7 +17,6 @@ describe('ClientUpgradeRequiredScreen', () => {
                 requirement={requirement}
                 serverUrl="https://health.example.com"
                 onRecheck={jest.fn(async () => false)}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 
@@ -26,7 +25,7 @@ describe('ClientUpgradeRequiredScreen', () => {
         expect(view.getByText(/pending offline changes are still stored/)).toBeTruthy();
         expect(view.getByText('https://health.example.com')).toBeTruthy();
         expect(view.getByLabelText('Check again')).toBeTruthy();
-        expect(view.getByLabelText('Sign out and choose another server')).toBeTruthy();
+        expect(view.queryByLabelText('Sign out and choose another server')).toBeNull();
     });
 
     it('renders the iOS version floor without Android-only copy', () => {
@@ -35,7 +34,6 @@ describe('ClientUpgradeRequiredScreen', () => {
                 requirement={{ ...requirement, platform: 'ios', message: 'Update Calibrate for iOS.' }}
                 serverUrl="https://health.example.com"
                 onRecheck={jest.fn(async () => false)}
-                onChooseServer={jest.fn(async () => undefined)}
             />
         );
 
@@ -51,7 +49,6 @@ describe('ClientUpgradeRequiredScreen', () => {
                 requirement={requirement}
                 serverUrl="https://health.example.com"
                 onRecheck={onRecheck}
-                onChooseServer={onChooseServer}
             />
         );
 

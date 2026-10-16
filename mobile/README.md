@@ -25,7 +25,9 @@ builds are the primary native workflow; Expo Go is useful for lightweight checks
 - In Expo dev builds pointed at localhost, the emulator loopback, or a LAN backend, the app auto-mints a mobile
   session for `test@calibratehealth.app` when no stored session can be restored.
 - Official builds default to `https://calibratehealth.app`.
-- A stored self-hosted server remains selected across restarts; choosing a custom server is an Advanced sign-in option.
+- Set `EXPO_PUBLIC_CALIBRATE_SERVER_URL` at build/export time for internal builds. It must be an explicit origin without credentials, paths, query or fragment. Invalid configuration blocks startup. Production web uses its serving origin.
+- Expo channel, EAS environment and service URL are independent inputs; a channel does not select a backend.
+- Native startup binds credentials to the configured origin. A changed target starts signed out only after all local queues are known safe. Unresolved or unreadable state blocks the change; return to a matching build to resolve it. Never clear storage to bypass recovery. Legacy records remain retained under their original origins/accounts.
 
 ## Architecture
 
