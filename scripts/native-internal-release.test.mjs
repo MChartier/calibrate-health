@@ -1,3 +1,4 @@
+/** Exercise local paired builds, internal-track plans, and private-runtime artifact verification. */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -11,6 +12,7 @@ import {
 } from './native-internal-release.mjs';
 
 const COMMIT = 'a'.repeat(40);
+/** Allocate an isolated local build plan with known native version codes. */
 function fixture(t) {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'calibrate-local-internal-'));
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
@@ -80,8 +82,8 @@ test('local plan markers cannot be confused with protected GitHub release names'
   const { plan } = fixture(t);
   assert.equal(plan.candidates.phone.releaseName, `local-p@${COMMIT}`);
   assert.equal(plan.candidates.watch.releaseName, `local-w@${COMMIT}`);
-  assert.equal(plan.candidates.phone.internalTrack, 'qa');
-  assert.equal(plan.candidates.watch.internalTrack, 'wear:qa');
+  assert.equal(plan.candidates.phone.internalTrack, 'internal');
+  assert.equal(plan.candidates.watch.internalTrack, 'wear:internal');
 });
 
 test('private baseline rejects a stale commit, server, project, channel or native runtime', (t) => {
@@ -92,6 +94,7 @@ test('private baseline rejects a stale commit, server, project, channel or nativ
   }
 });
 
+/** Model final Android manifest entries used to verify private builds. */
 function phoneManifest(runtime = '0.2.7') {
   return `<manifest><application android:usesCleartextTraffic="false">
     <meta-data android:name="expo.modules.updates.EXPO_UPDATE_URL" android:value="https://u.expo.dev/${INTERNAL_PROJECT_ID}"/>

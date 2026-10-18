@@ -1,3 +1,4 @@
+/** Verify canonical Play receipt identity, binary hashes, and historical signer authorization. */
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -23,6 +24,7 @@ const REPOSITORY = 'calibratehealth/calibrate';
 const PHONE_SHA = '1'.repeat(64);
 const WATCH_SHA = '2'.repeat(64);
 
+/** Provide canonical paired receipt inputs with focused invalid-field overrides. */
 function values(overrides = {}) {
   return {
     repository: REPOSITORY,
@@ -31,13 +33,14 @@ function values(overrides = {}) {
     nativeTag: 'native-v1.2.3',
     nativeVersion: '1.2.3',
     releases: {
-      phone: { track: 'qa', versionCode: 9, aabSha256: PHONE_SHA },
-      watch: { track: 'wear:qa', versionCode: 10, aabSha256: WATCH_SHA }
+      phone: { track: 'internal', versionCode: 9, aabSha256: PHONE_SHA },
+      watch: { track: 'wear:internal', versionCode: 10, aabSha256: WATCH_SHA }
     },
     ...overrides
   };
 }
 
+/** Model the exact hosted-workflow certificate identity used by verification. */
 function certificate(overrides = {}) {
   const repositoryUri = `https://github.com/${REPOSITORY}`;
   const workflowUri = `${repositoryUri}/.github/workflows/native-release.yml@refs/heads/master`;
@@ -72,8 +75,8 @@ test('native Play receipt has deterministic epoch-marked canonical bytes', () =>
     native_release_tag: 'native-v1.2.3',
     version_name: '1.2.3',
     releases: {
-      phone: { track: 'qa', version_code: 9, aab_sha256: PHONE_SHA },
-      watch: { track: 'wear:qa', version_code: 10, aab_sha256: WATCH_SHA }
+      phone: { track: 'internal', version_code: 9, aab_sha256: PHONE_SHA },
+      watch: { track: 'wear:internal', version_code: 10, aab_sha256: WATCH_SHA }
     }
   }, null, 2)}\n`);
   assert.deepEqual(parseNativePlayReceipt(bytes), createNativePlayReceipt(values()));
@@ -96,16 +99,16 @@ test('native Play receipt validates exact app, source, tag/version, role tracks,
     [values({ applicationId: 'other.app' }), /application ID must be/],
     [values({ sourceCommit: SOURCE.toUpperCase() }), /source commit is malformed/],
     [values({ nativeTag: 'native-v1.2.4' }), /tag and version do not match/],
-    [values({ releases: { ...values().releases, phone: { track: 'beta', versionCode: 9, aabSha256: PHONE_SHA } } }), /track must be qa/],
-    [values({ releases: { ...values().releases, phone: { track: 'qa', versionCode: 10, aabSha256: PHONE_SHA } } }), /wrong parity lane/],
-    [values({ releases: { ...values().releases, watch: { track: 'wear:qa', versionCode: 10, aabSha256: 'A'.repeat(64) } } }), /SHA-256 is malformed/]
+    [values({ releases: { ...values().releases, phone: { track: 'beta', versionCode: 9, aabSha256: PHONE_SHA } } }), /track must be internal/],
+    [values({ releases: { ...values().releases, phone: { track: 'internal', versionCode: 10, aabSha256: PHONE_SHA } } }), /wrong parity lane/],
+    [values({ releases: { ...values().releases, watch: { track: 'wear:internal', versionCode: 10, aabSha256: 'A'.repeat(64) } } }), /SHA-256 is malformed/]
   ];
   for (const [candidate, pattern] of invalid) assert.throws(() => createNativePlayReceipt(candidate), pattern);
 
   const swapped = values({
     releases: {
-      phone: { track: 'qa', versionCode: 9, aabSha256: WATCH_SHA },
-      watch: { track: 'wear:qa', versionCode: 10, aabSha256: PHONE_SHA }
+      phone: { track: 'internal', versionCode: 9, aabSha256: WATCH_SHA },
+      watch: { track: 'wear:internal', versionCode: 10, aabSha256: PHONE_SHA }
     }
   });
   assert.throws(
@@ -124,8 +127,8 @@ test('source-free receipt verification binds canonical receipt and both download
   const digest = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
   const receiptValues = values({
     releases: {
-      phone: { track: 'qa', versionCode: 9, aabSha256: digest(phone) },
-      watch: { track: 'wear:qa', versionCode: 10, aabSha256: digest(watch) }
+      phone: { track: 'internal', versionCode: 9, aabSha256: digest(phone) },
+      watch: { track: 'wear:internal', versionCode: 10, aabSha256: digest(watch) }
     }
   });
   const receipt = path.join(root, 'receipt.json');
@@ -205,6 +208,7 @@ test('current-master trust policy is strict and revocation wins', () => {
   assert.throws(() => parseNativePlayWorkflowTrustSet('anything\n'), /must be/);
 });
 
+/** Exercise trust decisions with controlled ancestry and critical-blob drift. */
 function fakeGit(options = {}) {
   const driftPath = options.driftPath;
   return (_root, args) => {
