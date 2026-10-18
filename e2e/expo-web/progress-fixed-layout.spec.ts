@@ -19,6 +19,7 @@ test('Trend heading, fullscreen icon, and graph share one full-width navigation 
     await page.goto('/progress');
     await hideTransientPwaNotices(page);
     const target = page.getByRole('button', { name: 'Open full weight trend', exact: true });
+    await expect(target).toBeVisible();
     await expect(target.getByRole('button')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Weight trend details', exact: true })).toHaveCount(0);
     const bounds = (await target.boundingBox())!;
@@ -231,7 +232,7 @@ test('Plan check detail navigation preserves recommendation review, apply, and u
   await expect(review).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true })).toBeVisible();
   expect(mutations).toEqual(['apply']);
-  await page.getByRole('button', { name: "Collapse Plan check", exact: true }).click();
+  await page.getByRole('button', { name: "Back to Progress", exact: true }).click();
   await expect(page.getByTestId('plan-check-summary')).toContainText('A calorie target update is scheduled.');
   await page.getByTestId('plan-check-summary').click();
   await page.getByRole('button', { name: 'Undo scheduled calorie target update', exact: true }).click();

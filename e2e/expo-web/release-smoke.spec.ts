@@ -467,7 +467,7 @@ test('authenticated shell renders real dashboard data and navigates release surf
   await expect(page.getByRole('button', { name: 'Collapse Breakfast', exact: true })).toBeVisible();
   await expect(page.getByRole('main').getByText('Greek yogurt and berries', { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page);
-  await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
+  await page.getByRole('button', { name: 'Back to Today', exact: true }).click();
 
   await page.getByRole('tab', { name: /Today$/ }).click();
   await expect(page).toHaveURL(/\/today$/);

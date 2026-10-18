@@ -247,8 +247,8 @@ test('Today is legible, keyboard-operable, and unclipped at every configured vie
       .toBe('3px');
     await foodPrimary.press('Enter');
     await expect(page.getByTestId('expanded-food')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeFocused();
-    await page.getByRole('button', { name: 'Collapse Food log', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Back to Today', exact: true })).toBeFocused();
+    await page.getByRole('button', { name: 'Back to Today', exact: true }).click();
     await expect(foodPrimary).toBeFocused();
     await expectUnderTargetDashboard(page);
     await expect(page).toHaveURL((url) => url.pathname === '/today');

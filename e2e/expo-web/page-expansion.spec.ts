@@ -15,6 +15,19 @@ async function useElapsedAnimationClock(page: import('@playwright/test').Page) {
   });
 }
 
+async function expectLabeledBackHeader(pane: import('@playwright/test').Locator, title: string, backLabel: string) {
+  const back = pane.getByRole('button', { name: backLabel, exact: true });
+  await expect(back.getByText(backLabel, { exact: true })).toBeVisible();
+  const heading = pane.getByRole('heading', { name: title, exact: true });
+  const backBox = (await back.boundingBox())!;
+  const headingBox = (await heading.boundingBox())!;
+  const paneBox = (await pane.boundingBox())!;
+  expect(backBox.height).toBeGreaterThanOrEqual(48);
+  expect(backBox.y + backBox.height).toBeLessThanOrEqual(headingBox.y + 1);
+  expect(backBox.x).toBeLessThanOrEqual(headingBox.x);
+  expect(backBox.x + backBox.width / 2).toBeLessThan(paneBox.x + paneBox.width / 2);
+}
+
 test('Food log expands below the date and restores its source, scroll and focus', async ({ page, ux }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await ux.install('populated', { foodDayStatus: 'OPEN' });
@@ -28,7 +41,8 @@ test('Food log expands below the date and restores its source, scroll and focus'
   await source.click();
   const pane = page.getByTestId('expanded-food');
   await expect(pane).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Collapse Food log' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to Today' })).toBeFocused();
+  await expectLabeledBackHeader(pane, 'Food log', 'Back to Today');
   const viewport = (await page.getByTestId('page-expansion-viewport').boundingBox())!;
   const bounds = (await pane.boundingBox())!;
   expect(Math.abs(bounds.y - viewport.y)).toBeLessThanOrEqual(1);
@@ -44,7 +58,7 @@ test('Food log expands below the date and restores its source, scroll and focus'
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(pane).toBeVisible();
-  await page.getByRole('button', { name: 'Collapse Food log' }).click();
+  await page.getByRole('button', { name: 'Back to Today' }).click();
   await expect(pane).toHaveCount(0);
   expect(await source.boundingBox()).toEqual(before);
   await expect(source).toBeFocused();
@@ -75,7 +89,8 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
     await page.screenshot({ path: testInfo.outputPath(`${id}-overview.png`) });
     await source.click();
     const pane = page.getByTestId(`expanded-${id}`);
-    await expect(page.getByRole('button', { name: `Collapse ${name}` })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Back to Progress' })).toBeFocused();
+    await expectLabeledBackHeader(pane, name, 'Back to Progress');
     const viewport = (await page.getByTestId('page-expansion-viewport').boundingBox())!;
     const bounds = (await pane.boundingBox())!;
     expect(Math.abs(bounds.y - viewport.y)).toBeLessThanOrEqual(1);
@@ -98,9 +113,9 @@ test('Progress expansions use the whole pane and return a scrolled overview', as
 });
 
 for (const section of [
-  { route: '/today', name: 'Food log', id: 'food', source: 'today-food-preview', above: 'calorie-balance-hero', below: null },
-  { route: '/progress', name: 'Trend', id: 'trend', source: 'weight-trend-preview-card', above: 'progress-snapshot-card', below: 'plan-check-summary' },
-  { route: '/progress', name: 'Plan check', id: 'plan', source: 'plan-check-summary', above: 'progress-snapshot-card', below: null },
+  { route: '/today', name: 'Food log', backLabel: 'Back to Today', id: 'food', source: 'today-food-preview', above: 'calorie-balance-hero', below: null },
+  { route: '/progress', name: 'Trend', backLabel: 'Back to Progress', id: 'trend', source: 'weight-trend-preview-card', above: 'progress-snapshot-card', below: 'plan-check-summary' },
+  { route: '/progress', name: 'Plan check', backLabel: 'Back to Progress', id: 'plan', source: 'plan-check-summary', above: 'progress-snapshot-card', below: null },
 ]) {
   test(`${section.name} collapse shrinks back on every expansion cycle`, async ({ page, ux }, testInfo) => {
     test.skip(!['desktop-chrome', 'android-phone-chrome'].includes(testInfo.project.name), 'Measure repeated mouse and touch motion.');
@@ -137,8 +152,8 @@ for (const section of [
     for (let cycle = 1; cycle <= 3; cycle++) {
       await test.step(`Expansion/collapse cycle ${cycle}`, async () => {
         const opening = await sample(`[data-testid="${section.source}"]`);
-        await expect(page.getByRole('button', { name: `Collapse ${section.name}` })).toBeFocused();
-        const closing = await sample(`[aria-label="Collapse ${section.name}"]`);
+        await expect(page.getByRole('button', { name: section.backLabel })).toBeFocused();
+        const closing = await sample(`[aria-label="${section.backLabel}"]`);
         await testInfo.attach(`${section.id}-animation-cycle-${cycle}`, { body: JSON.stringify({ opening, closing }), contentType: 'application/json' });
         const fields = ['top', 'height', 'above', 'opacity'] as const;
         for (const frames of [opening, closing]) {
@@ -202,7 +217,7 @@ for (const foodDayStatus of ['OPEN', 'COMPLETE'] as const) {
     expect(opening.at(-1)!.addWidth).toBeCloseTo(dock.width, 0);
     expect(opening.at(-1)!.completeX).toBeGreaterThanOrEqual(dock.x + dock.width);
     await expect(page.getByRole('button', { name: 'Add food', exact: true })).toContainText('Add food');
-    const closing = await sample('[aria-label="Collapse Food log"]');
+    const closing = await sample('[aria-label="Back to Today"]');
     expect(new Set(closing.map(frame => Math.round(frame.top))).size).toBeGreaterThan(3);
     expect(closing.at(-1)!.top).toBeGreaterThan(closing[0].top);
     expect(closing.at(-1)!.addWidth).toBeLessThan(closing[0].addWidth);
@@ -230,7 +245,7 @@ test('weight slides beneath the date header without clipping at its old body bou
   await useElapsedAnimationClock(page);
   const source = page.getByTestId('today-food-preview');
   const weight = page.getByTestId('today-weight-card');
-  const collapse = page.getByRole('button', { name: 'Collapse Food log' });
+  const collapse = page.getByRole('button', { name: 'Back to Today' });
   await expect(weight).toBeVisible();
   // Load the detail bundle and fonts before pausing time for reproducible screenshots.
   await source.click();
@@ -288,10 +303,10 @@ test('expanded pages reflow after resizing and keep enlarged-text actions reacha
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await ux.install('populated', { foodDayStatus: 'OPEN' });
   await page.route('**/api/v1/calibration/status', route => route.fulfill({ json: PLAN_CHECK_RECOMMENDATION_STATUS }));
-  for (const [route, sourceId, id, name] of [
-    ['/today', 'today-food-preview', 'food', 'Food log'],
-    ['/progress', 'weight-trend-preview-card', 'trend', 'Trend'],
-    ['/progress', 'plan-check-summary', 'plan', 'Plan check']
+  for (const [route, sourceId, id] of [
+    ['/today', 'today-food-preview', 'food'],
+    ['/progress', 'weight-trend-preview-card', 'trend'],
+    ['/progress', 'plan-check-summary', 'plan']
   ]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(route);
@@ -299,7 +314,7 @@ test('expanded pages reflow after resizing and keep enlarged-text actions reacha
     const source = page.getByTestId(sourceId);
     await source.click();
     const pane = page.getByTestId(`expanded-${id}`);
-    const collapse = page.getByRole('button', { name: `Collapse ${name}` });
+    const collapse = page.getByRole('button', { name: id === 'food' ? 'Back to Today' : 'Back to Progress' });
     await expect(collapse).toBeFocused();
     if (id === 'trend') await expect(pane.getByTestId('selected-trend-summary')).toBeVisible();
     if (id === 'food') await expect(pane.getByText('Fixture breakfast', { exact: true })).toBeVisible();
@@ -335,12 +350,12 @@ test('expansion history coexists with tab navigation and repeated collapse', asy
   await hideTransientPwaNotices(page);
   for (let attempt = 0; attempt < 2; attempt++) {
     await page.getByTestId('today-food-preview').click();
-    await expect(page.getByRole('button', { name: 'Collapse Food log' })).toBeFocused();
-    await page.getByRole('button', { name: 'Collapse Food log' }).click();
+    await expect(page.getByRole('button', { name: 'Back to Today' })).toBeFocused();
+    await page.getByRole('button', { name: 'Back to Today' }).click();
     await expect(page.getByTestId('today-food-preview')).toBeFocused();
   }
   await page.getByTestId('today-food-preview').click();
-  await expect(page.getByRole('button', { name: 'Collapse Food log' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to Today' })).toBeFocused();
   await page.getByRole('tab', { name: 'Progress' }).click();
   await expect(page).toHaveURL(url => url.pathname === '/progress');
   await page.goBack();

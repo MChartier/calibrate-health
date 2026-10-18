@@ -161,6 +161,7 @@ export default function TodayScreen() {
             expansion={{
                 id: isFoodExpanded && !isPaused ? 'food' : null,
                 title: 'Food log',
+                backLabel: 'Back to Today',
                 onClose: () => setIsFoodExpanded(false),
                 onRestore: id => setIsFoodExpanded(id === 'food' && !isPaused),
                 focused: getActiveTabRoute(pathname) === 'today',

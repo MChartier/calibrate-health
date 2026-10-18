@@ -94,7 +94,7 @@ test('Trend keeps the app shell and browser Back collapses into Progress', async
   await page.getByRole('button', { name: 'Open full weight trend', exact: true }).click();
 
   await expect(page).toHaveURL((url) => url.pathname === '/progress');
-  await expect(page.getByRole('button', { name: 'Collapse Trend', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to Progress', exact: true })).toBeFocused();
   await expect(page.locator('#route-focus-title')).toHaveText('Progress');
   await expect(page.getByRole('button', { name: 'Open notifications' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Account & settings', exact: true })).toBeVisible();
@@ -133,7 +133,7 @@ test('Food log returns to Today with browser Back on a compact phone', async ({ 
   await page.getByRole('button', { name: /Food log\..*View full log/ }).click();
 
   await expect(page).toHaveURL((url) => url.pathname === '/today');
-  await expect(page.getByRole('button', { name: 'Collapse Food log', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Back to Today', exact: true })).toBeFocused();
   await expect(page.locator('#route-focus-title')).toHaveText('Today');
   await expectNoHorizontalOverflow(page);
   await capture(page, 'food-log-phone-320x568.png');
