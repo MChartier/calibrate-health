@@ -10,7 +10,6 @@ type ClientUpgradeRequiredScreenProps = {
     requirement: ClientUpgradeRequirement;
     serverUrl: string;
     onRecheck: () => Promise<boolean>;
-    onChooseServer: () => Promise<void>;
 };
 
 const CLIENT_PLATFORM_LABELS: Record<ClientUpgradeRequirement['platform'], string> = {
@@ -23,8 +22,7 @@ const CLIENT_PLATFORM_LABELS: Record<ClientUpgradeRequirement['platform'], strin
 export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenProps> = ({
     requirement,
     serverUrl,
-    onRecheck,
-    onChooseServer
+    onRecheck
 }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
@@ -66,12 +64,6 @@ export const ClientUpgradeRequiredScreen: React.FC<ClientUpgradeRequiredScreenPr
                     onPress={() => void recheck()}
                     disabled={checking}
                     leftIcon={checking ? <ActivityIndicator color={theme.colors.onPrimary} /> : undefined}
-                />
-                <AppButton
-                    title="Sign out and choose another server"
-                    variant="secondary"
-                    onPress={() => void onChooseServer()}
-                    disabled={checking}
                 />
             </View>
         </ScrollView>

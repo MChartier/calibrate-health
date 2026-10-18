@@ -12,6 +12,15 @@ import { CALIBRATE_HOSTED_ORIGIN } from '@calibrate/shared/product';
 import release from '../../../shared/release.json';
 
 export const HOSTED_SERVER_URL = CALIBRATE_HOSTED_ORIGIN;
+/** Stored identities must be explicit origins; never infer the owner of legacy credentials. */
+export function storedOrigin(value: string): string {
+    const url = new URL(value);
+    if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password ||
+        url.pathname !== '/' || url.search || url.hash || value.trim() !== value) {
+        throw new Error('Saved service identity is invalid.');
+    }
+    return url.origin;
+}
 const ANDROID_EMULATOR_SERVER_URL = 'http://10.0.2.2:3000';
 const IOS_SIMULATOR_SERVER_URL = 'http://127.0.0.1:3000';
 const LOCAL_WEB_BACKEND_PORT = '3000';
@@ -67,8 +76,10 @@ export function isLocalServerHostname(hostname: string): boolean {
     ) {
         return true;
     }
-    if (normalized.startsWith('192.168.') || normalized.startsWith('10.')) return true;
-    return /^172\.(1[6-9]|2\d|3[01])\./.test(normalized);
+    const octets = normalized.split('.');
+    if (octets.length !== 4 || octets.some(part => !/^\d{1,3}$/.test(part) || Number(part) > 255)) return false;
+    return Number(octets[0]) === 10 || (Number(octets[0]) === 192 && Number(octets[1]) === 168)
+        || (Number(octets[0]) === 172 && Number(octets[1]) >= 16 && Number(octets[1]) <= 31);
 }
 
 /**
@@ -115,19 +126,14 @@ export function parseServerUrl(
 
 /** Allow local Expo sessions on physical devices to point at a LAN backend without code edits. */
 export function getConfiguredServerUrl(value = process.env.EXPO_PUBLIC_CALIBRATE_SERVER_URL): string | null {
-    if (!value) return null;
-    return normalizeServerUrl(value);
-}
-
-/** An explicit development target follows the active checkout instead of stale persisted server state. */
-export function resolveInitialServerUrl(
-    storedServerUrl: string | null,
-    configuredServerUrl: string | null,
-    fallbackServerUrl: string,
-    isDevelopment: boolean
-): string {
-    if (isDevelopment && configuredServerUrl) return configuredServerUrl;
-    return storedServerUrl ?? fallbackServerUrl;
+    if (value === undefined) return null;
+    const parsed = parseServerUrl(value);
+    let url: URL;
+    try { url = new URL(value); } catch { throw new Error('Invalid EXPO_PUBLIC_CALIBRATE_SERVER_URL: use an explicit service origin.'); }
+    if (!parsed.ok || url.pathname !== '/' || url.search || url.hash || value.trim() !== value) {
+        throw new Error('Invalid EXPO_PUBLIC_CALIBRATE_SERVER_URL: use a credential-free service origin.');
+    }
+    return parsed.url;
 }
 
 /** Keep the Expo dev server and local API on separate ports while preserving same-origin web exports. */
@@ -168,7 +174,8 @@ export function resolveDefaultNativeServerUrl(
 
 /** Default to an explicit env value, hosted production, or platform-specific simulator loopback. */
 export function getDefaultServerUrl(): string {
-    const configuredServerUrl = getConfiguredServerUrl();
+    // A production browser is always bound to the serving origin, regardless of native build inputs.
+    const configuredServerUrl = Platform.OS === 'web' && !__DEV__ ? null : getConfiguredServerUrl();
     // Production web exports use their serving origin for HttpOnly cookie sessions.
     // Local Expo development may target a separately configured backend port.
     if (Platform.OS === 'web') {

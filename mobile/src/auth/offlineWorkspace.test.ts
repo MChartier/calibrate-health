@@ -59,3 +59,43 @@ it('preserves cached tracking through successful cold authentication before any 
     await hydrateVerifiedOfflineWorkspace('https://one.test', 7, other, () => false);
     expect(other.getQueryData(['mobile-metrics'])).toBeUndefined();
 });
+
+
+it('restores the original snapshot when its provider unmounts during a save', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    await saveOfflineWorkspace('https://one.test', USER, client);
+    await saveOfflineWorkspace('https://two.test', USER, client);
+    const key = '@calibrate/offline-workspace/v1/' + encodeURIComponent('https://one.test');
+    const original = await AsyncStorage.getItem(key);
+    const set = jest.mocked(AsyncStorage.setItem);
+    const originalSet = set.getMockImplementation()!;
+    let release!: () => void, entered!: () => void;
+    const started = new Promise<void>(resolve => { entered = resolve; });
+    const hold = new Promise<void>(resolve => { release = resolve; });
+    set.mockImplementationOnce(async (key, value) => { entered(); await hold; return originalSet(key, value); });
+    let current = true;
+    const stale = saveOfflineWorkspace('https://one.test', { id: 8, email: 'late@example.invalid' } as never, client, () => current);
+    await started;
+    current = false;
+    const restored = restoreOfflineWorkspace('https://one.test', client);
+    release();
+    await stale;
+    await expect(restored).resolves.toEqual(USER);
+    expect(await AsyncStorage.getItem(key)).toBe(original);
+    expect(await restoreOfflineWorkspace('https://two.test', client)).toEqual(USER);
+});
+
+
+it('blocks snapshot reads until a failed cancelled-save restoration can recover', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+    await saveOfflineWorkspace('https://one.test', USER, client);
+    const set = jest.mocked(AsyncStorage.setItem);
+    const originalSet = set.getMockImplementation()!;
+    let current = true;
+    set.mockImplementationOnce(async (key, value) => { await originalSet(key, value); current = false; })
+        .mockRejectedValueOnce(new Error('Restore unavailable'))
+        .mockRejectedValueOnce(new Error('Still unavailable'));
+    await expect(saveOfflineWorkspace('https://one.test', { id: 8, email: 'discard@example.invalid' } as never, client, () => current)).rejects.toThrow('Restore unavailable');
+    await expect(restoreOfflineWorkspace('https://one.test', client)).rejects.toThrow('Still unavailable');
+    await expect(restoreOfflineWorkspace('https://one.test', client)).resolves.toEqual(USER);
+});

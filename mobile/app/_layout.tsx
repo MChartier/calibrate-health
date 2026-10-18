@@ -49,8 +49,7 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
         clientUpgradeRequired,
         clientServerIncompatibility,
         serverUrl,
-        recheckClientCompatibility,
-        clearLocalSession
+        recheckClientCompatibility
     } = useAuth();
     if (clientUpgradeRequired) {
         return (
@@ -58,7 +57,6 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
                 requirement={clientUpgradeRequired}
                 serverUrl={serverUrl}
                 onRecheck={recheckClientCompatibility}
-                onChooseServer={clearLocalSession}
             />
         );
     }
@@ -68,7 +66,6 @@ const ClientCompatibilityGate: React.FC<{ children: React.ReactNode }> = ({ chil
                 mismatch={clientServerIncompatibility}
                 serverUrl={serverUrl}
                 onRecheck={recheckClientCompatibility}
-                onChooseServer={clearLocalSession}
             />
         );
     }
