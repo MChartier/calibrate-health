@@ -20,7 +20,7 @@ import {
   NATIVE_RELEASE_ARTIFACT_CONTRACTS
 } from './native-release-evidence.mjs';
 
-export const REQUIRED_SIGNING_ENV = Object.freeze([
+const REQUIRED_SIGNING_ENV = Object.freeze([
   'CALIBRATE_ANDROID_SIGNING_STORE_FILE',
   'CALIBRATE_ANDROID_SIGNING_STORE_PASSWORD',
   'CALIBRATE_ANDROID_SIGNING_KEY_ALIAS',
@@ -32,16 +32,14 @@ const repositoryRoot = path.resolve(scriptDirectory, '..');
 
 // Expo SDK 57 release lint can exceed the generated project's 512 MiB metaspace cap.
 export const RELEASE_GRADLE_JVM_ARGS = '-Xmx4096m -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8';
-export const NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION = 1;
+const NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION = 1;
 export const NATIVE_RELEASE_BUILD_PROVENANCE_PATH = 'build/native-release-provenance.json';
-export const NATIVE_RELEASE_GRADLE_INTEGRITY_MANIFEST_PATH =
+const NATIVE_RELEASE_GRADLE_INTEGRITY_MANIFEST_PATH =
   'mobile/gradle/native-release/integrity.json';
-export const NATIVE_RELEASE_KEYSTORE_FILENAME = 'calibrate-android-upload.keystore';
+const NATIVE_RELEASE_KEYSTORE_FILENAME = 'calibrate-android-upload.keystore';
 export {
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL_PROPERTY,
   NATIVE_RELEASE_GRADLE_DISTRIBUTION_SHA256,
-  NATIVE_RELEASE_GRADLE_DISTRIBUTION_URL,
-  NATIVE_RELEASE_GRADLE_VERSION,
   NATIVE_RELEASE_GRADLE_WRAPPER_JAR_SHA256
 };
 
@@ -128,7 +126,7 @@ export function createNativeReleaseBuildProvenance(root, sourceCommit) {
 }
 
 /** Reject source or native-input drift in retained build evidence. */
-export function validateNativeReleaseBuildProvenance(provenance, options = {}) {
+function validateNativeReleaseBuildProvenance(provenance, options = {}) {
   const errors = [];
   if (!exactFields(provenance, PROVENANCE_FIELDS)) errors.push('Build provenance fields are invalid.');
   if (provenance?.schemaVersion !== NATIVE_RELEASE_BUILD_PROVENANCE_SCHEMA_VERSION) {
@@ -650,7 +648,7 @@ export function prepareNativeReleaseGradleExecution(builds, environment = proces
 }
 
 /** Fail before signing when prepared Gradle inputs have changed. */
-export function assertNativeReleaseGradleInputs(builds, options = {}) {
+function assertNativeReleaseGradleInputs(builds, options = {}) {
   const assertWrapper = options.assertWrapper ?? assertNativeReleaseGradleWrapper;
   const assertDependencyState = options.assertDependencyState ??
     assertNativeReleaseGradleDependencyState;
@@ -765,7 +763,7 @@ function prepareGradle() {
 }
 
 /** Keep generated Windows CMake/Ninja inputs on the validated native toolchain after prebuild. */
-export function configureWindowsCmake(root, environment, { platform = process.platform, execute = execFileSync } = {}) {
+function configureWindowsCmake(root, environment, { platform = process.platform, execute = execFileSync } = {}) {
   if (platform !== 'win32') return;
   const sdk = environment.ANDROID_HOME || environment.ANDROID_SDK_ROOT;
   if (!sdk) throw new Error('Set ANDROID_HOME through npm run native:setup.');
