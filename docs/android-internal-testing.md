@@ -1,7 +1,6 @@
 # Google Play internal testing onboarding
 
-Use [Local native builds and releases](mobile-release.md) for the daily commands: `native:build`, `native:install`,
-`native:submit`, and `ota:publish`. This companion guide covers one-time signing and Play Console setup for the
+Use [Local native builds and releases](mobile-release.md) for the common `release` CLI and separate `native:install` command. This companion guide covers one-time signing and Play Console setup for the
 local private-backend profile. Run `npm.cmd run native:setup` before the first build.
 
 The application ID is `net.darkmachines.healthtracker`. Both phone and Wear use
@@ -74,9 +73,8 @@ npm.cmd run native:configure
 npm.cmd run native:setup
 ```
 
-Build both packages with `npm.cmd run native:build`. Upload the phone AAB to
-the phone internal track and the Wear AAB to the Wear internal track in Play Console. Use the exact
-`local-p@COMMIT` / `local-w@COMMIT` release names printed by the build and verify both completed rollouts in Console.
+Plan with `npm.cmd run release -- plan --operation build --profile local`, then run `npm.cmd run release -- run --local`. Upload the phone AAB to
+the phone internal track and the Wear AAB to the Wear internal track in Play Console. Retain the common build receipt and verify both completed rollouts in Console.
 Complete the Console onboarding above before trying the API. For subsequent builds, allocate and
 commit a new native version pair before building. See the [build and submit guide](mobile-release.md)
 for the complete sequence and output paths.

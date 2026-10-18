@@ -117,7 +117,8 @@ ID/role/format/path, size/hash, application ID, and version. Then use explicit t
 $candidateCommit = git rev-parse HEAD
 $observationPath = Join-Path $env:TEMP 'calibrate-native-observation.json'
 
-npm.cmd run native:build
+npm.cmd run release -- plan --operation build --profile local
+npm.cmd run release -- run --local
 node scripts/native-release-devices.mjs `
   --skip-build `
   --phone-serial '<transient phone adb serial>' `

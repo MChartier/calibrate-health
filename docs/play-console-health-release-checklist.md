@@ -107,7 +107,7 @@ enrollment and duration remain Play Console onboarding work.
 
 ## Artifact gate
 
-- [ ] Run `node scripts/release-config.mjs prepare-native --bump patch` (or the intended semantic bump) and review every mirror.
+- [ ] Review `npm run release -- plan` and its reserved native pair before running the protected release; validate mapped metadata with `npm run release -- validate --source`.
 - [ ] Confirm the phone code is the next global odd code, the Wear code is the next global even code, and neither was
   previously uploaded under the shared application ID.
 - [ ] Run `npm.cmd run release:check` and `npm.cmd run test:release` on a clean release commit.
@@ -148,7 +148,7 @@ enrollment and duration remain Play Console onboarding work.
   identity only in protected `play-production`, as described in `docs/native-store-release.md`.
 - [ ] Assign an app-scoped testing submission key to the existing Expo project. Verify EAS accepts internal and the exact
   Wear track wear:internal before integrated rollout. Preserve separate production credentials and environment protection.
-- [ ] Migrate to Cut release with fresh available odd/even codes, verify native/OTA fingerprint agreement, then remove
+- [ ] Migrate to the shared release workflow with fresh available odd/even codes, verify native/OTA fingerprint agreement, then remove
   unused native-release-attestation and native-release-tags environments. Native tag signing and a GitHub App are no
   longer prerequisites. Retain historical image verification and native artifact signer trust for recovery.
 - [ ] Before every Publisher workflow dispatch, confirm Publishing overview has no unrelated changes ready to send

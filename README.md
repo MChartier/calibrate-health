@@ -90,15 +90,13 @@ encrypted backup monitoring, and the clean-instance restore procedure.
 
 ## Development
 
-For Android phone and Wear releases, use the [local native guide](docs/mobile-release.md):
-build packages with `npm run native:build`, publish Expo updates with `ota:publish`,
-install the last build with `native:install`, or submit its AABs with `native:submit`.
-Run `npm run <script> -- --help` for required options. Protected production releases have a
-[separate maintainer guide](docs/native-store-release.md).
+Use `npm run release -- validate|plan|run|status|recover` for hosted and local releases.
+The [local native guide](docs/mobile-release.md) covers building, retained receipts, and device installation;
+the [protected release guide](docs/native-store-release.md) covers Actions approvals and recovery.
 
 ### One-command quickstart
 
-Prerequisites are Node.js `20.19+` or `22.12+`, npm, Docker Desktop, and Docker
+Prerequisites are Node.js `22.14+`, npm, Docker Desktop, and Docker
 Compose `2.22+`. The launcher starts Docker Desktop on Windows or macOS when it
 is installed but not running.
 

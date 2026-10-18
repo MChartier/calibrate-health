@@ -72,7 +72,7 @@ exactly match the clean checkout's `HEAD`. Local runs may omit it. The result is
 
 On failure, the same path receives a sanitized `status: failed` result when the directory is writable. CI does not
 retain this file as release evidence. Pull requests run the rehearsal when migrations or its workflow/harness change;
-**Cut release** runs it only when migrations changed since the previous stable tag.
+Release validation retains the populated-upgrade check; rollback rehearsal remains a separate migration-focused PR/manual check.
 
 ## Operator follow-up
 
