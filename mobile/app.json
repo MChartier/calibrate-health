@@ -63,7 +63,7 @@
         "applinks:calibratehealth.app"
       ],
       "infoPlist": {
-        "NSLocalNetworkUsageDescription": "Allow calibrate to connect to a self-hosted server on your local network.",
+        "NSLocalNetworkUsageDescription": "Allow calibrate development builds to connect to the configured local service.",
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }

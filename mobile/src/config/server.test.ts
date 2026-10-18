@@ -6,7 +6,6 @@ import {
     resolveBrowserServerUrl,
     resolveDefaultNativeServerUrl,
     resolveDefaultWebServerUrl,
-    resolveInitialServerUrl,
     testCalibrateServerConnection
 } from './server';
 
@@ -31,7 +30,7 @@ const compatibleConfig = {
 };
 
 describe('server URL parsing', () => {
-    it('uses the canonical hosted origin while keeping self-hosting available', () => {
+    it('uses the existing canonical hosted origin', () => {
         expect(HOSTED_SERVER_URL).toBe('https://calibratehealth.app');
     });
 
@@ -62,30 +61,12 @@ describe('server URL parsing', () => {
     });
 
     it('reads an optional Expo public server override', () => {
-        expect(getConfiguredServerUrl('http://192.168.0.160:3000/api')).toBe('http://192.168.0.160:3000');
-        expect(getConfiguredServerUrl('not a url')).toBeNull();
+        expect(getConfiguredServerUrl('http://192.168.0.160:3000')).toBe('http://192.168.0.160:3000');
+        for (const invalid of ['', 'not a url', 'https://example.com/api', 'https://example.com?token=x', 'https://u:p@example.com', 'ftp://example.com', 'https://example.com#x']) {
+            expect(() => getConfiguredServerUrl(invalid)).toThrow('EXPO_PUBLIC_CALIBRATE_SERVER_URL');
+        }
     });
 
-    it('uses an explicit development target instead of a stale stored server', () => {
-        expect(resolveInitialServerUrl(
-            'https://previous.example',
-            'http://10.0.2.2:3329',
-            'https://calibratehealth.app',
-            true
-        )).toBe('http://10.0.2.2:3329');
-        expect(resolveInitialServerUrl(
-            'https://previous.example',
-            'https://build-default.example',
-            'https://calibratehealth.app',
-            false
-        )).toBe('https://previous.example');
-        expect(resolveInitialServerUrl(
-            null,
-            'https://build-default.example',
-            HOSTED_SERVER_URL,
-            false
-        )).toBe(HOSTED_SERVER_URL);
-    });
 
     it('targets port 3000 from a loopback Expo dev server but preserves production origins', () => {
         const expoLocation = new URL('http://localhost:8081/login');
