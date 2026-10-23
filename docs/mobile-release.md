@@ -9,7 +9,7 @@ npm.cmd run native:setup
 npm.cmd run native:configure
 ```
 
-Setup prepares the Windows Android toolchain; `native:setup -- --check` is read-only. Configure uses the toolkit's locked EAS CLI to authenticate, provision/reuse the default upload key and download the Play submission key assigned to the exact linked project and `net.darkmachines.healthtracker`. It uses an external credentials workspace and saves only absolute paths in `%LOCALAPPDATA%/calibrate-health/native.json`. A failed refresh preserves prior settings; no assigned Play key clears stale submission settings while allowing builds. Credentials remain outside the checkout. See [Play onboarding](android-internal-testing.md).
+Setup prepares the Windows Android toolchain; `native:setup -- --check` is read-only. Configure uses the toolkit's locked EAS CLI to authenticate, provision/reuse the default upload key and download the Play submission key assigned to the exact linked project and `net.darkmachines.healthtracker`. It uses an external credentials workspace and saves only absolute paths in `%LOCALAPPDATA%/calibrate-health/expo-release.json`. A failed refresh preserves prior settings; no assigned Play key clears stale submission settings while allowing builds. Credentials remain outside the checkout. See [Play onboarding](android-internal-testing.md).
 
 ## Build, install and submit
 

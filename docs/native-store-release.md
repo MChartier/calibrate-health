@@ -1,5 +1,7 @@
 # Protected releases
 
+Start with the [fresh-history cutover](release-cutover.md). Legacy release recovery and baseline import are intentionally unavailable.
+
 Calibrate consumes the pinned `@mchartier/expo-release` package and workers. `release.config.json` defines its components, existing metadata mappings, Android pair, tracks, environments and deployment values. See [shared implementation](https://github.com/MChartier/expo-release-template) for the common contract and recovery protocols.
 
 From a clean committed checkout:

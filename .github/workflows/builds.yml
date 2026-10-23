@@ -58,7 +58,6 @@ jobs:
         with:
           filters: |
             release_config:
-              - '.github/native-release-tag-allowed-signers'
               - '.github/native-play-attestation-trusted-workflow-shas'
               - '.github/release-image-attestation-trusted-workflow-shas'
               - 'release.config.json'

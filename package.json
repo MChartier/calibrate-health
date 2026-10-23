@@ -101,7 +101,8 @@
     "test:coverage:mobile": "npm --prefix mobile test -- --coverage --runInBand",
     "knip": "knip",
     "knip:production": "knip --production --exclude exports,types",
-    "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production"
+    "test:dead-code": "node --test scripts/knip-config.test.mjs && npm run knip && npm run knip:production",
+    "release:setup": "expo-release setup"
   },
   "keywords": [],
   "author": "",
@@ -115,7 +116,7 @@
     }
   },
   "devDependencies": {
-    "@mchartier/expo-release": "git+https://github.com/MChartier/expo-release-template.git#86b1beff598cbc5fe5b76f93ed116cf90d5d1006",
+    "@mchartier/expo-release": "git+https://github.com/MChartier/expo-release-template.git#6ae5cf3eaa680ae9911743387a2bd4791349570c",
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^20.0.0",

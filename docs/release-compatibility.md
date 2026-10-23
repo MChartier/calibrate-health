@@ -1,5 +1,7 @@
 # Release compatibility and artifact provenance
 
+Start with the [fresh-history cutover](release-cutover.md). Legacy release recovery and baseline import are intentionally unavailable.
+
 `shared/release.json` is the canonical release manifest for the server, the shared Expo mobile compatibility line,
 the Android app, and the Wear OS app. Android and iOS Expo clients share its semantic mobile version and minimum-version
 policy; Expo config and client-diagnostic allowlists mirror those values. Android build files also mirror the manifest

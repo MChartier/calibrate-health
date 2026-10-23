@@ -1,5 +1,7 @@
 # Google Play, Health Apps, and Data Safety release checklist
 
+Start with the [fresh-history cutover](release-cutover.md). Legacy release recovery and baseline import are intentionally unavailable.
+
 This document is a release worksheet for the Android phone and Wear OS artifacts. Refresh every source fact from
 the frozen source candidate and its canonical `shared/release.json`; this worksheet is not evidence that a build,
 signature inspection, device run, OTA publish, Play Console submission, or approval occurred.
