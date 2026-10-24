@@ -1,8 +1,6 @@
 # Google Play internal testing onboarding
 
-Use [Local native builds and releases](mobile-release.md) for the daily commands: `native:build`, `native:install`,
-`native:submit`, and `ota:publish`. This companion guide covers one-time signing and Play Console setup for the
-local private-backend profile. Run `npm.cmd run native:setup` before the first build.
+Use the [protected release workflow](native-store-release.md) and its fresh-cutover instructions. This companion guide covers Play Console onboarding and existing signing identities.
 
 The application ID is `net.darkmachines.healthtracker`. Both phone and Wear use
 `https://calibratehealth.darkmachines.net`, Expo channel `internal`, and Play internal tracks `internal` / `wear:internal`.
@@ -16,17 +14,7 @@ checkout. Enroll both form factors in the same Play App Signing identity. With G
 key, the upload key signs AAB submissions; Play signs the APKs installed on devices with its separate key.
 Use Play for subsequent updates rather than installing an upload-key APK over a Play-installed app.
 
-Let EAS manage the upload key for `net.darkmachines.healthtracker`:
-
-```powershell
-npm.cmd run native:configure
-```
-
-Sign into the linked Expo project when prompted. On the first run, accept EAS's new Android keystore
-generation prompt; later runs reuse the app's existing default key. Signing and assigned Play credentials
-download automatically, and the command exits without any credential menus. The wrapper validates the
-download and configures its external location for both phone and Wear builds.
-See [the configuration flow](mobile-release.md#configure-eas-credentials-once) for details and paths.
+Use official EAS credential management for the linked project. Reuse the existing upload key and assigned Play submission credential; do not accept replacement key generation during migration. Protect the existing key and its backup.
 
 Never commit the downloaded JSON/keystore, service-account JSON, or passwords. Keep a protected backup.
 The local build ignores inherited `CALIBRATE_ANDROID_*` signing variables. Expo prebuild finishes before
@@ -67,19 +55,7 @@ from the old package automatically.
 
 ## First upload and later updates
 
-Download the EAS signing and assigned Play credentials for this machine, then prepare the tools:
-
-```powershell
-npm.cmd run native:configure
-npm.cmd run native:setup
-```
-
-Build both packages with `npm.cmd run native:build`. Upload the phone AAB to
-the phone internal track and the Wear AAB to the Wear internal track in Play Console. Use the exact
-`local-p@COMMIT` / `local-w@COMMIT` release names printed by the build and verify both completed rollouts in Console.
-Complete the Console onboarding above before trying the API. For subsequent builds, allocate and
-commit a new native version pair before building. See the [build and submit guide](mobile-release.md)
-for the complete sequence and output paths.
+Complete Play Console onboarding before the first EAS Submit operation. The protected Release workflow allocates the version/code pair, builds and validates both artifacts, and submits phone before Wear. Inspect both form-factor results in Play Console. Subsequent versions are reserved automatically; do not bump default-branch metadata manually.
 
 ## Device acceptance
 

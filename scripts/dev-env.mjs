@@ -25,7 +25,7 @@ const packages = [
   {
     name: "mobile-workspace",
     directory: repoRoot,
-    installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
+    installArgs: ["ci", "--include=dev", "--prefer-offline", "--no-audit", "--fund=false"],
     requiredPaths: [
       "node_modules/expo/package.json",
       "node_modules/@playwright/test/cli.js",
@@ -35,7 +35,7 @@ const packages = [
   {
     name: "backend",
     directory: path.join(repoRoot, "backend"),
-    installArgs: ["ci", "--prefer-offline", "--no-audit", "--fund=false"],
+    installArgs: ["ci", "--include=dev", "--prefer-offline", "--no-audit", "--fund=false"],
     requiredPaths: [
       "node_modules/ts-node/package.json",
       "node_modules/prisma/package.json",

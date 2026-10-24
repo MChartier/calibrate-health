@@ -5,27 +5,21 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import { validateRuntimeResolution } from './expo-runtime.mjs';
+import { validateRuntimeResolution, validateEmbeddedRuntimeResources } from './expo-runtime.mjs';
 
-/** Keep the fixture aligned with the locked SDK's normalized fingerprint source shape. */
-function resolved() {
-  return { runtimeVersion: 'a'.repeat(40), fingerprintSources: [
-    { id: 'expoAutolinkingConfig:android', contents: JSON.stringify({ modules: [{ packageName: 'expo-updates' }, { packageName: '@calibrate/wear-pairing' }] }) },
-    { id: 'rncoreAutolinkingConfig:android', contents: JSON.stringify({ 'react-native-health-connect': {} }) }
-  ] };
-}
-
-test('runtime resolution accepts a complete native graph', () => {
-  assert.equal(validateRuntimeResolution(resolved()), 'a'.repeat(40));
+test('runtime resolution accepts only the explicit major policy', () => {
+  assert.equal(validateRuntimeResolution({ runtimeVersion: '2' }), '2');
+  for (const runtimeVersion of ['0.2.8', 'a'.repeat(40), '02']) assert.throws(() => validateRuntimeResolution({ runtimeVersion }), /major-only/);
 });
 
-test('a valid-looking hash cannot hide failed autolinking or appVersion policy', () => {
-  assert.throws(() => validateRuntimeResolution({ ...resolved(), runtimeVersion: '0.2.8' }), /fingerprint/);
-  for (const index of [0, 1]) {
-    const value = resolved();
-    value.fingerprintSources[index].contents = '{}';
-    assert.throws(() => validateRuntimeResolution(value), /Incomplete/);
-  }
+test('APK runtime verification ignores the spec index and checks every compiled resource value', () => {
+  const index = 'spec resource 0x7f120001 net.darkmachines.healthtracker:string/expo_runtime_version: flags=0x00000000\n';
+  const value = 'resource 0x7f120001 net.darkmachines.healthtracker:string/expo_runtime_version: t=0x03 d=0x00000001\n  (string8) "1"\n';
+  assert.doesNotThrow(() => validateEmbeddedRuntimeResources(index + value, '1'));
+  assert.doesNotThrow(() => validateEmbeddedRuntimeResources(index + value + value, '1'));
+  assert.throws(() => validateEmbeddedRuntimeResources(index, '1'), /differs/);
+  assert.throws(() => validateEmbeddedRuntimeResources(index + value + value.replace('"1"', '"2"'), '1'), /differs/);
+  assert.throws(() => validateEmbeddedRuntimeResources(index + value, '2'), /differs/);
 });
 
 test('SDK hashing ignores transient Kotlin sessions while retaining native plugin source', async (t) => {

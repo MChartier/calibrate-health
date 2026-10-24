@@ -90,15 +90,12 @@ encrypted backup monitoring, and the clean-instance restore procedure.
 
 ## Development
 
-For Android phone and Wear releases, use the [local native guide](docs/mobile-release.md):
-build packages with `npm run native:build`, publish Expo updates with `ota:publish`,
-install the last build with `native:install`, or submit its AABs with `native:submit`.
-Run `npm run <script> -- --help` for required options. Protected production releases have a
-[separate maintainer guide](docs/native-store-release.md).
+Use the protected [Release workflow](docs/native-store-release.md) for server, native and OTA releases.
+The CLI supports read-only configuration validation and planning.
 
 ### One-command quickstart
 
-Prerequisites are Node.js `20.19+` or `22.12+`, npm, Docker Desktop, and Docker
+Prerequisites are Node.js `22.14+`, npm, Docker Desktop, and Docker
 Compose `2.22+`. The launcher starts Docker Desktop on Windows or macOS when it
 is installed but not running.
 
@@ -127,9 +124,7 @@ The normal lifecycle is:
 - `npm run setup`: install host dependencies and generate Prisma without
   starting Docker.
 - `npm run native:setup`: install and verify the Windows Android build toolchain
-  plus host dependencies. See [native setup](docs/mobile-release.md#set-up-once).
-- `npm run native:configure`:
-  download EAS-managed Android signing and the assigned Play service-account key so build and submit need no repeated arguments.
+  plus host dependencies. See [native setup](docs/mobile-release.md).
 - `npm run dev`: prepare and run the full stack with seeded-user auto-login.
 - `npm run dev:manual-auth`: run the same stack with auto-login disabled.
 - `npm run dev:expo`: run the native Expo dev-client bundler on the host

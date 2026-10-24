@@ -26,18 +26,16 @@ The Builds workflow provides these focused checks:
 Database populated-upgrade checks run for database-relevant changes. Pull requests run the encrypted rollback
 rehearsal when Prisma migrations or the rollback workflow/harness change. Production-image build/startup/web smoke
 and OS-vulnerability checks remain automatic for affected inputs. Full image scans, including package libraries,
-run on the existing Monday 14:15 UTC schedule or manual dispatch. **Cut release** does not replay the PR checks
-against its generated version-only candidate.
+run on the existing Monday 14:15 UTC schedule or manual dispatch. The shared release worker validates both its exact source and candidate through the application validation hook, and retains production-image smoke and OS scanning.
 
-Generated version-only `release/v*` pull requests still validate synchronized release configuration, but suppress
+Generated version-only `release/v*` / `release/expo-*` pull requests still validate synchronized release configuration, but suppress
 unrelated web, phone, and Wear build fan-out.
 
 ## Dependency maintenance
 
-**Dependency Audit** checks root/mobile production dependencies, backend production dependencies, and the locked
-EAS CLI every Monday at 13:30 UTC. Run it manually with `workflow_dispatch` when investigating or upgrading packages.
+**Dependency Audit** checks root/mobile and backend production dependencies every Monday at 13:30 UTC. The shared toolkit owns EAS dependency maintenance. Run it manually with `workflow_dispatch` when investigating or upgrading packages.
 It audits the lockfiles without installing dependencies, reports high/critical findings through the workflow logs
-and failed jobs, and lets all three workspaces finish even if one reports findings.
+and failed jobs, and lets both application workspaces finish even if one reports findings.
 
 Application-package advisories do not run on pull requests, pushes to `master`, or merges; container OS checks
 remain. Release configuration checks also do not enforce package advisories or expiring exceptions. Review maintenance findings and apply compatible upgrades in
@@ -57,9 +55,9 @@ The manual **Optional Release Confidence** workflow checks an exact candidate co
 production dependency audit, deploy contracts, generated API contract, and clean worktree. It is an owner-discretion
 review aid and does not authorize or record an external launch.
 
-## Cut server/web release
+## Shared release execution
 
-After changes land on master, Cut release selects server/web, paired native, and each OTA channel. Selected version
+After changes land on master, the shared planner selects server/web, paired native, and each OTA channel. Selected version
 changes share one exact candidate PR, protected merge, production-image smoke, and existing required CI. Client-only
 publication without version changes uses the protected source directly. No applicable changes produces an explicit no-op.
 Selected server deployment must report successful health before clients publish. Native builds must verify and the

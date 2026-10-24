@@ -1,16 +1,6 @@
 name: Builds
 
 on:
-  workflow_call:
-    inputs:
-      release_sha:
-        description: Exact canonical release candidate; validated by Cut release
-        required: true
-        type: string
-      source_sha:
-        description: Exact protected source and workflow commit
-        required: true
-        type: string
   pull_request:
   workflow_dispatch:
     inputs:
@@ -38,12 +28,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: builds-${{ inputs.release_sha && format('candidate-{0}-{1}', github.run_id, github.run_attempt) || github.event.pull_request.number || github.ref }}
+  group: builds-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   changes:
-    name: Classify Build Inputs${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+    name: Classify Build Inputs
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -61,33 +51,14 @@ jobs:
       native_upgrade: ${{ steps.decision.outputs.native_upgrade }}
 
     steps:
-      - name: Checkout release candidate for identity verification
-        if: inputs.release_sha != ''
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.release_sha }}
-          fetch-depth: 2
-          persist-credentials: false
-
-      - name: Verify explicit release candidate
-        if: inputs.release_sha != ''
-        env:
-          RELEASE_SHA: ${{ inputs.release_sha }}
-          SOURCE_SHA: ${{ inputs.source_sha }}
-          WORKFLOW_SHA: ${{ job.workflow_sha }}
-        run: node scripts/release-ci-gate.mjs --verify-inputs
-
       - name: Detect affected build surfaces
-        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
             release_config:
-              - '.github/native-release-tag-allowed-signers'
-              - '.github/native-play-attestation-trusted-workflow-shas'
-              - '.github/release-image-attestation-trusted-workflow-shas'
-              - 'tools/eas-cli/**'
+              - 'release.config.json'
               - '.github/workflows/**'
               - 'backend/package.json'
               - 'backend/package-lock.json'
@@ -165,7 +136,7 @@ jobs:
               - 'mobile/plugins/**'
               - 'package-lock.json'
       - name: Detect changes outside generated release mirrors
-        if: inputs.release_sha == '' && github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request'
         id: release_mirror_filter
         uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
@@ -202,7 +173,6 @@ jobs:
         id: decision
         shell: bash
         env:
-          RELEASE_CANDIDATE: ${{ inputs.release_sha != '' }}
           EVENT_NAME: ${{ github.event_name }}
           HEAD_REF: ${{ github.head_ref }}
           RELEASE_CONFIG_CHANGED: ${{ steps.filter.outputs.release_config == 'true' }}
@@ -225,9 +195,7 @@ jobs:
           native_release=false
           native_upgrade=false
 
-          if [[ "${RELEASE_CANDIDATE}" == "true" ]]; then
-            release_config=true
-          elif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             release_config=true
             case "${MANUAL_VALIDATION_SCOPE}" in
               web)
@@ -260,7 +228,7 @@ jobs:
             fi
           else
             release_config=${RELEASE_CONFIG_CHANGED}
-            if [[ "${HEAD_REF}" == release/v* && "${NON_RELEASE_MIRROR_CHANGED}" != "true" ]]; then
+            if [[ ( "${HEAD_REF}" == release/v* || "${HEAD_REF}" == release/expo-* ) && "${NON_RELEASE_MIRROR_CHANGED}" != "true" ]]; then
               echo "Generated version-only release PR: platform build fan-out is intentionally suppressed."
             else
               backend=${BACKEND_CHANGED}
@@ -282,7 +250,7 @@ jobs:
           echo "native_upgrade=${native_upgrade}" >> "${GITHUB_OUTPUT}"
 
   release-config:
-    name: Release Configuration${{ inputs.release_sha && format(' [{0}]', inputs.release_sha) || '' }}
+    name: Release Configuration
     needs: changes
     if: needs.changes.outputs.release_config == 'true'
     runs-on: ubuntu-latest
@@ -292,7 +260,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Node
@@ -329,7 +297,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -355,7 +323,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed bundle Node
         uses: actions/setup-node@v4
@@ -386,7 +354,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -415,7 +383,7 @@ jobs:
       - name: Checkout candidate C
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed Web E2E Node
         uses: actions/setup-node@v4
@@ -443,7 +411,7 @@ jobs:
       - name: Checkout candidate C
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed data-state Node
         uses: actions/setup-node@v4
@@ -473,7 +441,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup reviewed UX Node
         uses: actions/setup-node@v4
@@ -529,17 +497,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --fund=false
+        run: npm ci --include=dev --no-audit --fund=false
 
       - name: Test installed mobile build tools
         run: npm run test:mobile-build-tools
@@ -564,12 +532,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -641,12 +609,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -688,7 +656,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -772,12 +740,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -891,12 +859,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
 
       - name: Initialize sanitized Wear evidence for candidate C
         run: >-
@@ -1006,12 +974,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.0
+          node-version: 22.14.0
 
       - name: Initialize sanitized upgrade evidence for candidate C
         run: >-
