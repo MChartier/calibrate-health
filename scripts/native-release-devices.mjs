@@ -901,7 +901,7 @@ Signing passwords are accepted only through hidden prompts or CALIBRATE_ANDROID_
 `);
 }
 
-export async function runNativeReleaseDevices(options = {}) {
+async function runNativeReleaseDevices(options = {}) {
   const root = options.repositoryRoot ?? repositoryRoot;
   const environment = options.environment ?? process.env;
   const config = options.config ?? parseNativeReleaseDeviceArgs(process.argv.slice(2));
