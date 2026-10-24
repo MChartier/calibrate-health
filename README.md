@@ -90,9 +90,8 @@ encrypted backup monitoring, and the clean-instance restore procedure.
 
 ## Development
 
-Use `npm run release -- validate|plan|run|status|recover` for hosted and local releases.
-The [local native guide](docs/mobile-release.md) covers building, retained receipts, and device installation;
-the [protected release guide](docs/native-store-release.md) covers Actions approvals and recovery.
+Use the protected [Release workflow](docs/native-store-release.md) for server, native and OTA releases.
+The CLI supports read-only configuration validation and planning.
 
 ### One-command quickstart
 
@@ -125,9 +124,7 @@ The normal lifecycle is:
 - `npm run setup`: install host dependencies and generate Prisma without
   starting Docker.
 - `npm run native:setup`: install and verify the Windows Android build toolchain
-  plus host dependencies. See [native setup](docs/mobile-release.md#set-up-once).
-- `npm run native:configure`:
-  download EAS-managed Android signing and the assigned Play service-account key so build and submit need no repeated arguments.
+  plus host dependencies. See [native setup](docs/mobile-release.md).
 - `npm run dev`: prepare and run the full stack with seeded-user auto-login.
 - `npm run dev:manual-auth`: run the same stack with auto-login disabled.
 - `npm run dev:expo`: run the native Expo dev-client bundler on the host

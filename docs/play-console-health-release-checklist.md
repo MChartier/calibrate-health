@@ -109,7 +109,7 @@ enrollment and duration remain Play Console onboarding work.
 
 ## Artifact gate
 
-- [ ] Review `npm run release -- plan` and its reserved native pair before running the protected release; validate mapped metadata with `npm run release -- validate --source`.
+- [ ] Review `npm run release -- plan --profile production` and its reserved native pair before running the protected release; validate mapped metadata with `npm run release -- validate`.
 - [ ] Confirm the phone code is the next global odd code, the Wear code is the next global even code, and neither was
   previously uploaded under the shared application ID.
 - [ ] Run `npm.cmd run release:check` and `npm.cmd run test:release` on a clean release commit.

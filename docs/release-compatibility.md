@@ -78,7 +78,7 @@ Compatibility changes follow these rules:
 | `production` | Locally signed release AAB | `release` | Store-distributed release |
 
 The internal Wear build uses shared release signing when all `CALIBRATE_ANDROID_SIGNING_*` values are supplied and
-falls back to the repository debug key for local phone-debug pairing. `npm run release -- run --local` supplies the same
+falls back to the repository debug key for local phone-debug pairing. The paired Gradle builder supplies the same
 validated signing environment to the phone and Wear release builds. Any future EAS-built phone artifact can pair only
 with a Wear artifact signed by that same certificate. Never place signing material in `shared/release.json` or
 generated metadata.
