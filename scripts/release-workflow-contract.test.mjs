@@ -383,7 +383,7 @@ test('server publication grants only the operation-specific built-in token permi
     ['cut-release.yml', 'prepare', { contents: 'read' }],
     ['cut-release.yml', 'publish_candidate', { actions: 'read', contents: 'write' }],
     ['cut-release.yml', 'release-validation', { contents: 'read' }],
-    ['cut-release.yml', 'finalize', { contents: 'write', 'pull-requests': 'write', actions: 'read' }],
+    ['cut-release.yml', 'finalize', { contents: 'write', 'pull-requests': 'write', actions: 'read', checks: 'write' }],
     ['cut-release.yml', 'inspect_cleanup', { contents: 'read', 'pull-requests': 'read' }],
     ['cut-release.yml', 'cleanup-candidate', { contents: 'write', 'pull-requests': 'write' }],
     ['publish-release.yml', 'tag_release', { contents: 'read' }],

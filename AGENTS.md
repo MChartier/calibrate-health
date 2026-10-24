@@ -272,7 +272,8 @@ UI code style:
   `GITHUB_TOKEN` writes only for candidate/tag publication, PR finalization/cleanup, and GHCR publication; callers must
   propagate every required reusable-workflow permission. Cut release calls existing read-only CI on the exact candidate
   and source SHAs; finalization verifies those jobs in the same trusted run, then uses the PR merge API with the validated head,
-  honors master protection, and checks merged parents/tree before publication. It must never push directly to master.
+  honors master protection, and checks merged parents/tree before publication. The finalizer alone receives `checks: write`
+  to attach the three required PR checks to the exact candidate after trusted CI verification. It must never push directly to master.
   Keep the repository's existing package Actions write access and PR-creation setting. A Server Release GitHub App,
   GHCR robot, `server-release-publication` environment, and extra server tag rulesets are not prerequisites.
   Separate source-free publisher runners retain exact artifact and current-workflow verification. The isolated
