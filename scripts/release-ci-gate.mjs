@@ -5,8 +5,8 @@ import { pathToFileURL } from 'node:url';
 // Only canonical version-mirror candidates reach this gate. Builds intentionally
 // suppresses platform fan-out; database rollback requires an actual migration.
 export const REQUIRED_CI = {
-  'lint.yml': ['Backend, Shared, API Client, and Mobile Typecheck'],
-  'tests.yml': ['Classify Test Inputs', 'Backend Tests', 'Mobile Tests'],
+  'lint.yml': ['Backend, Shared, API Client, and Mobile Typecheck', 'ESLint (zero warnings)'],
+  'tests.yml': ['Classify Test Inputs', 'Backend Tests', 'Mobile Tests', 'Required Tests'],
   'builds.yml': ['Classify Build Inputs', 'Release Configuration'],
   'container-scan.yml': ['Classify Production Image Inputs', 'High and Critical Vulnerabilities'],
   'database-upgrade.yml': ['Classify Database Inputs', 'Populated Postgres Upgrade'],

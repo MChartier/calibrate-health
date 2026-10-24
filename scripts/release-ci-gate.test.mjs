@@ -107,6 +107,15 @@ test('zero jobs, missing required success, unexpected skips and failing jobs fai
   }
 });
 
+test('missing lint or aggregate test success cannot authorize a release', () => {
+  for (const [workflow, name] of [['lint.yml', 'ESLint (zero warnings)'], ['tests.yml', 'Required Tests']]) {
+    const f = fixture();
+    const run = f.runs.find(item => item.path === `.github/workflows/${workflow}`);
+    run.jobs = run.jobs.filter(job => job.name !== name);
+    assert.throws(() => evaluateRuns(f.runs, identity), /required job/);
+  }
+});
+
 test('moved head/base/master, closed or draft PR cannot merge', () => {
   for (const mutate of [f => f.pull.head.sha = 'c'.repeat(40), f => f.pull.base.sha = 'c'.repeat(40),
     f => f.master.object.sha = 'c'.repeat(40), f => f.pull.state = 'closed', f => f.pull.draft = true,
